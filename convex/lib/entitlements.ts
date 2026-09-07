@@ -143,7 +143,7 @@ export type OrgSubscriptionState = {
  * La branche « compte offert » est datée à dessein. Un cadeau n'a **aucun**
  * abonnement Stripe derrière : personne ne viendrait clore quoi que ce soit à
  * l'échéance. Poser un statut `trialing` aurait donc ouvert l'accès à vie —
- * c'est en lisant `expiresAt` à chaque appel que « six mois » veut dire six
+ * c'est en lisant `expiresAt` à chaque appel que la durée offerte veut dire
  * mois. Un cadeau expiré ne bloque en revanche jamais une agence qui a
  * réellement souscrit depuis : le statut Stripe est testé en premier.
  *

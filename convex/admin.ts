@@ -3,7 +3,7 @@ import { mutation, query } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import { computePlatformAnalytics, computeRefundOutcome } from './lib/analytics';
 import { reverseReferralBySession, restoreCreditForRefundedSession } from './affiliate';
-import { galleryExpiresAtFor } from './lib/eventPlan';
+import { DEFAULT_COMPED_EVENT_PLAN, galleryExpiresAtFor } from './lib/eventPlan';
 import { isSuspended } from './lib/accountStatus';
 
 async function assertAdmin(
@@ -843,7 +843,8 @@ export const grantEventPlan = mutation({
   args: {
     adminId: v.id('users'),
     eventId: v.id('events'),
-    planTier: v.union(v.literal('essential'), v.literal('premium')),
+    /** Omis ⇒ `DEFAULT_COMPED_EVENT_PLAN` : on offre le palier complet. */
+    planTier: v.optional(v.union(v.literal('essential'), v.literal('premium'))),
     /** Pourquoi (nom du partenariat, ticket support…) — atterrit dans l'audit. */
     reason: v.optional(v.string()),
   },
@@ -852,14 +853,15 @@ export const grantEventPlan = mutation({
     const event = await ctx.db.get(eventId);
     if (!event) throw new Error('EVENT_NOT_FOUND');
 
+    const tier = planTier ?? DEFAULT_COMPED_EVENT_PLAN;
     const now = Date.now();
     const previousPlan = event.planTier ?? null;
     await ctx.db.patch(eventId, {
-      planTier,
+      planTier: tier,
       // Même calcul que le chemin payant (`galleryExpiresAtFor`) : un forfait
       // offert doit ouvrir exactement les mêmes droits, à la même échéance.
       paidAt: event.paidAt ?? now,
-      galleryExpiresAt: galleryExpiresAtFor(planTier, event.eventDate),
+      galleryExpiresAt: galleryExpiresAtFor(tier, event.eventDate),
       pendingPlanTier: undefined,
       compedPlan: { grantedBy: adminId, grantedAt: now, reason },
       updatedAt: now,
@@ -869,7 +871,9 @@ export const grantEventPlan = mutation({
       action: 'grant_event_plan',
       targetType: 'event',
       targetId: eventId,
-      details: JSON.stringify({ previousPlan, planTier, reason: reason ?? null }),
+      // Le tier RÉELLEMENT posé, pas l'argument : un audit qui note `null` sur
+      // un octroi par défaut ne dirait pas ce qui a été offert.
+      details: JSON.stringify({ previousPlan, planTier: tier, reason: reason ?? null }),
       createdAt: now,
     });
     return { ok: true };

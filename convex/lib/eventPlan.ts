@@ -17,6 +17,18 @@ export const GALLERY_RETENTION_DAYS: Record<'essential' | 'premium', number> = {
   premium: 180,
 };
 
+/**
+ * Forfait offert par défaut à un particulier (`admin:grantEventPlan` sans tier).
+ *
+ * Un forfait qu'on offre n'est pas un forfait qu'on vend : le geste sert un
+ * partenariat, un dédommagement ou une démo. L'Essentiel y montrerait le
+ * produit amputé de ce qui le vend — galerie partagée fermée à 30 jours au lieu
+ * de six mois, pas d'album PDF. On offre donc le palier complet, comme le
+ * compte agence offert (`DEFAULT_PARTNER_COMP_TIER`). Un Essentiel reste
+ * possible, en le demandant explicitement.
+ */
+export const DEFAULT_COMPED_EVENT_PLAN = 'premium' as const;
+
 /** L'upsell HD post-event pousse la rétention à 5 ans. */
 export const POST_EVENT_UPSELL_RETENTION_DAYS = 5 * 365;
 

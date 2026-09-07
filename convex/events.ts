@@ -8,6 +8,7 @@ import {
 } from './_generated/server';
 import { internal } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
+import { galleryExpiresAtFor } from './lib/eventPlan';
 import { pickUniqueSlug } from './lib/uniqueSlug';
 import { eventQuotaForTier, eventHasFeature, orgHasActiveAccess } from './lib/entitlements';
 import { isCompActive } from './lib/partnerInvite';
@@ -521,6 +522,30 @@ export const create = mutation({
     const slug = await pickUniqueSlug(ctx, 'events', 'by_slug', 'slug', base);
 
     const now = Date.now();
+
+    // Forfait particulier offert (lien partenaire « compte personnel ») : c'est
+    // ici qu'il se consomme, au premier mariage créé — avant, il n'y avait pas
+    // d'événement à créditer.
+    //
+    // Jamais sur un mariage d'agence : celui-là est déjà couvert par
+    // l'organisation, et brûler la créance dessus la ferait disparaître sans
+    // rien donner. Elle reste alors en attente du mariage personnel.
+    const comped = !args.organizationId ? owner.compedEventPlan : undefined;
+    const compedFields = comped
+      ? {
+          planTier: comped.tier,
+          paidAt: now,
+          // Même calcul que le chemin payant : un forfait offert ouvre
+          // exactement les mêmes droits, à la même échéance.
+          galleryExpiresAt: galleryExpiresAtFor(comped.tier, args.eventDate),
+          compedPlan: {
+            grantedBy: comped.grantedBy,
+            grantedAt: now,
+            reason: comped.reason ?? 'partner_invite',
+          },
+        }
+      : {};
+
     const id = await ctx.db.insert('events', {
       ownerId: args.ownerId,
       slug,
@@ -533,8 +558,10 @@ export const create = mutation({
         : {}),
       ...(args.theme ? { theme: args.theme } : {}),
       status: 'draft' as const,
-      // planTier left undefined until the owner pays (Essentiel or Premium).
-      ...(args.pendingPlanTier ? { pendingPlanTier: args.pendingPlanTier } : {}),
+      // planTier left undefined until the owner pays (Essentiel or Premium) —
+      // sauf forfait offert, appliqué juste au-dessus.
+      ...compedFields,
+      ...(args.pendingPlanTier && !comped ? { pendingPlanTier: args.pendingPlanTier } : {}),
       ...(args.organizationId ? { organizationId: args.organizationId } : {}),
       ...(currency ? { currency } : {}),
       ...(args.weddingState?.trim()
@@ -544,6 +571,11 @@ export const create = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    // La créance est à usage unique : on l'efface une fois posée sur l'event.
+    if (comped) {
+      await ctx.db.patch(args.ownerId, { compedEventPlan: undefined });
+    }
 
     return { id, slug };
   },
@@ -775,8 +807,14 @@ export const orgPublishQuotaStatus = query({
 
     const org = await ctx.db.get(orgId);
     if (!org) return { applicable: false as const };
+    // Mêmes couvertures que `decidePublishGate`, compte offert compris : la
+    // mutation `publish` applique le quota du tier à un compte offert aussi, or
+    // un `applicable: false` ici laissait le bouton actif jusqu'au throw
+    // EVENT_QUOTA_EXCEEDED, que le form action ne remonte pas.
     const hasActiveSub =
-      org.subscriptionStatus === 'active' || org.subscriptionStatus === 'trialing';
+      org.subscriptionStatus === 'active' ||
+      org.subscriptionStatus === 'trialing' ||
+      isCompActive(org.compedSubscription);
     if (!hasActiveSub) return { applicable: false as const };
 
     const quota = eventQuotaForTier(org.subscriptionTier);

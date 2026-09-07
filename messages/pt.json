@@ -119,7 +119,6 @@
       "statusPlaceholder": "Status…",
       "confirmDelete": "Excluir o evento «{title}»?",
       "compedBadge": "Oferecido",
-      "grantPlanPlaceholder": "Oferecer…",
       "grantEssential": "Oferecer Essencial",
       "grantPremium": "Oferecer Premium",
       "confirmGrantPlan": "Oferecer o plano «{plan}» a este evento, sem pagamento?",
@@ -926,7 +925,6 @@
     "changeNumber": "Mudar de número",
     "countryCodeLabel": "Código de país",
     "phoneLabel": "Número WhatsApp",
-    "phoneLengthHint": "Este número parece incompleto. Formato esperado: {format}.",
     "phonePlaceholder": "+351 91 234 56 78",
     "codeLabel": "Código recebido por WhatsApp",
     "codePlaceholder": "6 dígitos",
@@ -973,7 +971,8 @@
     "otpGroupLabel": "Código de verificação",
     "otpDigitLabel": "Dígito {position} de {total}",
     "title": "Um casamento vive-se na conversa.",
-    "titleAccent": "Faz com que aconteça aí."
+    "titleAccent": "Faz com que aconteça aí.",
+    "phoneLengthHint": "Este número parece incompleto. Formato esperado: {format}."
   },
   "Onboarding": {
     "stepProfile": "O teu perfil",
@@ -1015,9 +1014,9 @@
       "rateLimited": "Demasiados pedidos. Aguarda alguns minutos.",
       "sendFailed": "Falha no envio do código. Tenta de novo.",
       "network": "Erro de rede. Verifica a tua ligação.",
-      "sessionExpired": "A sua sessão expirou. Inicie sessão novamente e tente outra vez.",
       "emailTaken": "Este endereço já está em uso por outra conta.",
-      "submit": "Algo correu mal. Tenta de novo."
+      "submit": "Algo correu mal. Tenta de novo.",
+      "sessionExpired": "A sua sessão expirou. Inicie sessão novamente e tente outra vez."
     },
     "stepPrefix": "PASSO",
     "eyebrow": {
@@ -4429,7 +4428,12 @@
       "linkExpiry": "Este link é válido até {date}. Os meses grátis começam no dia em que abre a sua conta.",
       "noCard": "Não é pedido qualquer cartão bancário, nem agora nem no final dos meses grátis.",
       "preheader": "Abra o seu espaço de agência — {months} meses grátis, sem cartão.",
-      "subject": "A sua conta Wedillybird, {months} meses grátis"
+      "subject": "A sua conta Wedillybird, {months} meses grátis",
+      "subjectCouple": "O seu casamento no Wedillybird, Premium oferecido",
+      "preheaderCouple": "Abra a sua conta — casamento em Premium grátis, sem cartão.",
+      "introCouple": "Gostaríamos de o contar entre os nossos parceiros. Aqui está um link pessoal para abrir a sua conta Wedillybird: o seu casamento passa a Premium, grátis — convites, RSVP e galeria partilhada incluídos.",
+      "ctaLabelCouple": "Abrir a minha conta (Premium grátis)",
+      "linkExpiryCouple": "Este link é válido até {date}. O plano aplica-se ao casamento que criar."
     },
     "seatPass": {
       "subject": "O seu lugar à mesa — casamento de {coupleNames}",
@@ -5190,7 +5194,6 @@
       "guestNamePlaceholder": "Nome do convidado",
       "nameAria": "Nome do convidado",
       "whatsappAria": "Número de WhatsApp",
-      "countryCodeAria": "Indicativo do país",
       "add": "Adicionar",
       "newGuestGroup": "Por classificar",
       "searchGuest": "Procurar um convidado…",
@@ -5213,7 +5216,8 @@
       "preview": "Pré-visualizar",
       "qrTitle": "Código QR do convite",
       "qrDesc": "Imprimam-no ou mostrem-no no dia do casamento.",
-      "planTitle": "Planeamento"
+      "planTitle": "Planeamento",
+      "countryCodeAria": "Indicativo do país"
     },
     "planning": {
       "eyebrow": "Organização",
@@ -5845,7 +5849,11 @@
     "metaTitle": "O seu convite de parceiro — Wedillybird",
     "signInCta": "Criar a minha conta e aceitar",
     "signInHint": "Voltará aqui logo a seguir. Não lhe será pedido nenhum cartão bancário.",
-    "deadBackHome": "Voltar ao início"
+    "deadBackHome": "Voltar ao início",
+    "titleCouple": "O seu casamento, Premium oferecido",
+    "subtitleCouple": "Abra a sua conta: o seu casamento passa a Premium, grátis — convites, RSVP e galeria partilhada incluídos.",
+    "submitCouple": "Abrir a minha conta (Premium grátis)",
+    "codeHintCouple": "O seu código de parceiro {code} está ativo: partilhe-o com a sua comunidade para receber a sua comissão."
   },
   "SeatPass": {
     "summary": {

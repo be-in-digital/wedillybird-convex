@@ -21,17 +21,69 @@
  * `eventQuotaForTier(undefined)` rend `null`, c'est-à-dire **illimité**. Une
  * organisation à qui l'on ouvrirait l'accès sans lui poser de tier aurait donc
  * des mariages sans plafond — l'inverse d'un compte d'essai. Le cadeau écrit
- * `subscriptionTier` (Starter par défaut : assez pour un vrai test, trop peu
- * pour exploiter une agence gratuitement) et laisse `subscriptionStatus` à
- * Stripe. Cette séparation est ce qui garantit qu'un cadeau ne sera jamais
- * compté comme du revenu : le MRR se calcule sur le statut, pas sur le tier.
+ * `subscriptionTier` et laisse `subscriptionStatus` à Stripe. Cette séparation
+ * est ce qui garantit qu'un cadeau ne sera jamais compté comme du revenu : le
+ * MRR se calcule sur le statut, pas sur le tier.
+ *
+ * ## Pourquoi le tier le plus haut
+ *
+ * Le cadeau était plafonné à Starter — assez pour tester, trop peu pour
+ * exploiter une agence gratuitement. Mais Starter verrouille six entrées de la
+ * sidebar (CRM clients, budget éditable, devis/factures, contrats, analytics
+ * multi-events, intégrations) : une partenaire qu'on courtise pour qu'elle
+ * recommande le produit n'en voyait que la moitié, cadenassée. On offre donc le
+ * palier complet, exactement comme le Premium offert à un lien `couple`. Le
+ * garde-fou n'est plus le tier mais la DURÉE : le cadeau expire seul, et
+ * `isCompActive` referme tout à l'échéance.
  */
 
-/** Tier offert par défaut — cf. plafond commercial ci-dessus. */
-export const DEFAULT_PARTNER_COMP_TIER = 'starter' as const;
+import { DEFAULT_COMPED_EVENT_PLAN } from './eventPlan';
 
-/** Durée du compte offert, en mois calendaires. */
-export const DEFAULT_PARTNER_COMP_MONTHS = 6;
+/** Tier offert par défaut — le palier complet, cf. justification ci-dessus. */
+export const DEFAULT_PARTNER_COMP_TIER = 'agency' as const;
+
+/**
+ * Type de compte ouvert par un lien d'invitation.
+ *
+ * Les deux existent parce que les deux partenariats existent : une agence qui
+ * gère des mariages, et une personne dont c'est le propre mariage — une
+ * créatrice, une amie de la marque. Ce qu'on leur offre n'a pas la même forme,
+ * parce que leurs modèles économiques n'ont pas la même forme.
+ */
+export type PartnerInviteKind = 'pro' | 'couple';
+
+/** Défaut historique : les liens créés avant ce champ n'ouvraient que du pro. */
+export function inviteKind(invite: { kind?: PartnerInviteKind | null }): PartnerInviteKind {
+  return invite.kind ?? 'pro';
+}
+
+/**
+ * Forfait particulier offert par défaut.
+ *
+ * Premium, et non Essentiel : le cadeau doit valoir quelque chose. C'est aussi
+ * le seul qui inclut la galerie partagée, donc le seul qui montre le produit
+ * en entier à quelqu'un qu'on veut voir en parler.
+ *
+ * Alias de `DEFAULT_COMPED_EVENT_PLAN` : le lien partenaire et l'octroi
+ * commercial (`admin:grantEventPlan`) offrent le MÊME forfait, et deux
+ * littéraux pour une seule règle produit dérivent en silence — l'un des deux
+ * offrirait un jour l'Essentiel sans que personne le décide.
+ */
+export const DEFAULT_PARTNER_COMP_EVENT_TIER = DEFAULT_COMPED_EVENT_PLAN;
+
+/**
+ * Durée du compte agence offert, en mois calendaires.
+ *
+ * Douze mois, et non six : une agence se juge sur une **saison de mariages
+ * entière**. Six mois lui font traverser la moitié d'un cycle — elle
+ * découvrirait l'échéance en pleine haute saison, au moment où elle a le moins
+ * de temps pour arbitrer un abonnement.
+ *
+ * Cette valeur ne s'applique qu'aux liens **créés après** sa modification :
+ * `grantMonths` est figé sur chaque invitation à sa création, pour que ce qui
+ * a été promis reste ce qui est livré.
+ */
+export const DEFAULT_PARTNER_COMP_MONTHS = 12;
 
 /**
  * Validité du LIEN, distincte de la durée du compte. Un lien qui offre six

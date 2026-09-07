@@ -119,7 +119,6 @@
       "statusPlaceholder": "Stato…",
       "confirmDelete": "Eliminare l'evento «{title}»?",
       "compedBadge": "Omaggio",
-      "grantPlanPlaceholder": "Offri…",
       "grantEssential": "Offri Essenziale",
       "grantPremium": "Offri Premium",
       "confirmGrantPlan": "Offrire il piano «{plan}» a questo evento, senza pagamento?",
@@ -926,7 +925,6 @@
     "changeNumber": "Cambia numero",
     "countryCodeLabel": "Prefisso paese",
     "phoneLabel": "Numero WhatsApp",
-    "phoneLengthHint": "Questo numero sembra incompleto. Formato atteso: {format}.",
     "phonePlaceholder": "+33 6 12 34 56 78",
     "codeLabel": "Codice ricevuto via WhatsApp",
     "codePlaceholder": "6 cifre",
@@ -973,7 +971,8 @@
     "stepOneEyebrow": "PASSO 01 — IDENTITÀ",
     "stepTwoEyebrow": "PASSO 02 — VERIFICA",
     "title": "Il matrimonio si vive nella conversazione.",
-    "titleAccent": "Fallo esistere lì."
+    "titleAccent": "Fallo esistere lì.",
+    "phoneLengthHint": "Questo numero sembra incompleto. Formato atteso: {format}."
   },
   "Onboarding": {
     "stepProfile": "Il tuo profilo",
@@ -1015,9 +1014,9 @@
       "rateLimited": "Troppe richieste. Attendi qualche minuto.",
       "sendFailed": "Invio del codice fallito. Riprova.",
       "network": "Errore di rete. Verifica la tua connessione.",
-      "sessionExpired": "La tua sessione è scaduta. Accedi di nuovo e riprova.",
       "emailTaken": "Questo indirizzo è già utilizzato da un altro account.",
-      "submit": "Qualcosa è andato storto. Riprova."
+      "submit": "Qualcosa è andato storto. Riprova.",
+      "sessionExpired": "La tua sessione è scaduta. Accedi di nuovo e riprova."
     },
     "stepPrefix": "FASE",
     "eyebrow": {
@@ -4429,7 +4428,12 @@
       "linkExpiry": "Questo link è valido fino al {date}. I mesi offerti iniziano il giorno in cui apri l'account.",
       "noCard": "Non viene richiesta alcuna carta di pagamento, né ora né al termine dei mesi offerti.",
       "preheader": "Apri il tuo spazio agenzia — {months} mesi offerti, senza carta.",
-      "subject": "Il tuo account Wedillybird, {months} mesi offerti"
+      "subject": "Il tuo account Wedillybird, {months} mesi offerti",
+      "subjectCouple": "Il tuo matrimonio su Wedillybird, Premium offerto",
+      "preheaderCouple": "Apri il tuo account — matrimonio in Premium offerto, senza carta.",
+      "introCouple": "Ci farebbe piacere averti tra i nostri partner. Ecco un link personale per aprire il tuo account Wedillybird: il tuo matrimonio passa a Premium, offerto — inviti, RSVP e galleria condivisa inclusi.",
+      "ctaLabelCouple": "Apri il mio account (Premium offerto)",
+      "linkExpiryCouple": "Questo link è valido fino al {date}. Il piano si applica al matrimonio che creerai."
     },
     "seatPass": {
       "subject": "Il tuo posto a tavola — matrimonio di {coupleNames}",
@@ -5190,7 +5194,6 @@
       "guestNamePlaceholder": "Nome dell’invitato",
       "nameAria": "Nome dell’invitato",
       "whatsappAria": "Numero WhatsApp",
-      "countryCodeAria": "Prefisso internazionale",
       "add": "Aggiungi",
       "newGuestGroup": "Da classificare",
       "searchGuest": "Cerca un invitato…",
@@ -5213,7 +5216,8 @@
       "preview": "Anteprima",
       "qrTitle": "Codice QR dell’invito",
       "qrDesc": "Stampatelo o mostratelo il giorno delle nozze.",
-      "planTitle": "Pianificazione"
+      "planTitle": "Pianificazione",
+      "countryCodeAria": "Prefisso internazionale"
     },
     "planning": {
       "eyebrow": "Organizzazione",
@@ -5845,7 +5849,11 @@
     "metaTitle": "Il tuo invito partner — Wedillybird",
     "signInCta": "Creare il mio account e accettare",
     "signInHint": "Tornerai qui subito dopo. Nessuna carta di credito ti verrà richiesta.",
-    "deadBackHome": "Torna alla home"
+    "deadBackHome": "Torna alla home",
+    "titleCouple": "Il tuo matrimonio, Premium offerto",
+    "subtitleCouple": "Apri il tuo account: il tuo matrimonio passa a Premium, offerto — inviti, RSVP e galleria condivisa inclusi.",
+    "submitCouple": "Apri il mio account (Premium offerto)",
+    "codeHintCouple": "Il tuo codice partner {code} è attivo: condividilo con la tua community per incassare la commissione."
   },
   "SeatPass": {
     "summary": {

@@ -119,7 +119,6 @@
       "statusPlaceholder": "الحالة…",
       "confirmDelete": "حذف الفعالية «{title}»؟",
       "compedBadge": "مجاني",
-      "grantPlanPlaceholder": "منح…",
       "grantEssential": "منح الباقة الأساسية",
       "grantPremium": "منح باقة بريميوم",
       "confirmGrantPlan": "منح باقة «{plan}» لهذا الحدث دون دفع؟",
@@ -922,7 +921,6 @@
     "changeNumber": "تغيير الرقم",
     "countryCodeLabel": "رمز البلد",
     "phoneLabel": "رقم WhatsApp",
-    "phoneLengthHint": "يبدو هذا الرقم غير مكتمل. الصيغة المتوقعة: {format}.",
     "phonePlaceholder": "+33 6 12 34 56 78",
     "codeLabel": "الرمز المُستلَم عبر WhatsApp",
     "codePlaceholder": "6 أرقام",
@@ -969,7 +967,8 @@
     "otpGroupLabel": "رمز التحقق",
     "otpDigitLabel": "الرقم {position} من {total}",
     "title": "يُعاش الزفاف في المحادثة.",
-    "titleAccent": "اجعله موجودًا هناك."
+    "titleAccent": "اجعله موجودًا هناك.",
+    "phoneLengthHint": "يبدو هذا الرقم غير مكتمل. الصيغة المتوقعة: {format}."
   },
   "Onboarding": {
     "stepProfile": "ملفك الشخصي",
@@ -1011,9 +1010,9 @@
       "rateLimited": "طلبات كثيرة جدًا. انتظر بضع دقائق.",
       "sendFailed": "فشل إرسال الرمز. حاول مجددًا.",
       "network": "خطأ في الشبكة. تحقّق من اتصالك.",
-      "sessionExpired": "انتهت جلستك. سجّل الدخول من جديد ثم أعد المحاولة.",
       "emailTaken": "هذا العنوان مستخدَم بالفعل من حساب آخر.",
-      "submit": "حدث خطأ ما. حاول مجددًا."
+      "submit": "حدث خطأ ما. حاول مجددًا.",
+      "sessionExpired": "انتهت جلستك. سجّل الدخول من جديد ثم أعد المحاولة."
     },
     "stepPrefix": "خطوة",
     "eyebrow": {
@@ -4425,7 +4424,12 @@
       "linkExpiry": "هذا الرابط صالح حتى {date}. أما الأشهر المجانية فتبدأ يوم فتح حسابك.",
       "noCard": "لا تُطلب أي بطاقة بنكية، لا الآن ولا عند انتهاء الأشهر المجانية.",
       "preheader": "افتح مساحة وكالتك — {months} أشهر مجانًا، دون بطاقة بنكية.",
-      "subject": "حسابك على Wedillybird، {months} أشهر مجانًا"
+      "subject": "حسابك على Wedillybird، {months} أشهر مجانًا",
+      "subjectCouple": "حفل زفافك على Wedillybird، بباقة Premium مجانًا",
+      "preheaderCouple": "افتح حسابك — حفل الزفاف بباقة Premium مجانًا، دون بطاقة بنكية.",
+      "introCouple": "يسعدنا أن تكون من شركائنا. إليك رابطًا شخصيًا لفتح حسابك على Wedillybird: يرتقي حفل زفافك إلى Premium مجانًا — الدعوات وتأكيد الحضور والمعرض المشترك.",
+      "ctaLabelCouple": "فتح حسابي (Premium مجانًا)",
+      "linkExpiryCouple": "هذا الرابط صالح حتى {date}. أما الباقة فتنطبق على حفل الزفاف الذي ستنشئه."
     },
     "seatPass": {
       "subject": "مقعدك على الطاولة — زفاف {coupleNames}",
@@ -5186,7 +5190,6 @@
       "guestNamePlaceholder": "اسم الضيف",
       "nameAria": "اسم الضيف",
       "whatsappAria": "رقم واتساب",
-      "countryCodeAria": "رمز الدولة",
       "add": "إضافة",
       "newGuestGroup": "غير مصنَّف",
       "searchGuest": "ابحث عن ضيف…",
@@ -5209,7 +5212,8 @@
       "preview": "معاينة",
       "qrTitle": "رمز QR للدعوة",
       "qrDesc": "اطبعوه أو اعرضوه في يوم الزفاف.",
-      "planTitle": "الجدول الزمني"
+      "planTitle": "الجدول الزمني",
+      "countryCodeAria": "رمز الدولة"
     },
     "planning": {
       "eyebrow": "التنظيم",
@@ -5841,7 +5845,11 @@
     "metaTitle": "دعوة الشريك الخاصة بك — Wedillybird",
     "signInCta": "إنشاء حسابي والقبول",
     "signInHint": "ستعودين إلى هنا مباشرة بعد ذلك. لن يُطلب منك أي بطاقة بنكية.",
-    "deadBackHome": "العودة إلى الصفحة الرئيسية"
+    "deadBackHome": "العودة إلى الصفحة الرئيسية",
+    "titleCouple": "حفل زفافك، بباقة Premium مجانًا",
+    "subtitleCouple": "افتح حسابك: يرتقي حفل زفافك إلى Premium مجانًا — الدعوات وتأكيد الحضور والمعرض المشترك.",
+    "submitCouple": "فتح حسابي (Premium مجانًا)",
+    "codeHintCouple": "رمز الشريك {code} فعّال: شاركه مع جمهورك لتحصيل عمولتك."
   },
   "SeatPass": {
     "summary": {

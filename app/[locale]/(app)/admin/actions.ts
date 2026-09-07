@@ -694,7 +694,7 @@ async function createPartnerCouponForAffiliate(
 }
 
 /**
- * Crée le lien d'invitation d'un partenaire — « voici ton compte, six mois
+ * Crée le lien d'invitation d'un partenaire — « voici ton compte, offert
  * offerts, sans carte ».
  *
  * Créer un nouveau lien révoque le précédent côté Convex : deux liens vivants
@@ -726,7 +726,7 @@ export async function adminSetAffiliateOwnerAction(
 
 export async function adminCreatePartnerInviteAction(
   affiliateId: string,
-  input?: { inviteeEmail?: string; inviteeName?: string },
+  input?: { inviteeEmail?: string; inviteeName?: string; kind?: 'pro' | 'couple' },
 ): Promise<ActionResult & { token?: string }> {
   try {
     const adminId = await requireAdmin();
@@ -736,6 +736,7 @@ export async function adminCreatePartnerInviteAction(
       affiliateId,
       ...(input?.inviteeEmail ? { inviteeEmail: input.inviteeEmail } : {}),
       ...(input?.inviteeName ? { inviteeName: input.inviteeName } : {}),
+      ...(input?.kind ? { kind: input.kind } : {}),
     });
     revalidatePath('/admin/affiliates');
     return { ok: true, token: res.token };
@@ -916,7 +917,8 @@ export async function adminMarkReferralPaidAction(
 
 export async function adminGrantEventPlanAction(
   eventId: string,
-  planTier: 'essential' | 'premium',
+  /** Omis ⇒ le défaut serveur (`DEFAULT_COMPED_EVENT_PLAN`, soit Premium). */
+  planTier?: 'essential' | 'premium',
   reason?: string,
 ): Promise<ActionResult> {
   try {
@@ -925,7 +927,7 @@ export async function adminGrantEventPlanAction(
     await convex.mutation(convexApi.adminGrantEventPlan, {
       adminId,
       eventId,
-      planTier,
+      ...(planTier ? { planTier } : {}),
       ...(reason ? { reason } : {}),
     });
     revalidatePath('/admin/events');

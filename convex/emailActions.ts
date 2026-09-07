@@ -245,6 +245,7 @@ export const sendPartnerInvite = action({
   ): Promise<{ ok: true; to: string } | { ok: false; error: string }> => {
     const prepared: {
       recipient: string;
+      kind: 'pro' | 'couple';
       token: string;
       inviteeName: string | null;
       grantMonths: number;
@@ -261,6 +262,7 @@ export const sendPartnerInvite = action({
 
     const rendered = renderPartnerInvite({
       inviteUrl,
+      kind: prepared.kind,
       inviteeName: prepared.inviteeName ?? undefined,
       grantMonths: prepared.grantMonths,
       affiliateCode: prepared.affiliateCode,

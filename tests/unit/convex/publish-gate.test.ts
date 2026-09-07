@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { decidePublishGate } from '../../../convex/events';
 
 /**
@@ -276,5 +277,26 @@ describe('decidePublishGate — compte offert', () => {
     expect(
       decidePublishGate({ event: orgEvent, organization: { paygCredits: 0 }, now: NOW }),
     ).toEqual({ ok: false, error: 'PAYG_CREDIT_REQUIRED' });
+  });
+});
+/**
+ * Les deux écrans qui doublent `decidePublishGate` côté UI — le bouton
+ * « Publier » de la page événement et la query de quota qui le pré-désactive —
+ * doivent connaître le compte offert. Un cadeau que le serveur accepte mais que
+ * l'écran refuse, ou un quota que le serveur applique sans que l'écran
+ * prévienne, sont deux façons de casser le même cadeau.
+ */
+describe('miroirs UI du compte offert', () => {
+  it('la page événement compte le cadeau comme une couverture', () => {
+    const page = readFileSync('app/[locale]/(app)/events/[eventId]/page.tsx', 'utf8');
+    expect(page).toContain('isCompActive(orgRole?.compedSubscription)');
+  });
+
+  it('orgPublishQuotaStatus s’applique aussi à un compte offert', () => {
+    // Sinon `applicable: false` laisse le bouton actif jusqu'au throw
+    // EVENT_QUOTA_EXCEEDED, que le form action ne remonte pas.
+    const events = readFileSync('convex/events.ts', 'utf8');
+    const fn = events.slice(events.indexOf('export const orgPublishQuotaStatus'));
+    expect(fn.slice(0, fn.indexOf('});'))).toContain('isCompActive(org.compedSubscription)');
   });
 });

@@ -1,18 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_PARTNER_COMP_MONTHS,
-  DEFAULT_PARTNER_COMP_TIER,
-  compExpiresAt,
-  decidePartnerComp,
-} from '../../../convex/lib/partnerInvite';
+import { decidePartnerComp } from '../../../convex/lib/partnerInvite';
 
 /**
  * Ouverture du compte offert d'une partenaire.
  *
- * Un partenaire ne choisit pas de forfait et ne paie pas : le cadeau six mois
- * est la contrepartie du partenariat. Mais c'est une décision d'argent — poser
- * un cadeau sur une organisation cliente la sortirait du MRR, et prolonger un
+ * Un partenaire ne choisit pas de forfait et ne paie pas : le compte offert est
+ * la contrepartie du partenariat. Mais c'est une décision d'argent — poser un
+ * cadeau sur une organisation cliente la sortirait du MRR, et prolonger un
  * cadeau qui court le rendrait perpétuel. Ces tests figent les trois issues.
+ *
+ * Le tier et la durée offerts ne sont PAS testés ici : ce sont des paramètres
+ * commerciaux, figés par `partner-invite.test.ts` à côté de leur définition.
+ * Les redoubler ici les ferait diverger le jour où le produit les change.
  */
 
 const NOW = Date.UTC(2026, 8, 7);
@@ -45,7 +44,7 @@ describe('decidePartnerComp', () => {
   });
 
   it('ne prolonge pas un cadeau qui court encore', () => {
-    // Re-rattacher un affilié ne doit pas relancer six mois en silence.
+    // Re-rattacher un affilié ne doit pas relancer le compteur en silence.
     expect(
       decidePartnerComp({ org: { compedSubscription: { expiresAt: NOW + 1 } }, now: NOW }),
     ).toEqual({ action: 'skip', reason: 'already_comped' });
@@ -63,21 +62,5 @@ describe('decidePartnerComp', () => {
     expect(
       decidePartnerComp({ org: { compedSubscription: { expiresAt: NOW } }, now: NOW }),
     ).toEqual({ action: 'grant' });
-  });
-});
-
-describe('paramètres du cadeau', () => {
-  it('offre six mois', () => {
-    expect(DEFAULT_PARTNER_COMP_MONTHS).toBe(6);
-  });
-
-  it('reste plafonné à Starter — assez pour tester, trop peu pour exploiter', () => {
-    // Plafond commercial délibéré : le relever, c'est offrir 20 ou 50 mariages.
-    expect(DEFAULT_PARTNER_COMP_TIER).toBe('starter');
-  });
-
-  it('l’échéance tombe six mois après l’ouverture', () => {
-    const granted = Date.UTC(2026, 8, 7);
-    expect(compExpiresAt(granted, DEFAULT_PARTNER_COMP_MONTHS)).toBe(Date.UTC(2027, 2, 7));
   });
 });

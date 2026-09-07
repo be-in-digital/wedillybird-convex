@@ -119,7 +119,6 @@
       "statusPlaceholder": "Status…",
       "confirmDelete": "Das Event „{title}“ löschen?",
       "compedBadge": "Geschenkt",
-      "grantPlanPlaceholder": "Freischalten…",
       "grantEssential": "Essential freischalten",
       "grantPremium": "Premium freischalten",
       "confirmGrantPlan": "Den Tarif „{plan}“ für dieses Event ohne Zahlung freischalten?",
@@ -926,7 +925,6 @@
     "changeNumber": "Nummer ändern",
     "countryCodeLabel": "Ländervorwahl",
     "phoneLabel": "WhatsApp-Nummer",
-    "phoneLengthHint": "Diese Nummer scheint unvollständig. Erwartetes Format: {format}.",
     "phonePlaceholder": "+49 151 12345678",
     "codeLabel": "Per WhatsApp erhaltener Code",
     "codePlaceholder": "6 Ziffern",
@@ -973,7 +971,8 @@
     "otpGroupLabel": "Bestätigungscode",
     "otpDigitLabel": "Ziffer {position} von {total}",
     "title": "Eine Hochzeit lebt vom Gespräch.",
-    "titleAccent": "Lass sie genau dort entstehen."
+    "titleAccent": "Lass sie genau dort entstehen.",
+    "phoneLengthHint": "Diese Nummer scheint unvollständig. Erwartetes Format: {format}."
   },
   "Onboarding": {
     "stepProfile": "Dein Profil",
@@ -1015,9 +1014,9 @@
       "rateLimited": "Zu viele Anfragen. Warte ein paar Minuten.",
       "sendFailed": "Senden des Codes fehlgeschlagen. Versuch es erneut.",
       "network": "Netzwerkfehler. Prüfe deine Verbindung.",
-      "sessionExpired": "Ihre Sitzung ist abgelaufen. Melden Sie sich erneut an und versuchen Sie es noch einmal.",
       "emailTaken": "Diese Adresse wird bereits von einem anderen Konto verwendet.",
-      "submit": "Etwas ist schiefgelaufen. Versuche es erneut."
+      "submit": "Etwas ist schiefgelaufen. Versuche es erneut.",
+      "sessionExpired": "Ihre Sitzung ist abgelaufen. Melden Sie sich erneut an und versuchen Sie es noch einmal."
     },
     "stepPrefix": "SCHRITT",
     "eyebrow": {
@@ -4429,7 +4428,12 @@
       "linkExpiry": "Dieser Link ist bis zum {date} gültig. Die Gratismonate beginnen an dem Tag, an dem Sie Ihr Konto eröffnen.",
       "noCard": "Es wird keine Zahlungskarte verlangt, weder jetzt noch am Ende der Gratismonate.",
       "preheader": "Eröffnen Sie Ihren Agenturbereich — {months} Monate gratis, ohne Karte.",
-      "subject": "Ihr Wedillybird-Konto, {months} Monate gratis"
+      "subject": "Ihr Wedillybird-Konto, {months} Monate gratis",
+      "subjectCouple": "Ihre Hochzeit auf Wedillybird, Premium geschenkt",
+      "preheaderCouple": "Eröffnen Sie Ihr Konto — Hochzeit in Premium geschenkt, ohne Karte.",
+      "introCouple": "Wir würden Sie gerne als Partner gewinnen. Hier ist ein persönlicher Link, um Ihr Wedillybird-Konto zu eröffnen: Ihre Hochzeit wird kostenlos auf Premium gehoben — Einladungen, RSVP und geteilte Galerie inklusive.",
+      "ctaLabelCouple": "Mein Konto eröffnen (Premium gratis)",
+      "linkExpiryCouple": "Dieser Link ist bis zum {date} gültig. Der Tarif gilt für die Hochzeit, die Sie anlegen."
     },
     "seatPass": {
       "subject": "Ihr Sitzplatz — Hochzeit von {coupleNames}",
@@ -5190,7 +5194,6 @@
       "guestNamePlaceholder": "Name des Gastes",
       "nameAria": "Name des Gastes",
       "whatsappAria": "WhatsApp-Nummer",
-      "countryCodeAria": "Ländervorwahl",
       "add": "Hinzufügen",
       "newGuestGroup": "Noch zuzuordnen",
       "searchGuest": "Gast suchen…",
@@ -5213,7 +5216,8 @@
       "preview": "Vorschau",
       "qrTitle": "QR-Code der Einladung",
       "qrDesc": "Zum Ausdrucken oder Anzeigen am großen Tag.",
-      "planTitle": "Planung"
+      "planTitle": "Planung",
+      "countryCodeAria": "Ländervorwahl"
     },
     "planning": {
       "eyebrow": "Organisation",
@@ -5845,7 +5849,11 @@
     "metaTitle": "Ihre Partner-Einladung — Wedillybird",
     "signInCta": "Konto erstellen und annehmen",
     "signInHint": "Sie kehren direkt hierher zurück. Es wird keine Kreditkarte verlangt.",
-    "deadBackHome": "Zurück zur Startseite"
+    "deadBackHome": "Zurück zur Startseite",
+    "titleCouple": "Ihre Hochzeit, Premium geschenkt",
+    "subtitleCouple": "Eröffnen Sie Ihr Konto: Ihre Hochzeit wird kostenlos auf Premium gehoben — Einladungen, RSVP und geteilte Galerie inklusive.",
+    "submitCouple": "Mein Konto eröffnen (Premium gratis)",
+    "codeHintCouple": "Ihr Partnercode {code} ist aktiv: Teilen Sie ihn mit Ihrer Community, um Ihre Provision zu erhalten."
   },
   "SeatPass": {
     "summary": {

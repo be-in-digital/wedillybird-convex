@@ -11,6 +11,7 @@ import {
   isCompActive,
 } from '../../../convex/lib/partnerInvite';
 import { eventQuotaForTier } from '../../../convex/lib/entitlements';
+import { tierHasFeature } from '../../../lib/payments/entitlements';
 import {
   compDaysRemaining as appDaysRemaining,
   isCompActive as appIsCompActive,
@@ -44,10 +45,20 @@ describe('addMonthsUtc — mois calendaires, pas 30 jours', () => {
 });
 
 describe('échéances', () => {
-  it('le cadeau dure six mois par défaut', () => {
-    expect(DEFAULT_PARTNER_COMP_MONTHS).toBe(6);
+  it('le cadeau agence dure un an par défaut', () => {
+    // Une agence se juge sur une saison de mariages entière : six mois la
+    // laissaient arbitrer un abonnement en pleine haute saison.
+    expect(DEFAULT_PARTNER_COMP_MONTHS).toBe(12);
     const now = Date.UTC(2026, 8, 7);
-    expect(compExpiresAt(now)).toBe(addMonthsUtc(now, 6));
+    expect(compExpiresAt(now)).toBe(addMonthsUtc(now, 12));
+  });
+
+  it('le lien fige la durée promise à sa création', () => {
+    // Changer la constante ne doit pas réécrire ce qui a déjà été envoyé :
+    // `grantMonths` est stocké par invitation, et c'est lui qui fait foi.
+    const now = Date.UTC(2026, 8, 7);
+    expect(compExpiresAt(now, 6)).toBe(addMonthsUtc(now, 6));
+    expect(compExpiresAt(now, 12)).toBe(addMonthsUtc(now, 12));
   });
 
   it('le LIEN périme bien avant le compte qu’il ouvre', () => {
@@ -115,11 +126,17 @@ describe('le tier offert est indispensable', () => {
     // poser de tier donnerait des mariages sans plafond, l'inverse d'un
     // compte d'essai.
     expect(eventQuotaForTier(undefined)).toBeNull();
-    expect(eventQuotaForTier(DEFAULT_PARTNER_COMP_TIER)).toBe(5);
+    expect(eventQuotaForTier(DEFAULT_PARTNER_COMP_TIER)).toBe(50);
   });
 
-  it('le défaut est le tier le plus bas — tester, pas exploiter', () => {
-    expect(DEFAULT_PARTNER_COMP_TIER).toBe('starter');
+  it('le défaut est le palier complet — une partenaire doit voir tout le produit', () => {
+    // Starter verrouillait six entrées de la sidebar : une partenaire qu'on
+    // courtise n'aurait vu que la moitié du back-office, cadenassée. Le
+    // garde-fou n'est plus le tier mais la DURÉE du cadeau.
+    expect(DEFAULT_PARTNER_COMP_TIER).toBe('agency');
+    for (const feature of ['crmPipeline', 'documentsEsign', 'integrations'] as const) {
+      expect(tierHasFeature(DEFAULT_PARTNER_COMP_TIER, feature), feature).toBe(true);
+    }
   });
 });
 

@@ -88,6 +88,10 @@ export default async function PartnerInvitePage({
   // lui offre — on lui demanderait de s'inscrire pour découvrir ensuite à quoi.
   // L'offre est donc rendue d'abord, et le bouton mène à l'inscription en
   // gardant le lien en `next`.
+  // Deux offres distinctes derrière le même lien : espace agence, ou compte
+  // personnel avec le mariage offert en Premium.
+  const isCouple = invite.kind === 'couple';
+
   const session = await getSession();
 
   return (
@@ -111,10 +115,10 @@ export default async function PartnerInvitePage({
             color: 'var(--color-foreground)',
           }}
         >
-          {t('title', { months: invite.grantMonths })}
+          {isCouple ? t('titleCouple') : t('title', { months: invite.grantMonths })}
         </h1>
         <p className="text-sm leading-relaxed text-[color:var(--color-muted-foreground)] sm:text-base">
-          {t('subtitle', { months: invite.grantMonths })}
+          {isCouple ? t('subtitleCouple') : t('subtitle', { months: invite.grantMonths })}
         </p>
         {/* Dit explicitement ce qui NE sera pas demandé : c'est la promesse
               du lien, et c'est ce qui décide quelqu'un à aller au bout. */}
@@ -127,6 +131,7 @@ export default async function PartnerInvitePage({
             token={token}
             defaultName={invite.inviteeName ?? ''}
             months={invite.grantMonths}
+            kind={invite.kind}
           />
         ) : (
           <div className="flex flex-col gap-3">
@@ -145,7 +150,9 @@ export default async function PartnerInvitePage({
 
       {invite.partnerCode ? (
         <p className="max-w-[46ch] text-center text-xs text-[color:var(--color-muted-foreground)]">
-          {t('codeHint', { code: invite.partnerCode })}
+          {isCouple
+            ? t('codeHintCouple', { code: invite.partnerCode })
+            : t('codeHint', { code: invite.partnerCode })}
         </p>
       ) : null}
     </div>

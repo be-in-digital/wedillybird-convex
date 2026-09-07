@@ -119,7 +119,6 @@
       "statusPlaceholder": "Status…",
       "confirmDelete": "Delete the event “{title}”?",
       "compedBadge": "Comped",
-      "grantPlanPlaceholder": "Grant…",
       "grantEssential": "Grant Essential",
       "grantPremium": "Grant Premium",
       "confirmGrantPlan": "Grant the “{plan}” plan to this event, with no payment?",
@@ -922,7 +921,6 @@
     "changeNumber": "Change number",
     "countryCodeLabel": "Country code",
     "phoneLabel": "Phone number",
-    "phoneLengthHint": "This number looks incomplete. Expected format: {format}.",
     "phonePlaceholder": "+33 6 12 34 56 78",
     "codeLabel": "Code received by text",
     "codePlaceholder": "6 digits",
@@ -969,7 +967,8 @@
     "otpGroupLabel": "Verification code",
     "otpDigitLabel": "Digit {position} of {total}",
     "title": "A wedding lives in the conversation.",
-    "titleAccent": "Make it happen there."
+    "titleAccent": "Make it happen there.",
+    "phoneLengthHint": "This number looks incomplete. Expected format: {format}."
   },
   "Onboarding": {
     "stepProfile": "Your profile",
@@ -1011,9 +1010,9 @@
       "rateLimited": "Too many requests. Please wait a few minutes.",
       "sendFailed": "Failed to send code. Try again.",
       "network": "Network error. Check your connection.",
-      "sessionExpired": "Your session has expired. Sign in again, then retry.",
       "emailTaken": "This address is already used by another account.",
-      "submit": "Something went wrong. Try again."
+      "submit": "Something went wrong. Try again.",
+      "sessionExpired": "Your session has expired. Sign in again, then retry."
     },
     "stepPrefix": "STEP",
     "eyebrow": {
@@ -4425,7 +4424,12 @@
       "linkExpiry": "This link is valid until {date}. The free months start the day you open your account.",
       "noCard": "No payment card is required, neither now nor when the free months end.",
       "preheader": "Open your agency workspace — {months} months free, no card required.",
-      "subject": "Your Wedillybird account, {months} months free"
+      "subject": "Your Wedillybird account, {months} months free",
+      "subjectCouple": "Your wedding on Wedillybird, Premium on us",
+      "preheaderCouple": "Open your account — Premium wedding on us, no card required.",
+      "introCouple": "We would like to have you as a partner. Here is a personal link to open your Wedillybird account: your wedding is upgraded to Premium, free — invitations, RSVPs and shared gallery included.",
+      "ctaLabelCouple": "Open my account (Premium free)",
+      "linkExpiryCouple": "This link is valid until {date}. The plan itself applies to the wedding you create."
     },
     "seatPass": {
       "subject": "Your seat — {coupleNames}’s wedding",
@@ -5186,7 +5190,6 @@
       "guestNamePlaceholder": "Guest name",
       "nameAria": "Guest name",
       "whatsappAria": "WhatsApp number",
-      "countryCodeAria": "Country code",
       "add": "Add",
       "newGuestGroup": "To sort",
       "searchGuest": "Search for a guest…",
@@ -5209,7 +5212,8 @@
       "preview": "Preview",
       "qrTitle": "Invitation QR code",
       "qrDesc": "Print it or display it on the big day.",
-      "planTitle": "Planning"
+      "planTitle": "Planning",
+      "countryCodeAria": "Country code"
     },
     "planning": {
       "eyebrow": "Planning",
@@ -5841,7 +5845,11 @@
     "metaTitle": "Your partner invitation — Wedillybird",
     "signInCta": "Create my account and accept",
     "signInHint": "You'll come straight back here. No card details will be asked for.",
-    "deadBackHome": "Back to home"
+    "deadBackHome": "Back to home",
+    "titleCouple": "Your wedding, Premium on us",
+    "subtitleCouple": "Open your account: your wedding is upgraded to Premium, free — invitations, RSVPs and shared gallery included.",
+    "submitCouple": "Open my account (Premium free)",
+    "codeHintCouple": "Your partner code {code} is active: share it with your audience to earn your commission."
   },
   "SeatPass": {
     "summary": {
