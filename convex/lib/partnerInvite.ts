@@ -21,14 +21,23 @@
  * `eventQuotaForTier(undefined)` rend `null`, c'est-à-dire **illimité**. Une
  * organisation à qui l'on ouvrirait l'accès sans lui poser de tier aurait donc
  * des mariages sans plafond — l'inverse d'un compte d'essai. Le cadeau écrit
- * `subscriptionTier` (Starter par défaut : assez pour un vrai test, trop peu
- * pour exploiter une agence gratuitement) et laisse `subscriptionStatus` à
- * Stripe. Cette séparation est ce qui garantit qu'un cadeau ne sera jamais
- * compté comme du revenu : le MRR se calcule sur le statut, pas sur le tier.
+ * `subscriptionTier` et laisse `subscriptionStatus` à Stripe. Cette séparation
+ * est ce qui garantit qu'un cadeau ne sera jamais compté comme du revenu : le
+ * MRR se calcule sur le statut, pas sur le tier.
+ *
+ * ## Pourquoi le tier le plus haut
+ *
+ * Le cadeau était plafonné à Starter — assez pour tester, trop peu pour
+ * exploiter une agence gratuitement. Mais Starter verrouille six entrées de la
+ * sidebar (CRM clients, budget éditable, devis/factures, contrats, analytics
+ * multi-events, intégrations) : une partenaire qu'on courtise pour qu'elle
+ * recommande le produit n'en voyait que la moitié, cadenassée. On offre donc le
+ * palier complet, comme le Premium offert à un couple. Le garde-fou reste la
+ * DURÉE : le cadeau expire seul, et `isCompActive` referme tout à l'échéance.
  */
 
-/** Tier offert par défaut — cf. plafond commercial ci-dessus. */
-export const DEFAULT_PARTNER_COMP_TIER = 'starter' as const;
+/** Tier offert par défaut — le palier complet, cf. justification ci-dessus. */
+export const DEFAULT_PARTNER_COMP_TIER = 'agency' as const;
 
 /** Durée du compte offert, en mois calendaires. */
 export const DEFAULT_PARTNER_COMP_MONTHS = 6;
