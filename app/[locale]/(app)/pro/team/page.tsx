@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { TeamManager } from '@/components/pro/team-manager';
+import { effectiveProTier } from '@/lib/payments/entitlements';
 
 export default async function ProTeamPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -31,7 +32,7 @@ export default async function ProTeamPage({ params }: { params: Promise<{ locale
       org={{
         name: org!.name,
         primaryColor: org!.primaryColor,
-        tier: org!.subscriptionTier ?? null,
+        tier: effectiveProTier(org!),
         role: org!.myRole,
       }}
       user={{ name: user?.fullName }}
@@ -66,7 +67,7 @@ export default async function ProTeamPage({ params }: { params: Promise<{ locale
           canManage={org!.myRole === 'owner' || org!.myRole === 'admin'}
           currentUserId={session!.userId}
           myRole={org!.myRole}
-          tier={org!.subscriptionTier ?? null}
+          tier={effectiveProTier(org!)}
           initialMembers={members}
         />
       </div>

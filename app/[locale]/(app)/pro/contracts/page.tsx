@@ -6,7 +6,7 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { ModulePlaceholder } from '@/components/pro/module-placeholder';
 import { ContractsBoard } from '@/components/pro/contracts/contracts-board';
-import { tierHasFeature } from '@/lib/payments/entitlements';
+import { effectiveProTier, tierHasFeature } from '@/lib/payments/entitlements';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('ProPages');
@@ -22,7 +22,9 @@ export default async function ProContractsPage({
   setRequestLocale(locale);
   const { session, org, user } = await requireProContext(locale);
   const t = await getTranslations('ProPages');
-  const tier = org.subscriptionTier ?? null;
+  // Palier EFFECTIF : un cadeau expiré ne doit pas laisser la fonctionnalité
+  // ouverte, alors que `subscriptionTier` reste écrit sur l'organisation.
+  const tier = effectiveProTier(org);
   const locked = !tierHasFeature(tier, 'documentsEsign');
   const shellOrg = { name: org.name, primaryColor: org.primaryColor, tier, role: org.myRole };
 
