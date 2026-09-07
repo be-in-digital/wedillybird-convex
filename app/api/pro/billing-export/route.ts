@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+import { getActiveSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { listSubscriptionInvoices } from '@/lib/payments/drivers/stripe';
 import {
@@ -20,7 +20,7 @@ import {
  * 401 — pas de session · 404 — pas d'organisation · 200 — text/csv attachment.
  */
 export async function GET(req: Request): Promise<Response> {
-  const session = await getSession();
+  const session = await getActiveSession();
   if (!session) return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
 
   const month = new URL(req.url).searchParams.get('month') ?? '';

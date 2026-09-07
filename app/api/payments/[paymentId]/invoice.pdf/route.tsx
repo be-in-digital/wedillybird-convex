@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { getLocale } from 'next-intl/server';
-import { getSession } from '@/lib/auth/session';
+import { getActiveSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { buildInvoiceNumber, InvoicePDF, type InvoicePayment } from '@/lib/payments/invoice';
 
@@ -20,7 +20,7 @@ export async function GET(
   _req: Request,
   ctx: { params: Promise<{ paymentId: string }> },
 ): Promise<Response> {
-  const session = await getSession();
+  const session = await getActiveSession();
   if (!session) {
     return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+import { getActiveSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { createAccountOnboardingLink } from '@/lib/payments/drivers/stripe';
 import { appOrigin } from '@/lib/reminders/window';
@@ -12,7 +12,7 @@ import { appOrigin } from '@/lib/reminders/window';
 export async function GET(req: Request): Promise<Response> {
   const fail = () => NextResponse.redirect(new URL('/pro/payments?connect=error', req.url));
 
-  const session = await getSession();
+  const session = await getActiveSession();
   if (!session) return fail();
 
   try {

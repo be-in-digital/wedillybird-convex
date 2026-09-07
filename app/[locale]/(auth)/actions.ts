@@ -110,7 +110,7 @@ export async function completeOnboardingAction(formData: FormData): Promise<Acti
     await convex.mutation(convexApi.completeOnboarding, {
       userId: session.userId,
       fullName: parsed.data.fullName,
-      role: parsed.data.role,
+      ...(parsed.data.role ? { role: parsed.data.role } : {}),
       email: parsed.data.email,
       ...(preferredCurrency ? { preferredCurrency } : {}),
     });

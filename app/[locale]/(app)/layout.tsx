@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { redirect } from '@/i18n/navigation';
-import { getSession } from '@/lib/auth/session';
+import { getActiveSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { PostHogIdentify } from '@/components/analytics/posthog-identify';
 import { BugReportWidget } from '@/components/bug-report/bug-report-widget';
@@ -14,7 +14,9 @@ export default async function AppLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const session = await getSession();
+  // `getActiveSession` (et non `getSession`) : un compte suspendu garde un
+  // cookie valide, c'est ici qu'on le refuse pour toutes les pages du groupe.
+  const session = await getActiveSession();
   if (!session) {
     redirect({ href: '/sign-in', locale });
   }

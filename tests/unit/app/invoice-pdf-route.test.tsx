@@ -4,7 +4,9 @@ const getSessionMock = vi.fn();
 const queryMock = vi.fn();
 
 vi.mock('@/lib/auth/session', () => ({
-  getSession: () => getSessionMock(),
+  // La route lit `getActiveSession` : décoder le cookie ne suffit pas, la
+  // session d'un compte suspendu doit être refusée.
+  getActiveSession: () => getSessionMock(),
 }));
 
 vi.mock('@/lib/auth/convex-server', () => ({

@@ -119,4 +119,37 @@ export async function requireSession(): Promise<SessionPayload> {
   return session;
 }
 
+/**
+ * Session **utilisable** : le cookie est valide ET le compte n'est pas
+ * suspendu.
+ *
+ * `getSession` ne décode qu'un cookie : il ne peut rien savoir d'une décision
+ * prise après son émission. Sans ce second contrôle, suspendre quelqu'un ne
+ * coupait rien tant que son cookie vivait — il gardait l'accès aux pages comme
+ * aux routes API. C'est le palliatif au store de sessions absent : une requête
+ * Convex par appel, là où l'accès est réellement accordé.
+ *
+ * Renvoie `null` dans les deux cas, pour que les appelants gardent leur unique
+ * branche « pas de session » sans distinguer les motifs.
+ */
+export async function getActiveSession(): Promise<SessionPayload | null> {
+  const session = await getSession();
+  if (!session) return null;
+
+  try {
+    const { convexApi, getConvexServerClient } = await import('@/lib/auth/convex-server');
+    const user = await getConvexServerClient().query(convexApi.currentUser, {
+      userId: session.userId,
+    });
+    // Compte introuvable (supprimé) ou suspendu → plus de session.
+    if (!user || user.suspendedAt != null) return null;
+  } catch {
+    // Convex injoignable : on ne verrouille pas tout le monde dehors sur une
+    // panne réseau. Le refus à la connexion, lui, reste inconditionnel.
+    return session;
+  }
+
+  return session;
+}
+
 export const AUTH_COOKIE_NAME = COOKIE_NAME;

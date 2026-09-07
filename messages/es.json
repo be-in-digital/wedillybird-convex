@@ -16,7 +16,10 @@
       "moderation": "Moderación",
       "newsletter": "Newsletter",
       "auditLog": "Registro de auditoría",
-      "promotions": "Promociones"
+      "promotions": "Promociones",
+      "affiliates": "Afiliación",
+      "bugReports": "Errores reportados",
+      "photoBooks": "Álbumes de fotos"
     },
     "common": {
       "back": "Volver",
@@ -97,7 +100,10 @@
       "partnersOnly": "Solo socios",
       "attachPartner": "Vincular un código",
       "detachPartner": "Desvincular",
-      "confirmDetachPartner": "¿Desvincular este código de socio de esta cuenta?"
+      "confirmDetachPartner": "¿Desvincular este código de socio de esta cuenta?",
+      "unsuspend": "Reactivar",
+      "confirmUnsuspend": "¿Reactivar a {name}?",
+      "suspended": "Suspendido"
     },
     "events": {
       "searchPlaceholder": "Buscar un evento…",
@@ -218,6 +224,35 @@
         "empty": "Ninguna factura para esta organización."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Reportar un error",
+    "open": "Reportar un error",
+    "title": "Reportar un error",
+    "subtitle": "Cuéntanos qué ha pasado. Una captura ayuda mucho.",
+    "descLabel": "¿Qué ha pasado?",
+    "descPlaceholder": "Hice clic en… y en su lugar…",
+    "captureLabel": "Captura de pantalla (opcional)",
+    "captureBtn": "Capturar pantalla",
+    "uploadBtn": "Elegir una imagen",
+    "removeShot": "Quitar la captura",
+    "captureError": "No se ha podido hacer la captura. Puedes adjuntar una imagen.",
+    "contextPage": "Página",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "thanks": "Gracias, lo hemos recibido. Lo estamos revisando.",
+    "canvas": "Captura",
+    "video": "Vídeo"
+  },
+  "CeremonySchedule": {
+    "section": "Desarrollo del día",
+    "hint": "Estos horarios aparecen en la invitación. Déjalo vacío para no mostrar nada.",
+    "timeLabel": "Hora",
+    "timePlaceholder": "15:00",
+    "titleLabel": "Momento",
+    "titlePlaceholder": "Ceremonia",
+    "add": "Añadir un momento",
+    "remove": "Quitar este momento"
   },
   "Common": {
     "confirm": "Confirmar",
@@ -930,7 +965,8 @@
       "tooManyAttempts": "Demasiados intentos, vuelve a intentarlo en unos minutos",
       "rateLimited": "Demasiadas solicitudes. Espera unos minutos.",
       "expired": "Código expirado, solicita uno nuevo.",
-      "unknown": "Se ha producido un error. Inténtalo de nuevo."
+      "unknown": "Se ha producido un error. Inténtalo de nuevo.",
+      "accountSuspended": "Esta cuenta ha sido suspendida. Escríbenos a contact@wedillybird.com."
     },
     "tagline": "Prepare su gran día",
     "stepOneEyebrow": "PASO 01 — IDENTIDAD",
@@ -4005,6 +4041,38 @@
       "reconciliation": "El webhook de Stripe va con retraso. El pago se ha recibido correctamente, pero la mejora se aplicará en unos instantes. Actualiza la página.",
       "network": "Error de red, inténtalo de nuevo",
       "unknown": "Se ha producido un error. Inténtalo de nuevo."
+    },
+    "upsell": {
+      "eyebrow": "DESPUÉS DE LA BODA",
+      "title": "Conserva tus fotos en alta definición",
+      "subtitle": "Tu galería permanece en línea cinco años y descargas todo en calidad original.",
+      "benefitRetention": "Galería conservada cinco años en lugar de seis meses",
+      "benefitHd": "Descarga de todas las fotos en alta definición",
+      "cta": "Obtener el archivo HD",
+      "redirecting": "Redirigiendo…",
+      "purchased": "Archivo HD activado",
+      "downloadHd": "Descargar las fotos en HD",
+      "successTitle": "Tus fotos son tuyas, por mucho tiempo",
+      "successBody": "El archivo en alta definición está activo. Tu galería permanece en línea cinco años y puedes descargar todo en calidad original.",
+      "processingTitle": "Confirmando el pago",
+      "processingBody": "Tu pago está registrado. El archivo se activa en unos instantes: puedes cerrar esta página.",
+      "reconciliation": "La confirmación está tardando más de lo previsto. Si nada cambia en unos minutos, escríbenos a contact@wedillybird.com.",
+      "backToEvent": "Volver a mi boda",
+      "photoBook": {
+        "cta": "Pedir el álbum de fotos",
+        "dialogTitle": "Tu álbum de fotos",
+        "dialogSubtitle": "Indica la dirección de entrega. Imprimimos y enviamos en quince días.",
+        "recipientName": "Nombre del destinatario",
+        "addressLine1": "Dirección",
+        "addressLine2": "Complemento de dirección",
+        "postalCode": "Código postal",
+        "city": "Ciudad",
+        "country": "País",
+        "notes": "Instrucciones de entrega (opcional)",
+        "submit": "Confirmar el pedido",
+        "submitting": "Enviando…",
+        "cancel": "Cancelar"
+      }
     }
   },
   "Invoice": {
@@ -4347,6 +4415,15 @@
       "footer": "Notificación automática vinculada a la validación de Meta WhatsApp Business.",
       "textTemplate": "Plantilla: {templateName}",
       "textReason": "Motivo: {reason}"
+    },
+    "partnerInvite": {
+      "codeNotice": "Tu código de partner {code} estará activo en cuanto abras la cuenta: compártelo con tu comunidad para cobrar tu comisión.",
+      "ctaLabel": "Abrir mi espacio ({months} meses gratis)",
+      "intro": "Nos gustaría contar contigo como partner. Aquí tienes un enlace personal para abrir tu espacio de agencia Wedillybird: los primeros {months} meses son gratis, para probarlo en bodas reales.",
+      "linkExpiry": "Este enlace es válido hasta el {date}. Los meses gratuitos empiezan el día en que abres tu cuenta.",
+      "noCard": "No se pide ninguna tarjeta bancaria, ni ahora ni al terminar los meses gratuitos.",
+      "preheader": "Abre tu espacio de agencia — {months} meses gratis, sin tarjeta.",
+      "subject": "Tu cuenta Wedillybird, {months} meses gratis"
     },
     "seatPass": {
       "subject": "Tu sitio en la mesa — boda de {coupleNames}",
@@ -5075,6 +5152,14 @@
           "title": "Mi plan",
           "desc": "Vuestro plan, facturas y opciones."
         }
+      },
+      "referral": {
+        "title": "Recomienda a una pareja",
+        "desc": "Comparte tu enlace: recibes un crédito con su primera compra.",
+        "credit": "{amount} de crédito disponible",
+        "copy": "Copiar enlace",
+        "copied": "Copiado",
+        "linkAria": "Tu enlace de recomendación"
       }
     },
     "dashboard": {
@@ -5385,6 +5470,15 @@
           "short": "Proveedores"
         }
       }
+    },
+    "nav": {
+      "home": "Inicio",
+      "dashboard": "Mi boda",
+      "planning": "Planificación",
+      "vendors": "Proveedores",
+      "budget": "Presupuesto",
+      "seating": "Plano de mesas",
+      "forfait": "Plan"
     }
   },
   "CouplePortal": {

@@ -143,7 +143,9 @@ function EventRow({ event }: { event: Event }) {
           )}
         </td>
         <td className="px-4 py-3">
-          <Badge variant={STATUS_VARIANT[event.status] ?? 'neutral'}>{event.status}</Badge>
+          <Badge variant={STATUS_VARIANT[event.status] ?? 'neutral'}>
+            {t(`eventStatuses.${event.status}`)}
+          </Badge>
         </td>
         <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
           <span className="flex flex-wrap items-center gap-1.5">
@@ -162,7 +164,12 @@ function EventRow({ event }: { event: Event }) {
               onValueChange={async (v) => {
                 const newStatus = v as Event['status'];
                 if (
-                  await confirm({ title: t('events.confirmChangeStatus', { status: newStatus }) })
+                  await confirm({
+                    // Libellé traduit, pas la valeur en base : « Actif », pas « active ».
+                    title: t('events.confirmChangeStatus', {
+                      status: t(`eventStatuses.${newStatus}`),
+                    }),
+                  })
                 ) {
                   updateStatus(event._id, newStatus);
                 }

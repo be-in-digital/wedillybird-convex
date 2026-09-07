@@ -229,11 +229,18 @@ qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
 
 ## AWS — opérations & sécurité (post-PR #12)
 
-### Sortie de sandbox SES (PENDING)
-- Demande soumise via `aws sesv2 put-account-details --production-access-enabled` (réponse AWS sous 24-48 h)
-- Surveille `admin@tuumagency.com` pour la confirmation
-- Une fois acceptée : passer `EMAIL_DRIVER=mock` → `ses` sur Vercel Production / Preview
-- En cas de refus : revoir use-case description, prouver opt-in et gestion bounces/complaints
+### Sortie de sandbox SES — ✅ RÉSOLU
+Cette section décrivait la demande en cours ; elle est restée en « PENDING »
+alors que l'accès production est accordé depuis le 2026-06-06. Deux états
+contradictoires dans le même fichier, c'est ce qui fait qu'on planifie encore
+autour d'un blocage levé.
+
+Voir l'entrée faisant foi en tête de fichier (« Bloqueurs prod externes », § 1) :
+production access, 50 000/j, 14 msg/s, HEALTHY, vérifié API le 2026-06-12.
+
+Reste à confirmer sur chaque déploiement : `EMAIL_DRIVER` ne doit pas valoir
+`mock`, sinon les envois sont journalisés au lieu d'être expédiés (absent =
+`ses`, cf. `convex/emailActions.ts`).
 
 ### IAM scope-down avant prod élargie
 - L'utilisateur `wedillybird-dev` a actuellement `AdministratorAccess` (bootstrap). À scoper avant ouverture équipe :

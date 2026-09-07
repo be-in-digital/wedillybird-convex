@@ -16,7 +16,10 @@
       "moderation": "Moderation",
       "newsletter": "Newsletter",
       "auditLog": "Audit-Protokoll",
-      "promotions": "Aktionen"
+      "promotions": "Aktionen",
+      "affiliates": "Partnerprogramm",
+      "bugReports": "Fehlermeldungen",
+      "photoBooks": "Fotobücher"
     },
     "common": {
       "back": "Zurück",
@@ -97,7 +100,10 @@
       "partnersOnly": "Nur Partner",
       "attachPartner": "Code zuordnen",
       "detachPartner": "Trennen",
-      "confirmDetachPartner": "Diesen Partnercode von diesem Konto trennen?"
+      "confirmDetachPartner": "Diesen Partnercode von diesem Konto trennen?",
+      "unsuspend": "Reaktivieren",
+      "confirmUnsuspend": "{name} reaktivieren?",
+      "suspended": "Gesperrt"
     },
     "events": {
       "searchPlaceholder": "Ein Event suchen…",
@@ -218,6 +224,35 @@
         "empty": "Keine Rechnung für diese Organisation."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Fehler melden",
+    "open": "Fehler melden",
+    "title": "Fehler melden",
+    "subtitle": "Beschreiben Sie, was passiert ist. Ein Screenshot hilft sehr.",
+    "descLabel": "Was ist passiert?",
+    "descPlaceholder": "Ich habe auf … geklickt und stattdessen …",
+    "captureLabel": "Screenshot (optional)",
+    "captureBtn": "Bildschirm aufnehmen",
+    "uploadBtn": "Bild auswählen",
+    "removeShot": "Screenshot entfernen",
+    "captureError": "Der Screenshot konnte nicht erstellt werden. Sie können stattdessen ein Bild anhängen.",
+    "contextPage": "Seite",
+    "submit": "Senden",
+    "cancel": "Abbrechen",
+    "thanks": "Danke — angekommen. Wir sehen es uns an.",
+    "canvas": "Screenshot",
+    "video": "Video"
+  },
+  "CeremonySchedule": {
+    "section": "Ablauf des Tages",
+    "hint": "Diese Zeiten erscheinen auf der Einladung. Leer lassen, um nichts anzuzeigen.",
+    "timeLabel": "Uhrzeit",
+    "timePlaceholder": "15:00",
+    "titleLabel": "Programmpunkt",
+    "titlePlaceholder": "Trauung",
+    "add": "Programmpunkt hinzufügen",
+    "remove": "Diesen Programmpunkt entfernen"
   },
   "Common": {
     "confirm": "Bestätigen",
@@ -927,7 +962,8 @@
       "tooManyAttempts": "Zu viele Versuche, in einigen Minuten erneut versuchen",
       "rateLimited": "Zu viele Anfragen. Bitte warte einige Minuten.",
       "expired": "Code abgelaufen, fordere einen neuen an.",
-      "unknown": "Ein Fehler ist aufgetreten. Bitte erneut versuchen."
+      "unknown": "Ein Fehler ist aufgetreten. Bitte erneut versuchen.",
+      "accountSuspended": "Dieses Konto wurde gesperrt. Kontaktieren Sie uns unter contact@wedillybird.com."
     },
     "tagline": "Bereiten Sie Ihren großen Tag vor",
     "stepOneEyebrow": "SCHRITT 01 — IDENTITÄT",
@@ -4005,6 +4041,38 @@
       "reconciliation": "Der Stripe-Webhook ist verzögert. Die Zahlung wurde empfangen, das Upgrade wird gleich angewendet. Aktualisiere die Seite.",
       "network": "Netzwerkfehler, erneut versuchen",
       "unknown": "Ein Fehler ist aufgetreten. Bitte erneut versuchen."
+    },
+    "upsell": {
+      "eyebrow": "NACH DER HOCHZEIT",
+      "title": "Behalten Sie Ihre Fotos in hoher Auflösung",
+      "subtitle": "Ihre Galerie bleibt fünf Jahre online, und Sie laden alles in Originalqualität herunter.",
+      "benefitRetention": "Galerie fünf Jahre statt sechs Monate verfügbar",
+      "benefitHd": "Alle Fotos in hoher Auflösung herunterladen",
+      "cta": "HD-Archiv sichern",
+      "redirecting": "Weiterleitung…",
+      "purchased": "HD-Archiv aktiv",
+      "downloadHd": "Fotos in HD herunterladen",
+      "successTitle": "Ihre Fotos gehören Ihnen — für lange Zeit",
+      "successBody": "Das HD-Archiv ist aktiv. Ihre Galerie bleibt fünf Jahre online und Sie können alles in Originalqualität herunterladen.",
+      "processingTitle": "Zahlung wird bestätigt",
+      "processingBody": "Ihre Zahlung ist erfasst. Das Archiv wird gleich aktiviert — Sie können diese Seite schließen.",
+      "reconciliation": "Die Bestätigung dauert länger als erwartet. Ändert sich in einigen Minuten nichts, schreiben Sie uns an contact@wedillybird.com.",
+      "backToEvent": "Zurück zu meiner Hochzeit",
+      "photoBook": {
+        "cta": "Fotobuch bestellen",
+        "dialogTitle": "Ihr Fotobuch",
+        "dialogSubtitle": "Geben Sie die Lieferadresse an. Wir drucken und versenden innerhalb von fünfzehn Tagen.",
+        "recipientName": "Name der Empfängerin / des Empfängers",
+        "addressLine1": "Adresse",
+        "addressLine2": "Adresszusatz",
+        "postalCode": "Postleitzahl",
+        "city": "Ort",
+        "country": "Land",
+        "notes": "Lieferhinweise (optional)",
+        "submit": "Bestellung bestätigen",
+        "submitting": "Wird gesendet…",
+        "cancel": "Abbrechen"
+      }
     }
   },
   "Invoice": {
@@ -4347,6 +4415,15 @@
       "footer": "Automatische Benachrichtigung im Zusammenhang mit der Meta WhatsApp Business-Validierung.",
       "textTemplate": "Template: {templateName}",
       "textReason": "Grund: {reason}"
+    },
+    "partnerInvite": {
+      "codeNotice": "Ihr Partnercode {code} ist ab der Kontoeröffnung aktiv: Teilen Sie ihn mit Ihrer Community, um Ihre Provision zu erhalten.",
+      "ctaLabel": "Meinen Bereich eröffnen ({months} Monate gratis)",
+      "intro": "Wir würden Sie gerne als Partner gewinnen. Hier ist ein persönlicher Link, um Ihren Wedillybird-Agenturbereich zu eröffnen: die ersten {months} Monate sind gratis, damit Sie ihn an echten Hochzeiten testen können.",
+      "linkExpiry": "Dieser Link ist bis zum {date} gültig. Die Gratismonate beginnen an dem Tag, an dem Sie Ihr Konto eröffnen.",
+      "noCard": "Es wird keine Zahlungskarte verlangt, weder jetzt noch am Ende der Gratismonate.",
+      "preheader": "Eröffnen Sie Ihren Agenturbereich — {months} Monate gratis, ohne Karte.",
+      "subject": "Ihr Wedillybird-Konto, {months} Monate gratis"
     },
     "seatPass": {
       "subject": "Ihr Sitzplatz — Hochzeit von {coupleNames}",
@@ -5075,6 +5152,14 @@
           "title": "Mein Paket",
           "desc": "Ihr Paket, Ihre Rechnungen und Optionen."
         }
+      },
+      "referral": {
+        "title": "Ein Paar empfehlen",
+        "desc": "Teilen Sie Ihren Link: Sie erhalten ein Guthaben bei deren erstem Kauf.",
+        "credit": "{amount} Guthaben verfügbar",
+        "copy": "Link kopieren",
+        "copied": "Kopiert",
+        "linkAria": "Ihr Empfehlungslink"
       }
     },
     "dashboard": {
@@ -5385,6 +5470,15 @@
           "short": "Dienstleister"
         }
       }
+    },
+    "nav": {
+      "home": "Start",
+      "dashboard": "Meine Hochzeit",
+      "planning": "Planung",
+      "vendors": "Dienstleister",
+      "budget": "Budget",
+      "seating": "Sitzplan",
+      "forfait": "Paket"
     }
   },
   "CouplePortal": {

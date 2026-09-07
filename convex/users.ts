@@ -2,18 +2,25 @@ import { v } from 'convex/values';
 import { internalQuery, mutation, query } from './_generated/server';
 import { isValidEmail } from './lib/email';
 import { BUDGET_CURRENCY } from './lib/currency';
+import { resolveOnboardingRole } from './lib/onboardingRole';
+import { isSuspended } from './lib/accountStatus';
 
 export const completeOnboarding = mutation({
   args: {
     userId: v.id('users'),
     fullName: v.string(),
-    role: v.union(v.literal('couple'), v.literal('pro')),
+    // Optionnel : le wizard masque le step « rôle » quand le compte en a déjà
+    // un (admin promu, partenaire ayant consommé son invitation).
+    role: v.optional(v.union(v.literal('couple'), v.literal('pro'))),
     email: v.string(),
     preferredCurrency: v.optional(BUDGET_CURRENCY),
   },
   handler: async (ctx, { userId, fullName, role, email, preferredCurrency }) => {
     const user = await ctx.db.get(userId);
     if (!user) throw new Error('USER_NOT_FOUND');
+    // Un compte suspendu ne repasse pas par l'onboarding : c'était la voie de
+    // retour qui rendait la sanction annulable par la personne suspendue.
+    if (isSuspended(user)) throw new Error('ACCOUNT_SUSPENDED');
 
     const trimmed = fullName.trim();
     if (trimmed.length < 2 || trimmed.length > 80) {
@@ -36,9 +43,13 @@ export const completeOnboarding = mutation({
       throw new Error('EMAIL_TAKEN');
     }
 
+    // Ne jamais rétrograder : un admin plateforme reste admin, un partenaire
+    // déjà passé `pro` via son lien d'invitation reste pro.
+    const resolvedRole = resolveOnboardingRole(user.role, role);
+
     await ctx.db.patch(userId, {
       fullName: trimmed,
-      role,
+      role: resolvedRole,
       email: normalizedEmail,
       ...(preferredCurrency ? { preferredCurrency } : {}),
     });

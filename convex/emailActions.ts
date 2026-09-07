@@ -10,6 +10,7 @@ import {
   renderLinkCode,
   renderMagicLink,
   renderNewsletterCampaign,
+  renderPartnerInvite,
   renderProNotification,
   renderSeatPass,
   renderStripeInvoice,
@@ -18,6 +19,8 @@ import {
 import type { EmailRendered } from '../lib/email/types';
 import { signUnsubscribe } from '../lib/email/unsubscribe-token';
 import { getServerTranslator } from '../lib/i18n/server-translator';
+import { LEGAL_ENTITY } from '../lib/legal/entity';
+import { buildSesEmailInput } from './lib/sesMessage';
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -39,7 +42,11 @@ function sesClient(): SESv2Client {
 
 type DispatchOutcome = { ok: true; messageId: string } | { ok: false; error: string };
 
-async function dispatch(to: string, rendered: EmailRendered): Promise<DispatchOutcome> {
+async function dispatch(
+  to: string,
+  rendered: EmailRendered,
+  options: { replyTo?: string } = {},
+): Promise<DispatchOutcome> {
   const driver = process.env.EMAIL_DRIVER ?? 'ses';
 
   // Mode E2E : force le mock même si SES est configuré côté env Convex. Idem
@@ -51,20 +58,15 @@ async function dispatch(to: string, rendered: EmailRendered): Promise<DispatchOu
     return { ok: true, messageId };
   }
 
-  const command = new SendEmailCommand({
-    FromEmailAddress: requireEnv('SES_FROM_ADDRESS'),
-    Destination: { ToAddresses: [to] },
-    ConfigurationSetName: process.env.SES_CONFIGURATION_SET || undefined,
-    Content: {
-      Simple: {
-        Subject: { Data: rendered.subject, Charset: 'UTF-8' },
-        Body: {
-          Html: { Data: rendered.html, Charset: 'UTF-8' },
-          Text: { Data: rendered.text, Charset: 'UTF-8' },
-        },
-      },
-    },
-  });
+  const command = new SendEmailCommand(
+    buildSesEmailInput({
+      from: requireEnv('SES_FROM_ADDRESS'),
+      to,
+      rendered,
+      configurationSet: process.env.SES_CONFIGURATION_SET,
+      replyTo: options.replyTo,
+    }),
+  );
   try {
     const response = await sesClient().send(command);
     return { ok: true, messageId: response.MessageId ?? 'unknown' };
@@ -213,6 +215,75 @@ export const sendLinkCodeEmail = internalAction({
       console.error(`[email] failed to send link code to ${to}: ${result.error}`);
     }
     return result;
+  },
+});
+
+/**
+ * Envoie à un partenaire le lien qui ouvre son compte offert.
+ *
+ * Action publique (et non `internalAction`) parce que l'admin la déclenche
+ * depuis le back-office ; le contrôle du rôle se fait dans `prepareSend`, du
+ * côté qui voit la base.
+ *
+ * L'ordre compte : on n'écrit la trace d'envoi **qu'après** un retour SES
+ * positif. Marquer avant ferait croire à un lien parti alors qu'il a échoué,
+ * et personne ne le renverrait.
+ */
+export const sendPartnerInvite = action({
+  args: {
+    adminId: v.id('users'),
+    inviteId: v.id('partnerInvites'),
+    /** Destinataire explicite ; sinon celui noté sur l'invitation ou l'affilié. */
+    to: v.optional(v.string()),
+    locale: v.optional(v.string()),
+  },
+  // Annotation explicite : sans elle, TS boucle (l'action référence son propre
+  // module via `internal.partnerInvites`).
+  handler: async (
+    ctx,
+    { adminId, inviteId, to, locale },
+  ): Promise<{ ok: true; to: string } | { ok: false; error: string }> => {
+    const prepared: {
+      recipient: string;
+      token: string;
+      inviteeName: string | null;
+      grantMonths: number;
+      expiresAt: number;
+      affiliateCode: string;
+    } = await ctx.runQuery(internal.partnerInvites.prepareSend, {
+      adminId,
+      inviteId,
+      to,
+    });
+
+    const baseUrl = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
+    const inviteUrl = `${baseUrl.replace(/\/$/, '')}/rejoindre/${prepared.token}`;
+
+    const rendered = renderPartnerInvite({
+      inviteUrl,
+      inviteeName: prepared.inviteeName ?? undefined,
+      grantMonths: prepared.grantMonths,
+      affiliateCode: prepared.affiliateCode,
+      expiresAt: prepared.expiresAt,
+      locale,
+    });
+
+    // L'invitation part de `noreply@`, comme tout le reste. C'est pourtant le
+    // seul e-mail du parcours où une réponse humaine est attendue : « merci,
+    // une question sur… ». Sans `Reply-To`, elle tombe dans le vide.
+    const result = await dispatch(prepared.recipient, rendered, {
+      replyTo: LEGAL_ENTITY.contactEmail,
+    });
+    if (!result.ok) {
+      console.error(`[email] failed to send partner invite to ${prepared.recipient}`);
+      return { ok: false as const, error: result.error };
+    }
+
+    await ctx.runMutation(internal.partnerInvites.markSent, {
+      inviteId,
+      to: prepared.recipient,
+    });
+    return { ok: true as const, to: prepared.recipient };
   },
 });
 
