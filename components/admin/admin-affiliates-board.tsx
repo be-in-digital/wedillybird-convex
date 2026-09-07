@@ -154,7 +154,10 @@ export function AdminAffiliatesBoard({
 
   function onKindChange(next: 'referral' | 'partner') {
     setKind(next);
-    // Défaut cohérent : parrainage = crédit (100 % auto), partenaire = cash.
+    // La récompense DÉCOULE de la nature : parrainage = crédit (100 % auto),
+    // partenaire = cash. Le serveur refuse tout autre couple
+    // (`REWARD_TYPE_MISMATCH`) ; le champ est donc affiché mais non modifiable,
+    // plutôt que de laisser composer un affilié que la création rejettera.
     setRewardType(next === 'referral' ? 'credit' : 'cash');
   }
 
@@ -371,11 +374,7 @@ export function AdminAffiliatesBoard({
           </div>
           <div>
             <label className={labelCls}>Récompense</label>
-            <select
-              className={inputCls}
-              value={rewardType}
-              onChange={(e) => setRewardType(e.target.value as 'credit' | 'cash')}
-            >
+            <select className={inputCls} value={rewardType} disabled aria-readonly>
               <option value="cash">Cash</option>
               <option value="credit">Crédit</option>
             </select>
@@ -569,7 +568,7 @@ export function AdminAffiliatesBoard({
               {affiliates.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-4 py-8 text-center text-sm text-[color:var(--color-ink-500)]"
                   >
                     Aucun affilié. Créez-en un ci-dessus (invitation-only).

@@ -42,6 +42,11 @@ async function assertAdmin(
   return user;
 }
 
+/** Récompense imposée par la nature de l'affilié. */
+function expectedRewardType(kind: 'referral' | 'partner'): 'credit' | 'cash' {
+  return kind === 'partner' ? 'cash' : 'credit';
+}
+
 /* ============================ Création (admin) ============================ */
 
 /**
@@ -66,6 +71,15 @@ export const createAffiliate = mutation({
 
     const code = normalizeAffiliateCode(args.code);
     if (!isValidAffiliateCode(code)) throw new Error('INVALID_CODE');
+    // La nature de l'affilié détermine sa récompense, et rien ne rattrapait un
+    // couple incohérent : un `partner/credit` produit des commissions que
+    // `markReferralPaid` refuse de verser (ce n'est pas du cash) et que rien ne
+    // permet de dépenser (l'espace partenaire n'a pas de panier). Un
+    // `referral/cash` est l'inverse : versable, mais invisible pour son
+    // propriétaire, `partnerDashboard` ne montrant que les `partner`.
+    if (expectedRewardType(args.kind) !== args.rewardType) {
+      throw new Error('REWARD_TYPE_MISMATCH');
+    }
     if (!isRewardConfigSafe({ rateBps: args.rateBps, buyerDiscountBps: args.buyerDiscountBps })) {
       throw new Error('UNSAFE_REWARD_CONFIG');
     }

@@ -99,9 +99,11 @@ export const create = mutation({
       .query('partnerInvites')
       .withIndex('by_affiliate', (q) => q.eq('affiliateId', args.affiliateId))
       .collect();
+    let revokedPrevious = 0;
     for (const inv of previous) {
       if (inviteState(inv, now) === 'usable') {
         await ctx.db.patch(inv._id, { revokedAt: now });
+        revokedPrevious += 1;
       }
     }
 
@@ -131,7 +133,7 @@ export const create = mutation({
         grantTier: args.grantTier ?? DEFAULT_PARTNER_COMP_TIER,
         grantMonths,
         validityDays,
-        revokedPrevious: previous.filter((p) => inviteState(p, now) === 'revoked').length,
+        revokedPrevious,
       }),
       createdAt: now,
     });

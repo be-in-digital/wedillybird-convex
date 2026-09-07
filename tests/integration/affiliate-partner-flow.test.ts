@@ -555,3 +555,67 @@ describe('Régressions — les impasses corrigées', () => {
     expect(await t.query(api.affiliate.isPartner, { userId: filleul })).toBe(false);
   });
 });
+
+describe('Invariants de création d’un affilié', () => {
+  it('impose la récompense qui découle de la nature de l’affilié', async () => {
+    // Un `partner/credit` produirait des commissions ni versables (ce n'est pas
+    // du cash) ni dépensables (l'espace partenaire n'a pas de panier), et un
+    // `referral/cash` serait versable mais invisible pour son propriétaire.
+    await expect(
+      t.mutation(api.affiliate.createAffiliate, {
+        adminId,
+        code: 'BANCAL1',
+        kind: 'partner',
+        rewardType: 'credit',
+        rateBps: 1000,
+        buyerDiscountBps: 0,
+      }),
+    ).rejects.toThrow('REWARD_TYPE_MISMATCH');
+
+    await expect(
+      t.mutation(api.affiliate.createAffiliate, {
+        adminId,
+        code: 'BANCAL2',
+        kind: 'referral',
+        rewardType: 'cash',
+        rateBps: 1000,
+        buyerDiscountBps: 0,
+      }),
+    ).rejects.toThrow('REWARD_TYPE_MISMATCH');
+  });
+
+  it('refuse un code invalide, un doublon, et un cumul qui casse la marge', async () => {
+    await expect(
+      t.mutation(api.affiliate.createAffiliate, {
+        adminId,
+        code: 'ab',
+        kind: 'partner',
+        rewardType: 'cash',
+        rateBps: 1000,
+        buyerDiscountBps: 0,
+      }),
+    ).rejects.toThrow('INVALID_CODE');
+
+    await openPartner({ code: 'SARAH12' });
+    await expect(openPartner({ code: 'sarah12' })).rejects.toThrow('CODE_ALREADY_EXISTS');
+
+    // 20 % de commission + 10 % de remise = 30 %, au-delà du plafond de 25 %.
+    await expect(
+      openPartner({ code: 'TROPCHER', rateBps: 2000, buyerDiscountBps: 1000 }),
+    ).rejects.toThrow('UNSAFE_REWARD_CONFIG');
+  });
+
+  it('refuse la création à qui n’est pas admin', async () => {
+    const quidam = await seedUser(t, { email: 'quidam@test.fr' });
+    await expect(
+      t.mutation(api.affiliate.createAffiliate, {
+        adminId: quidam,
+        code: 'PIRATE1',
+        kind: 'partner',
+        rewardType: 'cash',
+        rateBps: 1000,
+        buyerDiscountBps: 0,
+      }),
+    ).rejects.toThrow('FORBIDDEN');
+  });
+});
