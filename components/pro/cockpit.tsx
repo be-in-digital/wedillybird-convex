@@ -21,6 +21,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
 import {
   buildQuotaGauges,
+  effectiveProTier,
   proSubscriptionBanner,
   tierHasFeature,
   BYTES_PER_GO,
@@ -201,7 +202,13 @@ export async function Cockpit(data: CockpitData) {
   } = data;
   const t = await getTranslations('Pro.main');
   const nf = new Intl.NumberFormat(locale);
-  const tier = org.subscriptionTier ?? null;
+  // Deux lectures du palier, volontairement distinctes :
+  //  - `tier` (effectif) décide de ce qui est OUVERT — jauges, bouton CRM,
+  //    cadenas de la sidebar. Un cadeau expiré referme tout.
+  //  - `org.subscriptionTier` (brut) alimente le bandeau, qui doit distinguer
+  //    « rien choisi » d'une résiliation : les confondre ferait annoncer
+  //    « aucun forfait » à une agence dont l'abonnement vient d'être résilié.
+  const tier = effectiveProTier(org);
   const gauges = tier ? buildQuotaGauges(tier, usage) : null;
   const hasActivity = !!(recentActivity && recentActivity.length > 0);
 
@@ -314,7 +321,7 @@ export async function Cockpit(data: CockpitData) {
         </div>
 
         <SubscriptionBanner
-          tier={tier}
+          tier={org.subscriptionTier ?? null}
           status={org.subscriptionStatus ?? null}
           periodEnd={org.subscriptionPeriodEnd ?? null}
           paygCredits={org.paygCredits}

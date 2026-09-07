@@ -6,7 +6,7 @@ import { requireProContext } from '@/lib/pro/require-pro-context';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { RsvpQuestionsEditor } from '@/components/events/rsvp-questions-editor';
-import { eventHasPremiumOnlyFeature } from '@/lib/payments/entitlements';
+import { effectiveProTier, eventHasPremiumOnlyFeature } from '@/lib/payments/entitlements';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('ProPages');
@@ -45,7 +45,7 @@ export default async function ProWeddingRsvpPage({
       org={{
         name: org.name,
         primaryColor: org.primaryColor,
-        tier: org.subscriptionTier ?? null,
+        tier: effectiveProTier(org),
         role: org.myRole,
       }}
       user={{ name: user?.fullName }}

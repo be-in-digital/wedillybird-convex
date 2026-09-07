@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { SettingsShell } from '@/components/pro/settings-shell';
+import { effectiveProTier } from '@/lib/payments/entitlements';
 
 const DEFAULT_PRIMARY = '#2c1a11';
 const DEFAULT_ACCENT = '#c8a165';
@@ -62,7 +63,7 @@ export default async function ProSettingsPage({ params }: { params: Promise<{ lo
       org={{
         name: org!.name,
         primaryColor: org!.primaryColor,
-        tier: org!.subscriptionTier ?? null,
+        tier: effectiveProTier(org!),
         role: org!.myRole,
       }}
       user={{ name: user?.fullName }}
@@ -89,7 +90,7 @@ export default async function ProSettingsPage({ params }: { params: Promise<{ lo
           org={{
             name: org!.name,
             slug: org!.slug,
-            tier: org!.subscriptionTier ?? null,
+            tier: effectiveProTier(org!),
             role: org!.myRole,
           }}
           user={{ name: user?.fullName, email: user?.email }}
