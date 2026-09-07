@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { getPaymentDriver } from '@/lib/payments';
+import { taxExclusiveMinor } from '@/lib/payments/vat';
 import { captureServer, EVENTS } from '@/lib/analytics/posthog-server';
 
 /**
@@ -102,10 +103,15 @@ export async function GET(req: Request): Promise<Response> {
         provider: payment.provider,
         providerSessionId: status.providerSessionId,
         providerEventId: status.providerEventId,
-        // Mêmes bases que le webhook pour l'affiliation (net encaissé + code
-        // promo). Le driver mock ne connaît pas le montant → on ne le passe pas.
+        // Mêmes bases que le webhook pour l'affiliation (net encaissé, assiette
+        // HT, code promo). Le driver mock ne connaît pas le montant → on ne le
+        // passe pas.
         ...(payment.provider === 'stripe'
-          ? { netMinor: status.amountMinor, promotionCode: status.promotionCode }
+          ? {
+              netMinor: status.amountMinor,
+              commissionBaseMinor: taxExclusiveMinor(status.amountMinor, status.currency),
+              promotionCode: status.promotionCode,
+            }
           : {}),
       });
 

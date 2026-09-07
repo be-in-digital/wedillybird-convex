@@ -3,6 +3,7 @@ import type { Locale } from '../../i18n/routing';
 import { getServerTranslator, toIntlTag } from '../i18n/server-translator';
 import type { Currency, PlanTier } from './plans';
 import { formatAmount } from './plans';
+import { vatBreakdownFor } from './vat';
 
 /**
  * Génération d'une facture PDF post-paiement Stripe pour les particuliers
@@ -43,17 +44,19 @@ const PROVIDER_LABEL: Record<'stripe' | 'mock', string> = {
   mock: 'Test',
 };
 
+/**
+ * Décomposition HT/TVA de la facture. Délègue à `lib/payments/vat.ts`, source
+ * unique partagée avec l'assiette de commission du programme partenaire : un
+ * partenaire qui recalcule sa commission depuis la facture d'un couple doit
+ * tomber exactement sur notre chiffre.
+ */
 function vatBreakdown(payment: InvoicePayment): {
   ht: number;
   vatRate: number;
   vatAmount: number;
 } {
-  if (payment.currency === 'EUR') {
-    const rate = 0.2;
-    const ht = Math.round(payment.amountMinor / (1 + rate));
-    return { ht, vatRate: rate, vatAmount: payment.amountMinor - ht };
-  }
-  return { ht: payment.amountMinor, vatRate: 0, vatAmount: 0 };
+  const { htMinor, rate, vatMinor } = vatBreakdownFor(payment.amountMinor, payment.currency);
+  return { ht: htMinor, vatRate: rate, vatAmount: vatMinor };
 }
 
 function formatDate(ms: number, locale: Locale | string | undefined): string {

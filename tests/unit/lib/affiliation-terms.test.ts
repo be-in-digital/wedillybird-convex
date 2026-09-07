@@ -7,6 +7,7 @@ import {
   MIN_VEST_FLOOR_MS,
 } from '../../../convex/lib/affiliate';
 import { PARTNER_CODE_VALIDITY_DAYS } from '../../../lib/payments/affiliate-coupon';
+import { INCLUSIVE_VAT_RATES } from '../../../lib/payments/vat';
 import { routing } from '../../../i18n/routing';
 
 /**
@@ -43,6 +44,15 @@ describe('CGU affiliation — cohérence avec le code', () => {
   it('annonce le taux de commission par défaut du ledger', () => {
     expect(DEFAULT_RATE_BPS).toBe(2000);
     expect(fr.article5Body).toContain('20 %');
+  });
+
+  it('annonce une assiette HORS TAXES, comme le calcul du serveur', () => {
+    // `markSucceeded` reçoit `commissionBaseMinor = taxExclusiveMinor(...)` :
+    // si quelqu'un rebasculait le calcul sur le TTC sans toucher au texte, les
+    // conditions promettraient une assiette que le système n'applique pas.
+    expect(INCLUSIVE_VAT_RATES.EUR).toBe(0.2);
+    expect(fr.article5Body).toContain('hors taxes');
+    expect(fr.article5Body).toContain('TVA est déduite');
   });
 
   it('annonce le plafond de cumul remise + commission appliqué au serveur', () => {

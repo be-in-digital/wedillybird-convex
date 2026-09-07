@@ -101,10 +101,15 @@ qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
   **Paramètres commerciaux à valider par le fondateur** (choisis par défaut,
   modifiables) : versement mensuel sur facture sous 30 j, seuil minimum 50 €,
   préavis de 30 j pour toute modification des conditions.
-  **Point ouvert** : la commission porte sur le montant encaissé **TTC**
-  (`amount_total`), donc la TVA est incluse dans l'assiette. Passer en HT est
-  une décision produit + un changement de code — à trancher AVANT de signer un
-  partenaire, une renégociation après coup étant coûteuse.
+  **Assiette tranchée (2026-09-07) : HORS TAXES.** La commission portait sur le
+  montant encaissé TTC (`amount_total`), donc sur de la TVA reversée à l'État.
+  Elle porte désormais sur le HT : `lib/payments/vat.ts` est la source unique de
+  la règle, partagée avec la facture (`invoice.tsx`) pour qu'un partenaire qui
+  recalcule depuis la facture d'un couple tombe sur notre chiffre. Stripe ne
+  calcule aucune taxe sur ce compte (ni `automatic_tax`, ni `tax_behavior`),
+  d'où une déduction par taux plutôt qu'une lecture d'`amount_tax`. L'assiette
+  est STOCKÉE (`affiliateReferrals.commissionBaseMinor`) pour rester auditable
+  si le taux change, et affichée dans le ledger admin.
   Les CGU n'ont **pas** été relues par un juriste, et l'entité légale reste
   « à compléter » (cf. `Invoice.issuerSiret`).
 - **Coupon Stripe auto** : `adminCreateAffiliateAction` crée le coupon + le code

@@ -217,6 +217,8 @@ export async function applyReferral(
     sourceSessionId: string;
     grossMinor: number;
     netMinor: number;
+    /** Assiette HT de la commission. Absente → repli sur `netMinor` (legacy). */
+    commissionBaseMinor?: number;
     currency: string;
     purchasedAt: number;
     eventDate?: number;
@@ -251,6 +253,13 @@ export async function applyReferral(
   }
 
   const now = Date.now();
+  // La commission porte sur le HT. Sans assiette fournie (webhook d'une version
+  // antérieure, provider mock), on retombe sur le net encaissé : le
+  // comportement historique, jamais une erreur de calcul silencieuse.
+  const base =
+    args.commissionBaseMinor !== undefined && args.commissionBaseMinor >= 0
+      ? args.commissionBaseMinor
+      : args.netMinor;
   const referralId = await ctx.db.insert('affiliateReferrals', {
     affiliateId: aff._id,
     code: aff.code,
@@ -260,8 +269,9 @@ export async function applyReferral(
     buyerUserId: args.buyerUserId,
     grossMinor: args.grossMinor,
     netMinor: args.netMinor,
+    commissionBaseMinor: base,
     currency: args.currency,
-    rewardMinor: rewardMinor(args.netMinor, aff.rateBps),
+    rewardMinor: rewardMinor(base, aff.rateBps),
     rewardType: aff.rewardType,
     status: 'pending',
     vestsAt: computeVestsAt(args.eventDate ?? Number.NaN, args.purchasedAt),
@@ -278,6 +288,7 @@ export const recordReferral = internalMutation({
     sourceSessionId: v.string(),
     grossMinor: v.number(),
     netMinor: v.number(),
+    commissionBaseMinor: v.optional(v.number()),
     currency: v.string(),
     purchasedAt: v.number(),
     eventDate: v.optional(v.number()),
@@ -398,6 +409,8 @@ export const listReferrals = query({
       rewardType: r.rewardType,
       rewardMinor: r.rewardMinor,
       netMinor: r.netMinor,
+      /** Assiette HT réellement utilisée ; null sur les lignes antérieures. */
+      commissionBaseMinor: r.commissionBaseMinor ?? null,
       currency: r.currency,
       vestsAt: r.vestsAt,
       createdAt: r.createdAt,

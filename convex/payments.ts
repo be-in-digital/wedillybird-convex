@@ -131,6 +131,13 @@ export const markSucceeded = mutation({
      */
     netMinor: v.optional(v.number()),
     /**
+     * Assiette HORS TAXES de la commission d'affiliation, calculée côté app
+     * (`lib/payments/vat.ts`, la même règle que les factures). La TVA n'étant
+     * pas un revenu, la commissionner reviendrait à payer le partenaire dessus.
+     * Absente → repli sur `netMinor`.
+     */
+    commissionBaseMinor: v.optional(v.number()),
+    /**
      * Code promo saisi au checkout. Rattrape l'attribution quand l'acheteur a
      * TAPÉ le code d'un partenaire au lieu de cliquer son lien `?ref=` (aucun
      * cookie `wdb_ref` → aucun `affiliateId` sur le paiement).
@@ -139,7 +146,15 @@ export const markSucceeded = mutation({
   },
   handler: async (
     ctx,
-    { webhookSecret, provider, providerSessionId, providerEventId, netMinor, promotionCode },
+    {
+      webhookSecret,
+      provider,
+      providerSessionId,
+      providerEventId,
+      netMinor,
+      commissionBaseMinor,
+      promotionCode,
+    },
   ) => {
     assertWebhookSecret(webhookSecret);
     const payment = await ctx.db
@@ -231,6 +246,7 @@ export const markSucceeded = mutation({
           grossMinor: payment.amountMinor,
           // Commission assise sur l'encaissement réel, pas sur le catalogue.
           netMinor: netMinor !== undefined && netMinor >= 0 ? netMinor : payment.amountMinor,
+          commissionBaseMinor,
           currency: payment.currency,
           purchasedAt: now,
           eventDate: event?.eventDate,

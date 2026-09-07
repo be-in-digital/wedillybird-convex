@@ -1598,8 +1598,20 @@ export default defineSchema({
     eventId: v.optional(v.id('events')),
     buyerUserId: v.optional(v.id('users')),
     grossMinor: v.number(),
-    /** Net encaissé après remise = base de calcul de la récompense. */
+    /** Net réellement encaissé après remise, TTC (ce que Stripe a débité). */
     netMinor: v.number(),
+    /**
+     * Assiette de la commission : le net encaissé RAMENÉ HORS TAXES. La TVA
+     * n'est pas un revenu (elle est reversée à l'État), la commissionner
+     * reviendrait à payer le partenaire dessus.
+     *
+     * Stocké plutôt que recalculé : le taux de TVA peut changer, et une ligne
+     * de ledger doit rester auditable des années plus tard — « encaissé 59,00 /
+     * assiette 49,17 / commission 9,83 » se relit sans connaître le taux en
+     * vigueur ce jour-là. Absent sur les lignes antérieures à cette règle, où
+     * l'assiette valait `netMinor`.
+     */
+    commissionBaseMinor: v.optional(v.number()),
     currency: v.string(),
     /** Récompense calculée (commission cash OU crédit), centimes. */
     rewardMinor: v.number(),

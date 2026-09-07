@@ -34,6 +34,7 @@ interface Referral {
   rewardType: 'credit' | 'cash';
   rewardMinor: number;
   netMinor: number;
+  commissionBaseMinor: number | null;
   currency: string;
   vestsAt: number;
   createdAt: number;
@@ -418,6 +419,7 @@ export function AdminAffiliatesBoard({
               <tr>
                 <th className="px-4 py-2.5">Code</th>
                 <th className="px-4 py-2.5">Vente (net)</th>
+                <th className="px-4 py-2.5">Assiette HT</th>
                 <th className="px-4 py-2.5">Récompense</th>
                 <th className="px-4 py-2.5">Statut</th>
                 <th className="px-4 py-2.5">Acquis le</th>
@@ -429,6 +431,13 @@ export function AdminAffiliatesBoard({
                 <tr key={r.id} className="border-t border-[color:var(--color-border)]">
                   <td className="px-4 py-2.5 font-mono">{r.code}</td>
                   <td className="px-4 py-2.5">{fmtMinor(r.netMinor, r.currency)}</td>
+                  {/* Ce sur quoi la commission a réellement été calculée : c'est
+                      ici qu'on tranche un litige sur un montant. */}
+                  <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
+                    {r.commissionBaseMinor === null
+                      ? '—'
+                      : fmtMinor(r.commissionBaseMinor, r.currency)}
+                  </td>
                   <td className="px-4 py-2.5 font-medium">
                     {fmtMinor(r.rewardMinor, r.currency)}
                     <span className="ml-1 text-[color:var(--color-ink-500)]">
@@ -458,7 +467,7 @@ export function AdminAffiliatesBoard({
               {referrals.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-8 text-center text-sm text-[color:var(--color-ink-500)]"
                   >
                     Aucune attribution pour l&apos;instant.
