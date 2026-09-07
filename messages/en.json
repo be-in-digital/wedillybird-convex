@@ -5582,6 +5582,10 @@
       "paid": "Paid",
       "credited": "Credited",
       "reversed": "Reversed"
-    }
+    },
+    "linkLabel": "Link",
+    "linkHint": "Any sale coming from a click on this link is attributed to you automatically.",
+    "codeLabel": "Code to share",
+    "codeHint": "To be entered at checkout. Same discount, same commission — handy for your stories and posts."
   }
 }

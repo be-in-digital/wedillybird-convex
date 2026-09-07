@@ -24,6 +24,7 @@ const CODE = {
   buyerDiscountBps: 0,
   status: 'active' as const,
   displayName: 'Sarah',
+  shareable: false,
 };
 
 const REFERRAL = {
@@ -63,7 +64,7 @@ describe('PartnerDashboard', () => {
     // `fireEvent` plutôt que `userEvent` : `userEvent.setup()` remplace
     // `navigator.clipboard` par son propre stub et masquerait le nôtre.
     render(<PartnerDashboard codes={[CODE]} referrals={[]} totals={[]} salesCount={0} />);
-    fireEvent.click(screen.getByRole('button', { name: /copy/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /copy/i })[0]!);
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith(expect.stringContaining('?ref=SARAH')),
     );
@@ -134,5 +135,48 @@ describe('PartnerDashboard', () => {
       />,
     );
     expect(screen.getByText('codeDisabled')).toBeTruthy();
+  });
+
+  it('n’affiche PAS de code à taper tant qu’aucun code promo Stripe n’existe', () => {
+    // Inviter à partager un code que le checkout refuserait ferait passer la
+    // partenaire pour une menteuse auprès de son audience.
+    render(
+      <PartnerDashboard
+        codes={[{ ...CODE, buyerDiscountBps: 1000, shareable: false }]}
+        referrals={[]}
+        totals={[]}
+        salesCount={0}
+      />,
+    );
+    expect(screen.queryByText('codeLabel')).toBeNull();
+    expect(screen.getByText('linkLabel')).toBeTruthy();
+  });
+
+  it('affiche le code à taper quand il est réellement accepté au checkout', () => {
+    render(
+      <PartnerDashboard
+        codes={[{ ...CODE, buyerDiscountBps: 1000, shareable: true }]}
+        referrals={[]}
+        totals={[]}
+        salesCount={0}
+      />,
+    );
+    expect(screen.getByText('codeLabel')).toBeTruthy();
+    expect(screen.getByDisplayValue('SARAH')).toBeTruthy();
+  });
+
+  it('copie le code seul (pas le lien) depuis le champ code', async () => {
+    render(
+      <PartnerDashboard
+        codes={[{ ...CODE, buyerDiscountBps: 1000, shareable: true }]}
+        referrals={[]}
+        totals={[]}
+        salesCount={0}
+      />,
+    );
+    // Deux champs : lien puis code. Le second copie la chaîne nue.
+    const buttons = screen.getAllByRole('button', { name: /copy/i });
+    fireEvent.click(buttons[1]!);
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('SARAH'));
   });
 });

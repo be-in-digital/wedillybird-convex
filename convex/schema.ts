@@ -1566,6 +1566,16 @@ export default defineSchema({
     ownerEmail: v.optional(v.string()),
     displayName: v.optional(v.string()),
     status: v.union(v.literal('active'), v.literal('disabled')),
+    /**
+     * Coupon + code promo Stripe portant la MÊME chaîne que `code`, créés à
+     * l'ouverture de l'affilié quand `buyerDiscountBps > 0`. C'est ce qui rend
+     * le code réellement partageable : l'audience du partenaire le tape au
+     * checkout et obtient la remise, et `markSucceeded` remonte du code promo
+     * vers cet affilié pour créditer la commission. Absents = seul le lien
+     * `?ref=` attribue (aucune remise saisissable).
+     */
+    stripeCouponId: v.optional(v.string()),
+    stripePromotionCodeId: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

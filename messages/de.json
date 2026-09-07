@@ -5586,6 +5586,10 @@
       "paid": "Ausgezahlt",
       "credited": "Gutgeschrieben",
       "reversed": "Storniert"
-    }
+    },
+    "linkLabel": "Link",
+    "linkHint": "Jeder Verkauf über einen Klick auf diesen Link wird Ihnen automatisch zugeordnet.",
+    "codeLabel": "Code zum Teilen",
+    "codeHint": "Beim Bezahlen einzugeben. Gleicher Rabatt, gleiche Provision — praktisch für Ihre Stories und Beiträge."
   }
 }

@@ -93,17 +93,27 @@ qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
   `/admin/affiliates` — le ledger a enfin une sortie de `vested`.
 - **Espace partenaire** `/partenaire` : le partenaire voit SON lien, ses ventes
   et son dû (lecture scopée `by_owner`, aucune donnée acheteur exposée).
+- **Coupon Stripe auto** : `adminCreateAffiliateAction` crée le coupon + le code
+  promo Stripe sous la MÊME chaîne que `affiliates.code` dès que
+  `buyerDiscountBps > 0`, restreint aux produits couple (`applies_to.products`,
+  immuable — on refuse plutôt que de créer trop large). Un seul code circule
+  donc vraiment : par le lien il attribue en silence, tapé au checkout il
+  remise ET attribue (rattrapage via `markSucceeded`). Le code est affiché au
+  partenaire dans `/partenaire`, à côté de son lien — mais seulement s'il est
+  réellement accepté au checkout (`shareable`), pour ne jamais lui faire
+  promettre un code que Stripe refuserait. L'activation du code promo suit
+  celle de l'affilié, et `adminEnsureAffiliateCouponAction` rattrape un échec
+  Stripe ou un affilié ouvert avant cette bascule.
 
 ### Reste à faire
 - **CGU affiliation** — aucune page légale ne décrit le programme (taux,
   vesting à la date de l'event, reversal sur remboursement, modalités de
   versement). À écrire avant de signer un partenaire qui facture.
-- **Coupon Stripe auto à la création d'un affilié** : aujourd'hui, poser un
-  `buyerDiscountBps` remise l'acheteur qui passe par le LIEN, mais le code
-  saisissable au checkout reste à créer à la main côté Stripe (ou via
-  `scripts/create-affiliate-code.ts`, qui crée un coupon indépendant du
-  ledger). À unifier : `createAffiliate` devrait créer le coupon + promotion
-  code du même nom, pour qu'un seul code circule.
+- **`scripts/create-affiliate-code.ts` redondant** — il crée un coupon Stripe
+  SANS ligne d'affilié côté Convex (attribution au compteur `times_redeemed`,
+  commission calculée à la main). Le chemin `/admin/affiliates` fait mieux et
+  branche le ledger. À supprimer une fois qu'on est sûr qu'aucun code créé par
+  ce script n'est encore en circulation.
 - **Versement automatisé** (Stripe Connect Express pour les partenaires cash) —
   aujourd'hui virement manuel, acté a posteriori dans le ledger. Suffisant à
   1-2 partenaires, pas au-delà.

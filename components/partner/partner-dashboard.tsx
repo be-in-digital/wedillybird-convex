@@ -18,6 +18,13 @@ interface PartnerCode {
   buyerDiscountBps: number;
   status: 'active' | 'disabled';
   displayName: string | null;
+  /**
+   * Le code est-il saisissable au checkout (code promo Stripe créé) ? Faux =
+   * on n'affiche QUE le lien : inviter à partager un code que le checkout
+   * refuserait ferait passer la partenaire pour une menteuse auprès de son
+   * audience.
+   */
+  shareable: boolean;
 }
 
 interface PartnerReferral {
@@ -150,23 +157,12 @@ export function PartnerDashboard({
 
 function CodeCard({ code }: { code: PartnerCode }) {
   const t = useTranslations('Partner');
-  const [copied, setCopied] = useState(false);
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://wedillybird.com';
   const link = `${origin}/?ref=${code.code}`;
 
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // clipboard indisponible — le champ reste sélectionnable à la main.
-    }
-  }
-
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
+    <div className="flex flex-col gap-4 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
       <div className="flex items-center gap-2">
         <Link2
           className="h-4 w-4 text-[color:var(--color-gold-700)]"
@@ -188,13 +184,44 @@ function CodeCard({ code }: { code: PartnerCode }) {
             })
           : t('codeTerms', { rate: code.rateBps / 100 })}
       </p>
+
+      <CopyField label={t('linkLabel')} value={link} hint={t('linkHint')} />
+
+      {/* Le code ne s'affiche que s'il est réellement accepté au checkout. */}
+      {code.shareable ? (
+        <CopyField label={t('codeLabel')} value={code.code} hint={t('codeHint')} />
+      ) : null}
+    </div>
+  );
+}
+
+/** Champ en lecture seule + bouton copier, avec sa légende d'usage. */
+function CopyField({ label, value, hint }: { label: string; value: string; hint: string }) {
+  const t = useTranslations('Partner');
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // clipboard indisponible — le champ reste sélectionnable à la main.
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--color-ink-500)] uppercase">
+        {label}
+      </span>
       <div className="flex items-center gap-2">
         <input
           readOnly
-          value={link}
+          value={value}
           onFocus={(e) => e.currentTarget.select()}
           className="min-w-0 flex-1 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-background)] px-3 py-2 font-mono text-xs"
-          aria-label={t('linkTitle')}
+          aria-label={label}
         />
         <button
           type="button"
@@ -209,6 +236,7 @@ function CodeCard({ code }: { code: PartnerCode }) {
           {copied ? t('copied') : t('copy')}
         </button>
       </div>
+      <span className="text-xs text-[color:var(--color-ink-500)]">{hint}</span>
     </div>
   );
 }

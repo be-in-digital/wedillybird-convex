@@ -108,6 +108,58 @@ export const setAffiliateStatus = mutation({
   },
 });
 
+/**
+ * Rattache le coupon + code promo Stripe créés pour un affilié.
+ *
+ * L'appel Stripe vit côté app (Convex ne peut pas sortir sur le réseau depuis
+ * une mutation), donc la séquence est : créer l'affilié ici (source de vérité,
+ * qui garantit l'unicité du code), créer le coupon côté Stripe, puis rattacher
+ * les ids avec cette mutation. Si Stripe échoue, l'affilié reste utilisable —
+ * son lien `?ref=` attribue toujours — et l'admin peut relancer la création.
+ */
+export const setAffiliateStripeCoupon = mutation({
+  args: {
+    adminId: v.id('users'),
+    affiliateId: v.id('affiliates'),
+    stripeCouponId: v.string(),
+    stripePromotionCodeId: v.string(),
+  },
+  handler: async (ctx, { adminId, affiliateId, stripeCouponId, stripePromotionCodeId }) => {
+    await assertAdmin(ctx, adminId);
+    const aff = await ctx.db.get(affiliateId);
+    if (!aff) throw new Error('AFFILIATE_NOT_FOUND');
+    await ctx.db.patch(affiliateId, {
+      stripeCouponId,
+      stripePromotionCodeId,
+      updatedAt: Date.now(),
+    });
+    return { ok: true };
+  },
+});
+
+/**
+ * Lecture admin d'un affilié — sert à la création différée du coupon Stripe
+ * (on a besoin du code et du taux de remise côté server action).
+ */
+export const getAffiliateForAdmin = query({
+  args: { adminId: v.id('users'), affiliateId: v.id('affiliates') },
+  handler: async (ctx, { adminId, affiliateId }) => {
+    await assertAdmin(ctx, adminId);
+    const aff = await ctx.db.get(affiliateId);
+    if (!aff) return null;
+    return {
+      id: aff._id,
+      code: aff.code,
+      kind: aff.kind,
+      buyerDiscountBps: aff.buyerDiscountBps,
+      displayName: aff.displayName ?? null,
+      status: aff.status,
+      stripeCouponId: aff.stripeCouponId ?? null,
+      stripePromotionCodeId: aff.stripePromotionCodeId ?? null,
+    };
+  },
+});
+
 /* ============================ Attribution ============================ */
 
 /**
@@ -304,6 +356,9 @@ export const listAffiliates = query({
       ownerEmail: a.ownerEmail ?? null,
       displayName: a.displayName ?? null,
       status: a.status,
+      /** Code promo Stripe rattaché → le code est saisissable au checkout. */
+      shareCode: a.stripePromotionCodeId ? a.code : null,
+      stripePromotionCodeId: a.stripePromotionCodeId ?? null,
       createdAt: a.createdAt,
     }));
   },
@@ -801,6 +856,12 @@ export const partnerDashboard = query({
         buyerDiscountBps: a.buyerDiscountBps,
         status: a.status,
         displayName: a.displayName ?? null,
+        /**
+         * Le code est-il RÉELLEMENT saisissable au checkout ? Vrai seulement
+         * si un code promo Stripe existe. Sans lui, afficher « partage ton
+         * code » serait un mensonge : l'audience taperait un code refusé.
+         */
+        shareable: Boolean(a.stripePromotionCodeId),
       })),
       referrals: rows.slice(0, 100),
       totals: [...totals.values()],

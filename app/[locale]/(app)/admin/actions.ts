@@ -17,11 +17,14 @@ import {
   setPromotionCodeActive,
   applyCouponToSubscription,
   removeSubscriptionDiscount,
+  resolveConsumerPlanProductIds,
+  findPromotionCodeByCode,
   type SubscriptionInvoice,
   type AdminCoupon,
   type AdminPromotionCode,
 } from '@/lib/payments/drivers/stripe';
 import type { Currency } from '@/lib/payments/plans';
+import { partnerCouponPlan } from '@/lib/payments/affiliate-coupon';
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -618,6 +621,66 @@ export async function adminGetBugScreenshotAction(
 /*  Affiliation — création d'affilié (invitation-only) + activation           */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Crée le coupon Stripe + le code promo d'un affilié, sous SON code exact.
+ *
+ * C'est ce qui rend le code réellement partageable : jusqu'ici `buyerDiscountBps`
+ * ne s'appliquait qu'aux acheteurs venus par le lien `?ref=`, et l'audience qui
+ * tapait le code au checkout se le voyait refuser.
+ *
+ * Le coupon est restreint aux PRODUITS COUPLE — sans ça, le code d'une
+ * créatrice remiserait aussi un abonnement pro (leurs checkouts ouvrent eux
+ * aussi le champ code promo). La restriction étant immuable côté Stripe, on
+ * refuse plutôt que de créer un coupon trop large.
+ */
+async function createPartnerCouponForAffiliate(
+  adminId: string,
+  affiliateId: string,
+  affiliate: { code: string; buyerDiscountBps: number; displayName?: string | null },
+): Promise<{ shareCode: string } | null> {
+  const plan = partnerCouponPlan({
+    code: affiliate.code,
+    buyerDiscountBps: affiliate.buyerDiscountBps,
+    displayName: affiliate.displayName ?? null,
+    now: Date.now(),
+  });
+  // Aucune remise configurée → rien à partager, le lien suffit à attribuer.
+  if (!plan) return null;
+
+  // Anti-doublon : deux codes promo de même chaîne rendraient l'attribution
+  // ambiguë (on ne saurait plus quel affilié créditer).
+  const clash = await findPromotionCodeByCode(affiliate.code);
+  if (clash) throw new Error('STRIPE_CODE_ALREADY_EXISTS');
+
+  const appliesToProducts = await resolveConsumerPlanProductIds();
+  if (appliesToProducts.length === 0) throw new Error('NO_CONSUMER_PRODUCTS_RESOLVED');
+
+  const coupon = await createCoupon({
+    name: plan.name,
+    percentOff: plan.percentOff,
+    duration: 'once',
+    redeemBy: plan.redeemBy,
+    appliesToProducts,
+  });
+  // Pas de `restrictToFirstTime` ici, contrairement à
+  // `scripts/create-affiliate-code.ts` : un code partenaire doit marcher pour
+  // TOUTE l'audience de la créatrice. Chaque réutilisation est une vente réelle
+  // qui génère sa commission — c'est le programme qui fonctionne, pas un abus.
+  const promo = await createPromotionCode({
+    couponId: coupon.id,
+    code: affiliate.code,
+    expiresAt: plan.redeemBy,
+  });
+
+  await getConvexServerClient().mutation(convexApi.setAffiliateStripeCoupon, {
+    adminId,
+    affiliateId,
+    stripeCouponId: coupon.id,
+    stripePromotionCodeId: promo.id,
+  });
+  return { shareCode: promo.code };
+}
+
 export async function adminCreateAffiliateAction(input: {
   code: string;
   kind: 'referral' | 'partner';
@@ -626,11 +689,11 @@ export async function adminCreateAffiliateAction(input: {
   buyerDiscountBps: number;
   ownerEmail?: string;
   displayName?: string;
-}): Promise<ActionResult> {
+}): Promise<ActionResult & { couponError?: string }> {
   try {
     const adminId = await requireAdmin();
     const convex = getConvexServerClient();
-    await convex.mutation(convexApi.createAffiliate, {
+    const created = await convex.mutation(convexApi.createAffiliate, {
       adminId,
       code: input.code,
       kind: input.kind,
@@ -640,6 +703,48 @@ export async function adminCreateAffiliateAction(input: {
       ...(input.ownerEmail ? { ownerEmail: input.ownerEmail } : {}),
       ...(input.displayName ? { displayName: input.displayName } : {}),
     });
+
+    // Le coupon Stripe est un EFFET DE BORD de la création, jamais un
+    // pré-requis : si Stripe échoue, l'affilié existe et son lien attribue
+    // déjà. On remonte l'échec pour que l'admin relance (« Créer le code »)
+    // plutôt que de perdre l'affilié en rollback.
+    let couponError: string | undefined;
+    try {
+      await createPartnerCouponForAffiliate(adminId, created.id, {
+        code: created.code,
+        buyerDiscountBps: input.buyerDiscountBps,
+        displayName: input.displayName ?? null,
+      });
+    } catch (e: unknown) {
+      couponError = msg(e);
+    }
+
+    revalidatePath('/admin/affiliates');
+    return couponError ? { ok: true, couponError } : { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: msg(e) };
+  }
+}
+
+/**
+ * Crée (ou recrée) le code partageable d'un affilié existant — rattrapage
+ * après un échec Stripe, et chemin de migration pour les affiliés ouverts
+ * avant que la création automatique n'existe.
+ */
+export async function adminEnsureAffiliateCouponAction(affiliateId: string): Promise<ActionResult> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    const affiliate = await convex.query(convexApi.getAffiliateForAdmin, { adminId, affiliateId });
+    if (!affiliate) return { ok: false, error: 'AFFILIATE_NOT_FOUND' };
+    if (affiliate.stripePromotionCodeId) return { ok: false, error: 'CODE_ALREADY_CREATED' };
+
+    const result = await createPartnerCouponForAffiliate(adminId, affiliateId, {
+      code: affiliate.code,
+      buyerDiscountBps: affiliate.buyerDiscountBps,
+      displayName: affiliate.displayName,
+    });
+    if (!result) return { ok: false, error: 'NO_BUYER_DISCOUNT' };
     revalidatePath('/admin/affiliates');
     return { ok: true };
   } catch (e: unknown) {
@@ -654,7 +759,20 @@ export async function adminSetAffiliateStatusAction(
   try {
     const adminId = await requireAdmin();
     const convex = getConvexServerClient();
+    const before = await convex.query(convexApi.getAffiliateForAdmin, { adminId, affiliateId });
     await convex.mutation(convexApi.setAffiliateStatus, { adminId, affiliateId, status });
+
+    // Le code promo Stripe suit l'affilié : désactiver l'un sans l'autre
+    // laisserait une remise encaissable alors que la commission ne serait plus
+    // créditée (`applyReferral` refuse un affilié `disabled`) — on offrirait la
+    // remise sans rien tracer. Best-effort : le ledger fait foi.
+    if (before?.stripePromotionCodeId) {
+      try {
+        await setPromotionCodeActive(before.stripePromotionCodeId, status === 'active');
+      } catch {
+        // Stripe indisponible — l'état Convex reste la source de vérité.
+      }
+    }
     revalidatePath('/admin/affiliates');
     return { ok: true };
   } catch (e: unknown) {

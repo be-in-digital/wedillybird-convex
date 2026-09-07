@@ -5586,6 +5586,10 @@
       "paid": "Pago",
       "credited": "Creditado",
       "reversed": "Anulado"
-    }
+    },
+    "linkLabel": "Link",
+    "linkHint": "Qualquer venda proveniente de um clique neste link é-lhe atribuída automaticamente.",
+    "codeLabel": "Código para partilhar",
+    "codeHint": "A introduzir no momento do pagamento. Mesmo desconto, mesma comissão — prático para as suas stories e publicações."
   }
 }

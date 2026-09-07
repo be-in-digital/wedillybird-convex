@@ -1446,6 +1446,47 @@ export async function resolveProPlanProductIds(): Promise<string[]> {
   return [...products];
 }
 
+/**
+ * Produits Stripe des forfaits COUPLE (Essentiel / Premium), résolus depuis
+ * leurs Prices EUR — pendant B2C de `resolveProPlanProductIds`.
+ *
+ * Sert à restreindre un coupon partenaire (`applies_to.products`) : sans cette
+ * restriction, le code d'une créatrice s'appliquerait aussi à un abonnement pro
+ * (les checkouts pros ouvrent également `allow_promotion_codes`) — une remise
+ * de 10 % offerte à son audience deviendrait 10 % sur un Agency à 449 €/mois.
+ * La restriction est IMMUABLE après création côté Stripe : mieux vaut refuser
+ * la création que créer un coupon trop large.
+ *
+ * Toutes les devises d'un même forfait partagent le même produit Stripe, donc
+ * résoudre via EUR suffit.
+ */
+export async function resolveConsumerPlanProductIds(): Promise<string[]> {
+  const stripe = getStripe();
+  const priceIds = (['essential', 'premium'] as const)
+    .map((plan) => priceIdForPlan(plan, 'EUR'))
+    .filter((id): id is string => Boolean(id));
+
+  const products = new Set<string>();
+  for (const priceId of priceIds) {
+    const price = await stripe.prices.retrieve(priceId);
+    const product = typeof price.product === 'string' ? price.product : price.product?.id;
+    if (product) products.add(product);
+  }
+  return [...products];
+}
+
+/**
+ * Retrouve un code promo par sa chaîne lisible, ou `null`. Garde anti-doublon
+ * avant d'en créer un : deux codes identiques rendraient l'attribution
+ * ambiguë (on ne saurait plus quel affilié créditer).
+ */
+export async function findPromotionCodeByCode(code: string): Promise<AdminPromotionCode | null> {
+  const stripe = getStripe();
+  const res = await stripe.promotionCodes.list({ code, limit: 1 });
+  const found = res.data[0];
+  return found ? mapPromotionCode(found) : null;
+}
+
 export async function listCoupons(limit = 100): Promise<AdminCoupon[]> {
   const stripe = getStripe();
   const res = await stripe.coupons.list({ limit });

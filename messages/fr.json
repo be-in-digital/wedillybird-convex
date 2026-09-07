@@ -5586,6 +5586,10 @@
       "paid": "Versé",
       "credited": "Crédité",
       "reversed": "Annulé"
-    }
+    },
+    "linkLabel": "Lien",
+    "linkHint": "Toute vente venant d’un clic sur ce lien vous est attribuée automatiquement.",
+    "codeLabel": "Code à partager",
+    "codeHint": "À saisir au moment du paiement. Même remise, même commission — pratique pour vos stories et vos publications."
   }
 }

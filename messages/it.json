@@ -5586,6 +5586,10 @@
       "paid": "Pagato",
       "credited": "Accreditato",
       "reversed": "Annullato"
-    }
+    },
+    "linkLabel": "Link",
+    "linkHint": "Ogni vendita che arriva da un clic su questo link ti viene attribuita automaticamente.",
+    "codeLabel": "Codice da condividere",
+    "codeHint": "Da inserire al momento del pagamento. Stesso sconto, stessa commissione — comodo per le tue storie e i tuoi post."
   }
 }
