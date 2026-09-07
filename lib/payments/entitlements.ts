@@ -197,6 +197,28 @@ export function orgHasActiveAccess(
 /*  Quotas : statut d'usage (pur)                                              */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Faut-il proposer un **forfait particulier** (Essentiel / Premium) sur cet
+ * événement ?
+ *
+ * Non dès qu'il appartient à une organisation : un mariage porté par une
+ * agence est couvert par l'abonnement de celle-ci — ou par son compte offert,
+ * ou par un crédit PAYG. C'est exactement ce que dit `decidePublishGate`, qui
+ * ne réclame jamais de `planTier` à un event porteur d'`organizationId`.
+ *
+ * L'afficher quand même faisait dire à l'écran l'inverse de ce que fait le
+ * serveur : une partenaire à qui l'on vient d'offrir six mois créait son
+ * premier mariage et se voyait proposer de payer 29 € ou 59 €. Rien ne
+ * bloquait — la publication passait — mais le doute suffit à faire abandonner.
+ */
+export function eventNeedsConsumerPlan(event: {
+  organizationId?: string | null;
+  planTier?: string | null;
+}): boolean {
+  if (event.organizationId) return false;
+  return true;
+}
+
 export type QuotaLevel = 'ok' | 'warning' | 'danger';
 
 export interface QuotaStatus {

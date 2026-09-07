@@ -1066,7 +1066,8 @@
     "previewInvitation": "Preview the invitation",
     "customizeMessage": "Customise the message",
     "editDetails": "Edit details",
-    "guestsEyebrow": "Your guests"
+    "guestsEyebrow": "Your guests",
+    "planByOrganization": "Covered by the agency plan"
   },
   "Guests": {
     "title": "Invitation list",

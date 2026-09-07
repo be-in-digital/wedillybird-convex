@@ -1066,7 +1066,8 @@
     "previewInvitation": "معاينة الدعوة",
     "customizeMessage": "تخصيص الرسالة",
     "editDetails": "تعديل التفاصيل",
-    "guestsEyebrow": "مدعووك"
+    "guestsEyebrow": "مدعووك",
+    "planByOrganization": "مشمول باشتراك الوكالة"
   },
   "Guests": {
     "title": "قائمة الدعوات",
