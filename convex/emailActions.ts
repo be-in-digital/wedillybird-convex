@@ -10,6 +10,7 @@ import {
   renderLinkCode,
   renderMagicLink,
   renderNewsletterCampaign,
+  renderPartnerInvite,
   renderProNotification,
   renderStripeInvoice,
   type ProNotificationKind,
@@ -164,6 +165,70 @@ export const sendLinkCodeEmail = internalAction({
       console.error(`[email] failed to send link code to ${to}: ${result.error}`);
     }
     return result;
+  },
+});
+
+/**
+ * Envoie à un partenaire le lien qui ouvre son compte offert.
+ *
+ * Action publique (et non `internalAction`) parce que l'admin la déclenche
+ * depuis le back-office ; le contrôle du rôle se fait dans `prepareSend`, du
+ * côté qui voit la base.
+ *
+ * L'ordre compte : on n'écrit la trace d'envoi **qu'après** un retour SES
+ * positif. Marquer avant ferait croire à un lien parti alors qu'il a échoué,
+ * et personne ne le renverrait.
+ */
+export const sendPartnerInvite = action({
+  args: {
+    adminId: v.id('users'),
+    inviteId: v.id('partnerInvites'),
+    /** Destinataire explicite ; sinon celui noté sur l'invitation ou l'affilié. */
+    to: v.optional(v.string()),
+    locale: v.optional(v.string()),
+  },
+  // Annotation explicite : sans elle, TS boucle (l'action référence son propre
+  // module via `internal.partnerInvites`).
+  handler: async (
+    ctx,
+    { adminId, inviteId, to, locale },
+  ): Promise<{ ok: true; to: string } | { ok: false; error: string }> => {
+    const prepared: {
+      recipient: string;
+      token: string;
+      inviteeName: string | null;
+      grantMonths: number;
+      expiresAt: number;
+      affiliateCode: string;
+    } = await ctx.runQuery(internal.partnerInvites.prepareSend, {
+      adminId,
+      inviteId,
+      to,
+    });
+
+    const baseUrl = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
+    const inviteUrl = `${baseUrl.replace(/\/$/, '')}/rejoindre/${prepared.token}`;
+
+    const rendered = renderPartnerInvite({
+      inviteUrl,
+      inviteeName: prepared.inviteeName ?? undefined,
+      grantMonths: prepared.grantMonths,
+      affiliateCode: prepared.affiliateCode,
+      expiresAt: prepared.expiresAt,
+      locale,
+    });
+
+    const result = await dispatch(prepared.recipient, rendered);
+    if (!result.ok) {
+      console.error(`[email] failed to send partner invite to ${prepared.recipient}`);
+      return { ok: false as const, error: result.error };
+    }
+
+    await ctx.runMutation(internal.partnerInvites.markSent, {
+      inviteId,
+      to: prepared.recipient,
+    });
+    return { ok: true as const, to: prepared.recipient };
   },
 });
 

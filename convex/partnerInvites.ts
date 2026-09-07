@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
+import { internalMutation, internalQuery, mutation, query } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import {
   DEFAULT_PARTNER_COMP_MONTHS,
@@ -187,7 +187,66 @@ export const listForAdmin = query({
       expiresAt: inv.expiresAt,
       consumedAt: inv.consumedAt ?? null,
       createdAt: inv.createdAt,
+      lastSentAt: inv.lastSentAt ?? null,
+      lastSentTo: inv.lastSentTo ?? null,
+      sendCount: inv.sendCount ?? 0,
     }));
+  },
+});
+
+/* -------------------------------------------------------------------------- */
+/*  Envoi du lien au partenaire                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Tout ce dont l'action d'envoi a besoin, en une lecture — l'action Node ne
+ * touche pas la base.
+ *
+ * Le destinataire est résolu **ici** et non côté appelant : la chaîne
+ * `to` explicite → e-mail noté sur l'invitation → e-mail de l'affilié évite
+ * qu'un envoi parte vers une adresse laissée vide dans un formulaire.
+ */
+export const prepareSend = internalQuery({
+  args: { adminId: v.id('users'), inviteId: v.id('partnerInvites'), to: v.optional(v.string()) },
+  handler: async (ctx, { adminId, inviteId, to }) => {
+    await assertAdmin(ctx, adminId);
+
+    const invite = await ctx.db.get(inviteId);
+    if (!invite) throw new Error('INVITE_NOT_FOUND');
+
+    // Envoyer un lien mort ferait perdre un partenaire sur un clic inutile.
+    const state = inviteState(invite, Date.now());
+    if (state !== 'usable') throw new Error(`INVITE_NOT_USABLE: ${state}`);
+
+    const affiliate = await ctx.db.get(invite.affiliateId);
+    if (!affiliate) throw new Error('AFFILIATE_NOT_FOUND');
+
+    const recipient = (to ?? invite.inviteeEmail ?? affiliate.ownerEmail ?? '').trim();
+    if (!recipient) throw new Error('NO_RECIPIENT');
+
+    return {
+      recipient,
+      token: invite.token,
+      inviteeName: invite.inviteeName ?? affiliate.displayName ?? null,
+      grantMonths: invite.grantMonths,
+      expiresAt: invite.expiresAt,
+      affiliateCode: affiliate.code,
+    };
+  },
+});
+
+/** Trace l'envoi réussi. Un échec SES ne doit rien écrire : on renverrait. */
+export const markSent = internalMutation({
+  args: { inviteId: v.id('partnerInvites'), to: v.string() },
+  handler: async (ctx, { inviteId, to }) => {
+    const invite = await ctx.db.get(inviteId);
+    if (!invite) throw new Error('INVITE_NOT_FOUND');
+    await ctx.db.patch(inviteId, {
+      lastSentAt: Date.now(),
+      lastSentTo: to,
+      sendCount: (invite.sendCount ?? 0) + 1,
+    });
+    return { ok: true as const };
   },
 });
 

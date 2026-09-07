@@ -9,6 +9,7 @@ import {
   adminEnsureAffiliateCouponAction,
   adminMarkReferralPaidAction,
   adminRevokePartnerInviteAction,
+  adminSendPartnerInviteAction,
   adminSetAffiliateStatusAction,
 } from '@/app/[locale]/(app)/admin/actions';
 
@@ -41,6 +42,10 @@ interface PartnerInvite {
   expiresAt: number;
   consumedAt: number | null;
   createdAt: number;
+  /** Dernier envoi réussi — dit à l'admin s'il doit envoyer ou relancer. */
+  lastSentAt: number | null;
+  lastSentTo: string | null;
+  sendCount: number;
 }
 
 interface Referral {
@@ -91,6 +96,8 @@ export function AdminAffiliatesBoard({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  /** Adresse effectivement servie par le dernier envoi, pour confirmation. */
+  const [sent, setSent] = useState<string | null>(null);
 
   const [code, setCode] = useState('');
   const [kind, setKind] = useState<'referral' | 'partner'>('partner');
@@ -221,6 +228,25 @@ export function AdminAffiliatesBoard({
         setError(res.error);
         return;
       }
+      router.refresh();
+    });
+  }
+
+  /**
+   * Envoie le lien au partenaire. `sent` porte l'adresse réellement servie —
+   * le destinataire est résolu côté serveur, pas ici : afficher l'adresse
+   * qu'on croyait viser plutôt que celle atteinte serait un faux témoignage.
+   */
+  function sendInvite(inviteId: string) {
+    setError(null);
+    setSent(null);
+    startTransition(async () => {
+      const res = await adminSendPartnerInviteAction(inviteId);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      setSent(res.to ?? null);
       router.refresh();
     });
   }
@@ -373,6 +399,11 @@ export function AdminAffiliatesBoard({
           {error ? (
             <span className="text-sm text-[color:var(--color-destructive)]">{error}</span>
           ) : null}
+          {sent ? (
+            <span className="text-sm text-[color:var(--color-accent)]">
+              Invitation envoyée à {sent}.
+            </span>
+          ) : null}
         </div>
       </section>
 
@@ -457,6 +488,8 @@ export function AdminAffiliatesBoard({
                         pending={pending}
                         onCreate={() => createInvite(a)}
                         onRevoke={revokeInvite}
+                        onSend={sendInvite}
+                        fallbackEmail={a.ownerEmail ?? null}
                         buildUrl={inviteUrl}
                       />
                     )}
@@ -585,15 +618,23 @@ function PartnerInviteCell({
   pending,
   onCreate,
   onRevoke,
+  onSend,
+  fallbackEmail,
   buildUrl,
 }: {
   invite: PartnerInvite | null;
   pending: boolean;
   onCreate: () => void;
   onRevoke: (inviteId: string) => void;
+  onSend: (inviteId: string) => void;
+  /** E-mail de l'affilié, si l'invitation n'en porte pas elle-même. */
+  fallbackEmail: string | null;
   buildUrl: (token: string) => string;
 }) {
   const [copied, setCopied] = useState(false);
+  // Le serveur résout le destinataire ; on reproduit la même chaîne ici pour
+  // savoir s'il y a une adresse à servir, et laquelle annoncer au survol.
+  const recipient = invite?.inviteeEmail ?? fallbackEmail;
 
   if (!invite) {
     return (
@@ -613,8 +654,27 @@ function PartnerInviteCell({
       <span className="text-xs text-[color:var(--color-ink-500)]">
         {INVITE_STATE_LABEL[invite.state]} · {invite.grantMonths} mois {invite.grantTier}
       </span>
+      {invite.lastSentAt ? (
+        <span className="text-[11px] text-[color:var(--color-ink-500)]">
+          Envoyé {invite.sendCount > 1 ? `${invite.sendCount}× ` : ''}à {invite.lastSentTo} le{' '}
+          {new Date(invite.lastSentAt).toLocaleDateString('fr-FR')}
+        </span>
+      ) : null}
       {invite.state === 'usable' && invite.token ? (
         <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onSend(invite.id)}
+            disabled={pending || !recipient}
+            title={
+              recipient
+                ? `Envoyer le lien à ${recipient}`
+                : "Aucune adresse connue : renseignez l'e-mail de l'affilié pour pouvoir envoyer."
+            }
+            className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)] px-2.5 py-1 text-[11px] font-medium disabled:opacity-50"
+          >
+            {invite.lastSentAt ? 'Renvoyer' : 'Envoyer par e-mail'}
+          </button>
           <button
             type="button"
             onClick={() => {

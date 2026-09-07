@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+import { getActiveSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { normalizeRsvpConfig } from '@/lib/rsvp/questions';
 
@@ -27,7 +27,7 @@ export async function GET(
   _req: Request,
   ctx: { params: Promise<{ eventId: string }> },
 ): Promise<Response> {
-  const session = await getSession();
+  const session = await getActiveSession();
   if (!session) {
     return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   }

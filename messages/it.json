@@ -100,7 +100,10 @@
       "partnersOnly": "Solo partner",
       "attachPartner": "Collega un codice",
       "detachPartner": "Scollega",
-      "confirmDetachPartner": "Scollegare questo codice partner da questo account?"
+      "confirmDetachPartner": "Scollegare questo codice partner da questo account?",
+      "unsuspend": "Riattiva",
+      "confirmUnsuspend": "Riattivare {name}?",
+      "suspended": "Sospeso"
     },
     "events": {
       "searchPlaceholder": "Cerca un evento…",
@@ -962,7 +965,8 @@
       "tooManyAttempts": "Troppi tentativi, riprova tra qualche minuto",
       "rateLimited": "Troppe richieste. Attendi qualche minuto.",
       "expired": "Codice scaduto, richiedine uno nuovo.",
-      "unknown": "Si è verificato un errore. Riprova."
+      "unknown": "Si è verificato un errore. Riprova.",
+      "accountSuspended": "Questo account è stato sospeso. Scrivici a contact@wedillybird.com."
     },
     "tagline": "Prepara il tuo grande giorno",
     "stepOneEyebrow": "PASSO 01 — IDENTITÀ",
@@ -4406,6 +4410,15 @@
       "footer": "Notifica automatica legata alla convalida Meta WhatsApp Business.",
       "textTemplate": "Template: {templateName}",
       "textReason": "Motivo: {reason}"
+    },
+    "partnerInvite": {
+      "codeNotice": "Il tuo codice partner {code} sarà attivo all'apertura dell'account: condividilo con la tua community per incassare la commissione.",
+      "ctaLabel": "Apri il mio spazio ({months} mesi offerti)",
+      "intro": "Ci farebbe piacere averti tra i nostri partner. Ecco un link personale per aprire il tuo spazio agenzia Wedillybird: i primi {months} mesi sono offerti, per provarlo su matrimoni veri.",
+      "linkExpiry": "Questo link è valido fino al {date}. I mesi offerti iniziano il giorno in cui apri l'account.",
+      "noCard": "Non viene richiesta alcuna carta di pagamento, né ora né al termine dei mesi offerti.",
+      "preheader": "Apri il tuo spazio agenzia — {months} mesi offerti, senza carta.",
+      "subject": "Il tuo account Wedillybird, {months} mesi offerti"
     }
   },
   "Metadata": {

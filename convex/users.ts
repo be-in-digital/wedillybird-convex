@@ -3,6 +3,7 @@ import { internalQuery, mutation, query } from './_generated/server';
 import { isValidEmail } from './lib/email';
 import { BUDGET_CURRENCY } from './lib/currency';
 import { resolveOnboardingRole } from './lib/onboardingRole';
+import { isSuspended } from './lib/accountStatus';
 
 export const completeOnboarding = mutation({
   args: {
@@ -17,6 +18,9 @@ export const completeOnboarding = mutation({
   handler: async (ctx, { userId, fullName, role, email, preferredCurrency }) => {
     const user = await ctx.db.get(userId);
     if (!user) throw new Error('USER_NOT_FOUND');
+    // Un compte suspendu ne repasse pas par l'onboarding : c'était la voie de
+    // retour qui rendait la sanction annulable par la personne suspendue.
+    if (isSuspended(user)) throw new Error('ACCOUNT_SUSPENDED');
 
     const trimmed = fullName.trim();
     if (trimmed.length < 2 || trimmed.length > 80) {

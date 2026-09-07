@@ -100,7 +100,10 @@
       "partnersOnly": "Apenas parceiros",
       "attachPartner": "Associar um código",
       "detachPartner": "Desassociar",
-      "confirmDetachPartner": "Desassociar este código de parceiro desta conta?"
+      "confirmDetachPartner": "Desassociar este código de parceiro desta conta?",
+      "unsuspend": "Reativar",
+      "confirmUnsuspend": "Reativar {name}?",
+      "suspended": "Suspenso"
     },
     "events": {
       "searchPlaceholder": "Buscar um evento…",
@@ -959,7 +962,8 @@
       "tooManyAttempts": "Demasiadas tentativas, tenta de novo daqui a alguns minutos",
       "rateLimited": "Demasiados pedidos. Aguarda alguns minutos.",
       "expired": "Código expirado, pede um novo.",
-      "unknown": "Ocorreu um erro. Tenta de novo."
+      "unknown": "Ocorreu um erro. Tenta de novo.",
+      "accountSuspended": "Esta conta foi suspensa. Fale connosco em contact@wedillybird.com."
     },
     "tagline": "Prepare seu grande dia",
     "stepOneEyebrow": "PASSO 01 — IDENTIDADE",
@@ -4406,6 +4410,15 @@
       "footer": "Notificação automática ligada à validação Meta WhatsApp Business.",
       "textTemplate": "Template: {templateName}",
       "textReason": "Motivo: {reason}"
+    },
+    "partnerInvite": {
+      "codeNotice": "O seu código de parceiro {code} ficará ativo assim que a conta for aberta: partilhe-o com a sua comunidade para receber a sua comissão.",
+      "ctaLabel": "Abrir o meu espaço ({months} meses grátis)",
+      "intro": "Gostaríamos de o contar entre os nossos parceiros. Aqui está um link pessoal para abrir o seu espaço de agência Wedillybird: os primeiros {months} meses são grátis, para experimentar em casamentos reais.",
+      "linkExpiry": "Este link é válido até {date}. Os meses grátis começam no dia em que abre a sua conta.",
+      "noCard": "Não é pedido qualquer cartão bancário, nem agora nem no final dos meses grátis.",
+      "preheader": "Abra o seu espaço de agência — {months} meses grátis, sem cartão.",
+      "subject": "A sua conta Wedillybird, {months} meses grátis"
     }
   },
   "Metadata": {

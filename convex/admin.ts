@@ -4,6 +4,7 @@ import type { Id } from './_generated/dataModel';
 import { computePlatformAnalytics, computeRefundOutcome } from './lib/analytics';
 import { reverseReferralBySession, restoreCreditForRefundedSession } from './affiliate';
 import { galleryExpiresAtFor } from './lib/eventPlan';
+import { isSuspended } from './lib/accountStatus';
 
 async function assertAdmin(
   ctx: { db: { get: (id: Id<'users'>) => Promise<{ role: string } | null> } },
@@ -188,6 +189,8 @@ export const listUsers = query({
         planTier: u.planTier,
         createdAt: u.createdAt,
         lastSeenAt: u.lastSeenAt,
+        /** Suspension : distincte du rôle, donc à remonter séparément. */
+        suspendedAt: u.suspendedAt,
         affiliate: affiliate
           ? {
               id: affiliate._id,
@@ -603,13 +606,43 @@ export const suspendUser = mutation({
     if (!target) throw new Error('USER_NOT_FOUND');
     if (target.role === 'admin') throw new Error('CANNOT_SUSPEND_ADMIN');
 
-    await ctx.db.patch(targetUserId, { role: 'guest' as const });
+    // Le rôle n'est PAS touché : il reste la vérité sur ce qu'est ce compte,
+    // et la suspension se lève sans avoir à le redeviner. Écraser `role` avec
+    // `guest` rendait en plus la sanction annulable par la personne suspendue,
+    // via l'onboarding (cf. `convex/lib/accountStatus.ts`).
+    await ctx.db.patch(targetUserId, { suspendedAt: Date.now(), suspendedBy: adminId });
     await ctx.db.insert('adminAuditLog', {
       adminId,
       action: 'suspend_user',
       targetType: 'user',
       targetId: targetUserId,
-      details: JSON.stringify({ previousRole: target.role }),
+      details: JSON.stringify({ role: target.role }),
+      createdAt: Date.now(),
+    });
+    return { ok: true };
+  },
+});
+
+export const unsuspendUser = mutation({
+  args: {
+    adminId: v.id('users'),
+    targetUserId: v.id('users'),
+  },
+  handler: async (ctx, { adminId, targetUserId }) => {
+    await assertAdmin(ctx, adminId);
+    const target = await ctx.db.get(targetUserId);
+    if (!target) throw new Error('USER_NOT_FOUND');
+    if (!isSuspended(target)) throw new Error('USER_NOT_SUSPENDED');
+
+    // Le rôle n'ayant jamais été écrasé, lever la suspension suffit : le compte
+    // retrouve exactement ce qu'il était.
+    await ctx.db.patch(targetUserId, { suspendedAt: undefined, suspendedBy: undefined });
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'unsuspend_user',
+      targetType: 'user',
+      targetId: targetUserId,
+      details: JSON.stringify({ role: target.role, suspendedAt: target.suspendedAt }),
       createdAt: Date.now(),
     });
     return { ok: true };

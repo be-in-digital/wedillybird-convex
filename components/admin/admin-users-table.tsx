@@ -14,6 +14,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useServerAction } from '@/components/admin/use-admin-action';
 import {
   adminSuspendUserAction,
+  adminUnsuspendUserAction,
   adminChangeUserRoleAction,
   adminSetAffiliateOwnerAction,
 } from '@/app/[locale]/(app)/admin/actions';
@@ -24,6 +25,8 @@ type User = {
   email?: string;
   fullName?: string;
   role: 'couple' | 'pro' | 'guest' | 'admin';
+  /** Suspension administrative — indépendante du rôle depuis sa correction. */
+  suspendedAt?: number | null;
   planTier?: string;
   createdAt: number;
   lastSeenAt?: number;
@@ -45,6 +48,14 @@ type PartnerCode = {
   displayName: string | null;
   ownerEmail: string | null;
 };
+
+/** Clés de traduction des rôles — le badge affichait la valeur brute en base. */
+const ROLE_LABEL_KEY = {
+  couple: 'roles.couple',
+  pro: 'roles.pro',
+  guest: 'roles.guest',
+  admin: 'roles.admin',
+} as const;
 
 const ROLE_VARIANT: Record<string, 'neutral' | 'primary' | 'accent' | 'warning' | 'destructive'> = {
   couple: 'primary',
@@ -157,9 +168,11 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
   const t = useTranslations('Admin');
   const locale = useLocale();
   const { execute: suspend, loading: suspending } = useServerAction(adminSuspendUserAction);
+  const { execute: unsuspend, loading: unsuspending } = useServerAction(adminUnsuspendUserAction);
   const { execute: changeRole, loading: changing } = useServerAction(adminChangeUserRoleAction);
   const { execute: setOwner, loading: attaching } = useServerAction(adminSetAffiliateOwnerAction);
   const { confirm, confirmDialog } = useConfirm();
+  const suspended = user.suspendedAt != null;
 
   return (
     <>
@@ -172,7 +185,14 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
           </div>
         </td>
         <td className="px-4 py-3">
-          <Badge variant={ROLE_VARIANT[user.role] ?? 'neutral'}>{user.role}</Badge>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant={ROLE_VARIANT[user.role] ?? 'neutral'}>
+              {t(ROLE_LABEL_KEY[user.role])}
+            </Badge>
+            {/* La suspension se lit à côté du rôle, plus à sa place : le rôle
+                reste ce qu'est le compte, la suspension ce qu'on lui a fait. */}
+            {suspended ? <Badge variant="destructive">{t('users.suspended')}</Badge> : null}
+          </div>
         </td>
         <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
           {user.planTier ?? '—'}
@@ -229,7 +249,25 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
         </td>
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
-            {user.role !== 'admin' && user.role !== 'guest' ? (
+            {user.role === 'admin' ? null : suspended ? (
+              <button
+                onClick={async () => {
+                  if (
+                    await confirm({
+                      title: t('users.confirmUnsuspend', {
+                        name: user.fullName ?? user.email ?? user._id,
+                      }),
+                    })
+                  ) {
+                    unsuspend(user._id);
+                  }
+                }}
+                disabled={unsuspending}
+                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-accent)] transition-colors hover:bg-[color:var(--color-accent)]/10 disabled:opacity-50"
+              >
+                {t('users.unsuspend')}
+              </button>
+            ) : (
               <button
                 onClick={async () => {
                   if (
@@ -248,14 +286,19 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
               >
                 {t('users.suspend')}
               </button>
-            ) : null}
+            )}
             {user.role !== 'admin' ? (
               <Select
                 value=""
                 disabled={changing}
                 onValueChange={async (v) => {
                   const newRole = v as User['role'];
-                  if (await confirm({ title: t('users.confirmChangeRole', { role: newRole }) })) {
+                  if (
+                    await confirm({
+                      // Libellé traduit, pas la valeur en base : « Couple », pas « couple ».
+                      title: t('users.confirmChangeRole', { role: t(ROLE_LABEL_KEY[newRole]) }),
+                    })
+                  ) {
                     changeRole(user._id, newRole);
                   }
                 }}
