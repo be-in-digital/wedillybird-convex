@@ -16,7 +16,10 @@
       "moderation": "Moderazione",
       "newsletter": "Newsletter",
       "auditLog": "Registro di audit",
-      "promotions": "Promozioni"
+      "promotions": "Promozioni",
+      "affiliates": "Affiliazione",
+      "bugReports": "Bug segnalati",
+      "photoBooks": "Album fotografici"
     },
     "common": {
       "back": "Indietro",
@@ -218,6 +221,25 @@
         "empty": "Nessuna fattura per questa organizzazione."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Segnala un bug",
+    "open": "Segnala un bug",
+    "title": "Segnala un bug",
+    "subtitle": "Raccontaci cosa è successo. Uno screenshot aiuta molto.",
+    "descLabel": "Cosa è successo?",
+    "descPlaceholder": "Ho cliccato su… e invece…",
+    "captureLabel": "Screenshot (facoltativo)",
+    "captureBtn": "Cattura schermo",
+    "uploadBtn": "Scegli un'immagine",
+    "removeShot": "Rimuovi lo screenshot",
+    "captureError": "Non è stato possibile catturare lo schermo. Puoi allegare un'immagine.",
+    "contextPage": "Pagina",
+    "submit": "Invia",
+    "cancel": "Annulla",
+    "thanks": "Grazie, l'abbiamo ricevuto. Ci stiamo guardando.",
+    "canvas": "Screenshot",
+    "video": "Video"
   },
   "Common": {
     "confirm": "Conferma",

@@ -16,7 +16,10 @@
       "moderation": "Modération",
       "newsletter": "Newsletter",
       "auditLog": "Journal d’audit",
-      "promotions": "Promotions"
+      "promotions": "Promotions",
+      "affiliates": "Affiliation",
+      "bugReports": "Bugs signalés",
+      "photoBooks": "Livres photo"
     },
     "common": {
       "back": "Retour",
@@ -218,6 +221,25 @@
         "empty": "Aucune facture pour cette organisation."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Signaler un bug",
+    "open": "Signaler un bug",
+    "title": "Signaler un bug",
+    "subtitle": "Décrivez ce qui s'est passé. Une capture aide beaucoup.",
+    "descLabel": "Que s'est-il passé ?",
+    "descPlaceholder": "J'ai cliqué sur… et à la place…",
+    "captureLabel": "Capture d'écran (facultatif)",
+    "captureBtn": "Capturer l'écran",
+    "uploadBtn": "Choisir une image",
+    "removeShot": "Retirer la capture",
+    "captureError": "La capture n'a pas pu être prise. Vous pouvez joindre une image à la place.",
+    "contextPage": "Page",
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "thanks": "Merci — c'est bien arrivé. Nous regardons ça.",
+    "canvas": "Capture",
+    "video": "Vidéo"
   },
   "Common": {
     "confirm": "Confirmer",

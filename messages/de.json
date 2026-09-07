@@ -16,7 +16,10 @@
       "moderation": "Moderation",
       "newsletter": "Newsletter",
       "auditLog": "Audit-Protokoll",
-      "promotions": "Aktionen"
+      "promotions": "Aktionen",
+      "affiliates": "Partnerprogramm",
+      "bugReports": "Fehlermeldungen",
+      "photoBooks": "Fotobücher"
     },
     "common": {
       "back": "Zurück",
@@ -218,6 +221,25 @@
         "empty": "Keine Rechnung für diese Organisation."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Fehler melden",
+    "open": "Fehler melden",
+    "title": "Fehler melden",
+    "subtitle": "Beschreiben Sie, was passiert ist. Ein Screenshot hilft sehr.",
+    "descLabel": "Was ist passiert?",
+    "descPlaceholder": "Ich habe auf … geklickt und stattdessen …",
+    "captureLabel": "Screenshot (optional)",
+    "captureBtn": "Bildschirm aufnehmen",
+    "uploadBtn": "Bild auswählen",
+    "removeShot": "Screenshot entfernen",
+    "captureError": "Der Screenshot konnte nicht erstellt werden. Sie können stattdessen ein Bild anhängen.",
+    "contextPage": "Seite",
+    "submit": "Senden",
+    "cancel": "Abbrechen",
+    "thanks": "Danke — angekommen. Wir sehen es uns an.",
+    "canvas": "Screenshot",
+    "video": "Video"
   },
   "Common": {
     "confirm": "Bestätigen",

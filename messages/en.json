@@ -16,7 +16,10 @@
       "moderation": "Moderation",
       "newsletter": "Newsletter",
       "auditLog": "Audit log",
-      "promotions": "Promotions"
+      "promotions": "Promotions",
+      "affiliates": "Affiliates",
+      "bugReports": "Bug reports",
+      "photoBooks": "Photo books"
     },
     "common": {
       "back": "Back",
@@ -218,6 +221,25 @@
         "empty": "No invoice for this organization."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Report a bug",
+    "open": "Report a bug",
+    "title": "Report a bug",
+    "subtitle": "Tell us what happened. A screenshot helps a lot.",
+    "descLabel": "What happened?",
+    "descPlaceholder": "I clicked on… and instead…",
+    "captureLabel": "Screenshot (optional)",
+    "captureBtn": "Capture screen",
+    "uploadBtn": "Choose an image",
+    "removeShot": "Remove screenshot",
+    "captureError": "The screenshot couldn't be taken. You can attach an image instead.",
+    "contextPage": "Page",
+    "submit": "Send",
+    "cancel": "Cancel",
+    "thanks": "Thank you — we got it. We're looking into it.",
+    "canvas": "Screenshot",
+    "video": "Video"
   },
   "Common": {
     "confirm": "Confirm",
