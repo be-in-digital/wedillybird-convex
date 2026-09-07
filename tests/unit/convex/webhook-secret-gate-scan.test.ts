@@ -90,6 +90,15 @@ const ALLOW_LIST = new Set<string>([
   'admin.ts:markPaymentRefunded',
   'admin.ts:markSubscriptionCanceled',
   'admin.ts:markSubscriptionReactivated',
+  // Forfait OFFERT (partenariat / geste commercial / démo) : posent `planTier`
+  // + `galleryExpiresAt` sans transaction Stripe. C'est délibéré — c'est la
+  // raison d'être de ces mutations — et c'est justement pourquoi elles sont
+  // réservées au rôle admin, tracées dans `adminAuditLog` et marquées
+  // `events.compedPlan` (un accès offert ne doit jamais se confondre avec un
+  // revenu). La révocation refuse en plus tout event qui porte un paiement
+  // `succeeded` : on ne coupe pas la galerie d'un client qui a payé.
+  'admin.ts:grantEventPlan',
+  'admin.ts:revokeEventPlan',
 
   // --- Bookkeeping "pending" : créent/attachent une session AVANT tout
   // encaissement confirmé — jamais un marquage succeeded/failed. Gardées par

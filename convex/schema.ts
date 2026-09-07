@@ -327,6 +327,20 @@ export default defineSchema({
      */
     pendingPlanTier: v.optional(v.union(v.literal('essential'), v.literal('premium'))),
     paidAt: v.optional(v.number()),
+    /**
+     * Forfait OFFERT par l'équipe (partenariat, geste commercial, compte de
+     * démo) plutôt que payé. Présent ⇒ `planTier` et `paidAt` ont été posés
+     * sans transaction Stripe : indispensable pour ne pas confondre un accès
+     * offert avec un revenu lors d'un audit, et pour savoir qui l'a accordé.
+     * Posé par `admin:grantEventPlan`, effacé par sa révocation.
+     */
+    compedPlan: v.optional(
+      v.object({
+        grantedBy: v.id('users'),
+        grantedAt: v.number(),
+        reason: v.optional(v.string()),
+      }),
+    ),
     // Hard cap kept for anti-abuse (uniform across plans). Defaults to 5000 on create.
     maxGuests: v.number(),
     // Gallery access expires after this timestamp. Computed from planTier
@@ -1121,6 +1135,7 @@ export default defineSchema({
       v.literal('photo_book'),
       v.literal('template'),
       v.literal('newsletter'),
+      v.literal('affiliate'),
     ),
     targetId: v.string(),
     details: v.optional(v.string()),
@@ -1551,6 +1566,16 @@ export default defineSchema({
     ownerEmail: v.optional(v.string()),
     displayName: v.optional(v.string()),
     status: v.union(v.literal('active'), v.literal('disabled')),
+    /**
+     * Coupon + code promo Stripe portant la MÊME chaîne que `code`, créés à
+     * l'ouverture de l'affilié quand `buyerDiscountBps > 0`. C'est ce qui rend
+     * le code réellement partageable : l'audience du partenaire le tape au
+     * checkout et obtient la remise, et `markSucceeded` remonte du code promo
+     * vers cet affilié pour créditer la commission. Absents = seul le lien
+     * `?ref=` attribue (aucune remise saisissable).
+     */
+    stripeCouponId: v.optional(v.string()),
+    stripePromotionCodeId: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -1573,8 +1598,20 @@ export default defineSchema({
     eventId: v.optional(v.id('events')),
     buyerUserId: v.optional(v.id('users')),
     grossMinor: v.number(),
-    /** Net encaissé après remise = base de calcul de la récompense. */
+    /** Net réellement encaissé après remise, TTC (ce que Stripe a débité). */
     netMinor: v.number(),
+    /**
+     * Assiette de la commission : le net encaissé RAMENÉ HORS TAXES. La TVA
+     * n'est pas un revenu (elle est reversée à l'État), la commissionner
+     * reviendrait à payer le partenaire dessus.
+     *
+     * Stocké plutôt que recalculé : le taux de TVA peut changer, et une ligne
+     * de ledger doit rester auditable des années plus tard — « encaissé 59,00 /
+     * assiette 49,17 / commission 9,83 » se relit sans connaître le taux en
+     * vigueur ce jour-là. Absent sur les lignes antérieures à cette règle, où
+     * l'assiette valait `netMinor`.
+     */
+    commissionBaseMinor: v.optional(v.number()),
     currency: v.string(),
     /** Récompense calculée (commission cash OU crédit), centimes. */
     rewardMinor: v.number(),

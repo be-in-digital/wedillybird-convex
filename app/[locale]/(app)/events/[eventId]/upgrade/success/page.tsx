@@ -8,6 +8,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { AppShell } from '@/components/app/app-shell';
 import { getPaymentDriver } from '@/lib/payments';
 import type { ProviderName } from '@/lib/payments/country';
+import { taxExclusiveMinor } from '@/lib/payments/vat';
 import { cn } from '@/lib/cn';
 import { captureServer, EVENTS } from '@/lib/analytics/posthog-server';
 
@@ -48,6 +49,17 @@ export default async function UpgradeSuccessPage({
           provider,
           providerSessionId: status.providerSessionId,
           providerEventId: status.providerEventId,
+          // Encaissement réel, assiette HT et code promo, comme le webhook : si
+          // ce filet gagne la course, la commission d'affiliation doit être
+          // calculée sur les mêmes bases (le driver mock ne connaît pas le
+          // montant, on ne lui fait donc pas dire 0).
+          ...(provider === 'stripe'
+            ? {
+                netMinor: status.amountMinor,
+                commissionBaseMinor: taxExclusiveMinor(status.amountMinor, status.currency),
+                promotionCode: status.promotionCode,
+              }
+            : {}),
         });
       }
     } catch (err) {

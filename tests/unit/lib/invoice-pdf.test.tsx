@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { renderToBuffer } from '@react-pdf/renderer';
-import { InvoicePDF, buildInvoiceNumber, type InvoicePayment } from '@/lib/payments/invoice';
+import {
+  InvoicePDF,
+  buildInvoiceNumber,
+  buildIssuerLines,
+  type InvoicePayment,
+} from '@/lib/payments/invoice';
+import { LEGAL_ENTITY } from '@/lib/legal/entity';
+import { getServerTranslator } from '@/lib/i18n/server-translator';
 
 const basePayment: InvoicePayment = {
   paymentId: 'p_abc12345',
@@ -91,4 +98,40 @@ describe('InvoicePDF — content validation via element tree', () => {
     expect(ascii).toContain('Wedillybird');
     expect(ascii).toContain('WB-2026-ABC12345');
   }, 30000);
+});
+
+describe('buildIssuerLines — mentions d’identification de l’émetteur', () => {
+  const t = getServerTranslator('fr');
+
+  it('imprime le SIREN et la TVA intracommunautaire réels', () => {
+    const lines = buildIssuerLines(t);
+    expect(lines).toContain('Wedillybird — Tuum Agency');
+    expect(lines).toContain('SIREN 930 817 697');
+    expect(lines).toContain('N° TVA intracom. FR31930817697');
+  });
+
+  it('n’imprime aucun gabarit à la place d’une mention manquante', () => {
+    // Le siège et le RCS ne sont pas encore connus : ils doivent être ABSENTS,
+    // pas remplis d'un « à compléter » qui partirait chez un vrai client.
+    for (const line of buildIssuerLines(t)) {
+      expect(line).not.toMatch(/à compléter|to be completed|TODO/i);
+    }
+    expect(buildIssuerLines(t).some((l) => l.startsWith('RCS '))).toBe(false);
+  });
+
+  it('imprime le SIRET plutôt que le SIREN dès qu’il est connu', () => {
+    const lines = buildIssuerLines(t, {
+      ...LEGAL_ENTITY,
+      siret: '93081769700012',
+      rcsCity: 'Paris',
+      registeredAddress: ['1 rue de la Paix', '75002 Paris'],
+    });
+    expect(lines).toContain('SIRET 930 817 697 00012');
+    expect(lines.some((l) => l.startsWith('SIREN '))).toBe(false);
+    expect(lines).toContain('RCS Paris 930 817 697');
+    expect(lines).toContain('1 rue de la Paix');
+    // L'adresse se place avant les numéros d'identification, comme sur un
+    // en-tête de facture classique.
+    expect(lines.indexOf('75002 Paris')).toBeLessThan(lines.indexOf('SIRET 930 817 697 00012'));
+  });
 });

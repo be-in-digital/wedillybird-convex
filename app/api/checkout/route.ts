@@ -8,6 +8,7 @@ import { PLANS } from '@/lib/payments/plans';
 import { detectCountryFromHeaders, routePayment } from '@/lib/payments/country';
 import { getPaymentDriver } from '@/lib/payments';
 import { createOneTimeAmountCoupon } from '@/lib/payments/drivers/stripe';
+import { splitOrderDiscounts } from '@/lib/payments/affiliate-discount';
 import { captureServer, EVENTS } from '@/lib/analytics/posthog-server';
 
 const bodySchema = z.object({
@@ -48,38 +49,72 @@ export async function POST(req: Request): Promise<Response> {
   // Attribution affiliation : le proxy pose le cookie `wdb_ref` sur `?ref=CODE`.
   // On le résout en id d'affilié — best-effort strict : ne jamais bloquer le
   // checkout si la résolution échoue ou si le code est inconnu/inactif.
+  //
+  // On récupère aussi `buyerDiscountBps` : c'est la remise promise à l'audience
+  // du partenaire. Jusqu'ici elle était stockée sur l'affilié mais jamais
+  // appliquée — un code partenaire traçait la commission sans remiser personne.
   let affiliateId: string | undefined;
+  let buyerDiscountBps = 0;
   const refCode = (await cookies()).get('wdb_ref')?.value;
   if (refCode) {
     try {
       const aff = await getConvexServerClient().query(convexApi.getAffiliateByCode, {
         code: refCode,
       });
-      if (aff) affiliateId = aff.id;
+      if (aff) {
+        affiliateId = aff.id;
+        buyerDiscountBps = aff.buyerDiscountBps;
+      }
     } catch {
       // best-effort — l'attribution ne bloque jamais l'achat.
     }
   }
 
-  // Crédit de parrainage : on RÉSERVE le crédit AVANT de créer le coupon — le
-  // montant réservé == le montant du coupon (jamais de sur-remise ni de crédit
-  // gratuit). `reservationId` (token) est porté par la session (metadata) puis le
+  // Remise affiliée + crédit de parrainage fusionnent dans UN SEUL coupon
+  // (`discounts` n'accepte qu'une entrée côté Stripe). La remise s'applique en
+  // premier, le crédit ne mord que sur le reliquat — sinon on réserverait du
+  // crédit que le coupon n'applique pas (crédit brûlé pour rien).
+  //
+  // On RÉSERVE le crédit AVANT de créer le coupon : le montant réservé ==
+  // la part crédit du coupon (jamais de sur-remise ni de crédit gratuit).
+  // `reservationId` (token) est porté par la session (metadata) puis le
   // paiement, et consommé à la confirmation. Best-effort strict.
   const reservationId = crypto.randomUUID();
   let discountCouponId: string | undefined;
   let creditReserved = false;
   if (routing.provider === 'stripe') {
+    const { discountMinor, creditBudgetMinor } = splitOrderDiscounts({
+      orderMinor: amountMinor,
+      buyerDiscountBps,
+      creditAvailableMinor: 0,
+    });
     try {
       const convex = getConvexServerClient();
-      const reserved = await convex.mutation(convexApi.reserveCreditForCheckout, {
-        userId: session.userId,
-        reservationId,
-        currency: routing.currency,
+      const reserved =
+        creditBudgetMinor > 0
+          ? await convex.mutation(convexApi.reserveCreditForCheckout, {
+              userId: session.userId,
+              reservationId,
+              currency: routing.currency,
+              orderMinor: creditBudgetMinor,
+            })
+          : { appliedMinor: 0 };
+      creditReserved = reserved.appliedMinor > 0;
+      const { couponMinor } = splitOrderDiscounts({
         orderMinor: amountMinor,
+        buyerDiscountBps,
+        creditAvailableMinor: reserved.appliedMinor,
       });
-      if (reserved.appliedMinor > 0) {
-        creditReserved = true;
-        discountCouponId = await createOneTimeAmountCoupon(reserved.appliedMinor, routing.currency);
+      if (couponMinor > 0) {
+        discountCouponId = await createOneTimeAmountCoupon(
+          couponMinor,
+          routing.currency,
+          discountMinor > 0 && creditReserved
+            ? 'referral_credit_and_discount'
+            : discountMinor > 0
+              ? 'affiliate_discount'
+              : 'referral_credit',
+        );
       }
     } catch {
       // reserve OU création du coupon a échoué → relâche si on avait réservé.

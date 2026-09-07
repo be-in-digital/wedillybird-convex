@@ -3,6 +3,7 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { captureServer, EVENTS } from '@/lib/analytics/posthog-server';
 import { getPaymentDriver } from '@/lib/payments';
 import type { ProviderName } from '@/lib/payments/country';
+import { taxExclusiveMinor } from '@/lib/payments/vat';
 import {
   verifyAndParseSubscriptionWebhook,
   parseBudgetPaymentWebhook,
@@ -294,6 +295,13 @@ export async function POST(
         provider,
         providerSessionId: event.providerSessionId,
         providerEventId: event.providerEventId,
+        // Encaissement réel (après remise), et son équivalent HORS TAXES qui
+        // sert d'assiette à la commission d'affiliation — la TVA n'est pas un
+        // revenu. Le code promo tapé rattrape l'attribution quand l'acheteur
+        // n'a pas cliqué le lien `?ref=` du partenaire.
+        netMinor: event.amountMinor,
+        commissionBaseMinor: taxExclusiveMinor(event.amountMinor, event.currency),
+        promotionCode: event.promotionCode,
       });
 
       // Analytics serveur : event de revenu `purchase_completed`. On ne le tire

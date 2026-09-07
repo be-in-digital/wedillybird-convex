@@ -62,10 +62,110 @@ Reproduire `.env.local` sur Vercel → Project Settings → Environment Variable
 
 ### PDF facture (post-Sprint 6) ✅ livré
 - `@react-pdf/renderer` installé.
-- Composant `lib/payments/invoice.tsx` (`<InvoicePDF payment={...} />`) — en-tête Wedillybird, bloc émetteur/client, ligne plan, TVA 20 % isolée pour EUR, mention "TVA non applicable, art. 293 B du CGI" pour XOF/MAD/TND, footer mentions légales + provider.
+- Composant `lib/payments/invoice.tsx` (`<InvoicePDF payment={...} />`) — en-tête Wedillybird, bloc émetteur/client, ligne plan, mention de TVA, footer mentions légales + provider. Le taux vient de `lib/payments/vat.ts` : **20 % sur l'EUR, 0 hors zone euro**. L'identité de l'émetteur (dénomination, SIREN, TVA intracom., siège) vient de `lib/legal/entity.ts` et non des fichiers de messages — un SIREN ne se traduit pas.
 - Route `app/api/payments/[paymentId]/invoice.pdf/route.tsx` (GET) — auth session, query Convex `paymentsInvoice:getForInvoice` (ownership = buyer OR event owner), 200 `application/pdf` attachment idempotent.
 - Strings i18n dans `messages/fr.json` section `Invoice`.
 - Tests : `tests/unit/lib/invoice-pdf.test.tsx` (composant + buildInvoiceNumber) + `tests/unit/app/invoice-pdf-route.test.tsx` (401/403/404/200).
+
+## Affiliation / partenariats créatrices
+
+Le ledger (`convex/affiliate.ts`, `affiliates` + `affiliateReferrals`) est en
+place depuis la PR #68. Le lot « partnership readiness » ferme les trois trous
+qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
+
+### Livré
+- **Un code qui remise ET attribue** : `buyerDiscountBps` était persisté sur
+  l'affilié mais jamais lu au checkout. Il est désormais appliqué
+  (`lib/payments/affiliate-discount.ts`), fusionné avec un éventuel crédit de
+  parrainage dans un coupon Stripe unique (`discounts` n'en accepte qu'un).
+- **Rattrapage d'attribution** : un acheteur qui TAPE le code au checkout (sans
+  cookie `wdb_ref`) est rattaché au partenaire — le code promo est relu depuis
+  la session Stripe et résolu en affilié dans `payments:markSucceeded`.
+- **Commission sur le net réel** : `applyReferral` recevait le prix catalogue,
+  ce qui surévaluait la commission dès qu'une remise s'appliquait. Le montant
+  vient maintenant de `amount_total`, sur les trois chemins de confirmation
+  (webhook, cron de réconciliation, page de succès).
+- **Forfait offert** : `admin:grantEventPlan` / `revokeEventPlan` posent
+  `planTier` sans passer par Stripe (partenariat, démo, geste commercial),
+  tracés par `events.compedPlan` + journal d'audit. La révocation refuse tout
+  event portant un paiement `succeeded`.
+- **Versement** : `affiliate:markReferralPaid` + bouton « Marquer versé » dans
+  `/admin/affiliates` — le ledger a enfin une sortie de `vested`.
+- **Espace partenaire** `/partenaire` : le partenaire voit SON lien, ses ventes
+  et son dû (lecture scopée `by_owner`, aucune donnée acheteur exposée).
+- **CGU du programme** : `/legal/affiliation` (11 articles, 7 locales, page
+  publique et indexable — une créatrice doit pouvoir les lire AVANT d'accepter,
+  alors qu'elle n'a pas encore de compte ; l'espace partenaire y renvoie).
+  Chiffres tirés du code, et `tests/unit/lib/affiliation-terms.test.ts` échoue
+  si une constante bouge sans que le texte suive.
+  **Paramètres commerciaux à valider par le fondateur** (choisis par défaut,
+  modifiables) : versement mensuel sur facture sous 30 j, seuil minimum 50 €,
+  préavis de 30 j pour toute modification des conditions.
+  **Régime TVA (2026-09-07, décision fondateur) : ASSUJETTIE.** L'exploitation
+  passe sur la société Tuum Agency (SIREN 930 817 697), qui facture la TVA.
+  `INCLUSIVE_VAT_RATES.EUR = 0.2` : les prix EUR affichés sont TTC, la facture
+  isole HT + TVA, et l'assiette de commission partenaire descend au HT.
+  Les devises hors zone euro (USD, XOF, MAD, TND) restent à 0 — la devise suit
+  le pays de facturation, donc un client hors UE n'est pas taxable en France ;
+  la facture porte la mention correspondante, plus aucune référence à 293 B.
+  **Conséquence chiffrée** : sur un Premium à 59 € TTC, 9,83 € partent en TVA,
+  la commission partenaire tombe de 11,80 € à 9,83 €, et le net encaissé passe
+  de 59 € à 49,17 €. Les prix affichés n'ont **pas** été relevés — à trancher
+  si la marge doit être préservée (côté Stripe, hors de ce dépôt).
+  **Limite connue** : l'EUR ne distingue pas la France du reste de la zone
+  euro. Sous le seuil OSS de 10 000 €/an de ventes B2C intracommunautaires, la
+  TVA française s'applique — au-delà, il faudra un taux par pays de
+  facturation et non par devise.
+  **Bloqueur restant : mentions d'identité incomplètes.** `lib/legal/entity.ts`
+  porte la dénomination, le SIREN (clé de Luhn vérifiée) et la TVA
+  intracommunautaire FR31930817697 (clé recalculée depuis le SIREN par un
+  test). Manquent encore, et `pendingLegalFields()` les énumère : **SIRET**
+  (le NIC n'est pas déductible du SIREN), **forme juridique**, **capital
+  social**, **adresse du siège**, **ville du RCS**, **directeur de
+  publication**. La fiche Infogreffe n'est pas lisible depuis l'environnement
+  d'exécution (egress bloqué) — un avis de situation SIRENE suffirait. Tant que
+  la liste n'est pas vide, la facture omet ces lignes (elle n'imprime **pas**
+  de gabarit) et aucune page `/legal/mentions` n'est publiée : la construire
+  avec une adresse manquante serait une non-conformité visible.
+
+  **Assiette (2026-09-07) : HORS TAXES.** La commission portait sur le
+  montant encaissé TTC (`amount_total`), donc sur de la TVA reversée à l'État.
+  Elle porte désormais sur le HT : `lib/payments/vat.ts` est la source unique de
+  la règle, partagée avec la facture (`invoice.tsx`) pour qu'un partenaire qui
+  recalcule depuis la facture d'un couple tombe sur notre chiffre. Stripe ne
+  calcule aucune taxe sur ce compte (ni `automatic_tax`, ni `tax_behavior`),
+  d'où une déduction par taux plutôt qu'une lecture d'`amount_tax`. L'assiette
+  est STOCKÉE (`affiliateReferrals.commissionBaseMinor`) pour rester auditable
+  si le taux change, et affichée dans le ledger admin.
+  Depuis l'assujettissement, l'assiette diffère RÉELLEMENT de l'encaissé :
+  l'article 5 des CGU porte un exemple chiffré (59 € TTC → 49,17 € HT →
+  9,83 €) que `tests/unit/lib/affiliation-terms.test.ts` recalcule depuis le
+  code, pour qu'un exemple faux dans un contrat ne survive pas à un changement
+  de prix ou de taux.
+  Les CGU n'ont **pas** été relues par un juriste.
+- **Coupon Stripe auto** : `adminCreateAffiliateAction` crée le coupon + le code
+  promo Stripe sous la MÊME chaîne que `affiliates.code` dès que
+  `buyerDiscountBps > 0`, restreint aux produits couple (`applies_to.products`,
+  immuable — on refuse plutôt que de créer trop large). Un seul code circule
+  donc vraiment : par le lien il attribue en silence, tapé au checkout il
+  remise ET attribue (rattrapage via `markSucceeded`). Le code est affiché au
+  partenaire dans `/partenaire`, à côté de son lien — mais seulement s'il est
+  réellement accepté au checkout (`shareable`), pour ne jamais lui faire
+  promettre un code que Stripe refuserait. L'activation du code promo suit
+  celle de l'affilié, et `adminEnsureAffiliateCouponAction` rattrape un échec
+  Stripe ou un affilié ouvert avant cette bascule.
+
+### Reste à faire
+- **`scripts/create-affiliate-code.ts` redondant** — il crée un coupon Stripe
+  SANS ligne d'affilié côté Convex (attribution au compteur `times_redeemed`,
+  commission calculée à la main). Le chemin `/admin/affiliates` fait mieux et
+  branche le ledger. À supprimer une fois qu'on est sûr qu'aucun code créé par
+  ce script n'est encore en circulation.
+- **Versement automatisé** (Stripe Connect Express pour les partenaires cash) —
+  aujourd'hui virement manuel, acté a posteriori dans le ledger. Suffisant à
+  1-2 partenaires, pas au-delà.
+- **Notification partenaire** (« nouvelle vente attribuée », « commission
+  acquise ») — rien n'est envoyé, le partenaire doit venir voir la page.
 
 ## Multi-utilisateurs (post-Sprint 7)
 

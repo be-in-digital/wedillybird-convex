@@ -15,7 +15,7 @@ import {
   type MutationCtx,
   type QueryCtx,
 } from './_generated/server';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import {
   DEFAULT_RATE_BPS,
   isRewardConfigSafe,
@@ -29,6 +29,7 @@ import {
   canReverse,
   generateReferralCode,
   selectReferralsToConsume,
+  type ReferralStatus,
 } from './lib/affiliate';
 
 /** Garde admin (miroir de `admin.ts`, volontairement convex-local). */
@@ -107,23 +108,91 @@ export const setAffiliateStatus = mutation({
   },
 });
 
+/**
+ * Rattache le coupon + code promo Stripe créés pour un affilié.
+ *
+ * L'appel Stripe vit côté app (Convex ne peut pas sortir sur le réseau depuis
+ * une mutation), donc la séquence est : créer l'affilié ici (source de vérité,
+ * qui garantit l'unicité du code), créer le coupon côté Stripe, puis rattacher
+ * les ids avec cette mutation. Si Stripe échoue, l'affilié reste utilisable —
+ * son lien `?ref=` attribue toujours — et l'admin peut relancer la création.
+ */
+export const setAffiliateStripeCoupon = mutation({
+  args: {
+    adminId: v.id('users'),
+    affiliateId: v.id('affiliates'),
+    stripeCouponId: v.string(),
+    stripePromotionCodeId: v.string(),
+  },
+  handler: async (ctx, { adminId, affiliateId, stripeCouponId, stripePromotionCodeId }) => {
+    await assertAdmin(ctx, adminId);
+    const aff = await ctx.db.get(affiliateId);
+    if (!aff) throw new Error('AFFILIATE_NOT_FOUND');
+    await ctx.db.patch(affiliateId, {
+      stripeCouponId,
+      stripePromotionCodeId,
+      updatedAt: Date.now(),
+    });
+    return { ok: true };
+  },
+});
+
+/**
+ * Lecture admin d'un affilié — sert à la création différée du coupon Stripe
+ * (on a besoin du code et du taux de remise côté server action).
+ */
+export const getAffiliateForAdmin = query({
+  args: { adminId: v.id('users'), affiliateId: v.id('affiliates') },
+  handler: async (ctx, { adminId, affiliateId }) => {
+    await assertAdmin(ctx, adminId);
+    const aff = await ctx.db.get(affiliateId);
+    if (!aff) return null;
+    return {
+      id: aff._id,
+      code: aff.code,
+      kind: aff.kind,
+      buyerDiscountBps: aff.buyerDiscountBps,
+      displayName: aff.displayName ?? null,
+      status: aff.status,
+      stripeCouponId: aff.stripeCouponId ?? null,
+      stripePromotionCodeId: aff.stripePromotionCodeId ?? null,
+    };
+  },
+});
+
 /* ============================ Attribution ============================ */
 
 /**
+ * Résout un code saisi (`?ref=CODE` ou code promo tapé au checkout) vers
+ * l'affilié ACTIF correspondant. Helper partagé — réutilisé par la query
+ * publique du checkout ET par `markSucceeded` (rattrapage d'attribution quand
+ * l'acheteur a tapé le code au lieu de cliquer le lien).
+ */
+export async function findActiveAffiliateByCode(
+  ctx: QueryCtx,
+  code: string,
+): Promise<Doc<'affiliates'> | null> {
+  const normalized = normalizeAffiliateCode(code);
+  if (!isValidAffiliateCode(normalized)) return null;
+  const aff = await ctx.db
+    .query('affiliates')
+    .withIndex('by_code', (q) => q.eq('code', normalized))
+    .first();
+  if (!aff || aff.status !== 'active') return null;
+  return aff;
+}
+
+/**
  * Résout un code (`?ref=CODE`) vers l'affilié actif — utilisé au checkout pour
- * poser `metadata.affiliateId` sur la Session. Ne révèle que le strict
- * nécessaire (jamais d'infos internes).
+ * poser `metadata.affiliateId` sur la Session ET pour appliquer la remise
+ * filleul (`buyerDiscountBps`). Ne révèle que le strict nécessaire (jamais
+ * d'infos internes).
  */
 export const getAffiliateByCode = query({
   args: { code: v.string() },
   handler: async (ctx, { code }) => {
-    const normalized = normalizeAffiliateCode(code);
-    if (!isValidAffiliateCode(normalized)) return null;
-    const aff = await ctx.db
-      .query('affiliates')
-      .withIndex('by_code', (q) => q.eq('code', normalized))
-      .first();
-    if (!aff || aff.status !== 'active') return null;
+    const aff = await findActiveAffiliateByCode(ctx, code);
+    if (!aff) return null;
     return {
       id: aff._id,
       code: aff.code,
@@ -148,6 +217,8 @@ export async function applyReferral(
     sourceSessionId: string;
     grossMinor: number;
     netMinor: number;
+    /** Assiette HT de la commission. Absente → repli sur `netMinor` (legacy). */
+    commissionBaseMinor?: number;
     currency: string;
     purchasedAt: number;
     eventDate?: number;
@@ -182,6 +253,13 @@ export async function applyReferral(
   }
 
   const now = Date.now();
+  // La commission porte sur le HT. Sans assiette fournie (webhook d'une version
+  // antérieure, provider mock), on retombe sur le net encaissé : le
+  // comportement historique, jamais une erreur de calcul silencieuse.
+  const base =
+    args.commissionBaseMinor !== undefined && args.commissionBaseMinor >= 0
+      ? args.commissionBaseMinor
+      : args.netMinor;
   const referralId = await ctx.db.insert('affiliateReferrals', {
     affiliateId: aff._id,
     code: aff.code,
@@ -191,8 +269,9 @@ export async function applyReferral(
     buyerUserId: args.buyerUserId,
     grossMinor: args.grossMinor,
     netMinor: args.netMinor,
+    commissionBaseMinor: base,
     currency: args.currency,
-    rewardMinor: rewardMinor(args.netMinor, aff.rateBps),
+    rewardMinor: rewardMinor(base, aff.rateBps),
     rewardType: aff.rewardType,
     status: 'pending',
     vestsAt: computeVestsAt(args.eventDate ?? Number.NaN, args.purchasedAt),
@@ -209,6 +288,7 @@ export const recordReferral = internalMutation({
     sourceSessionId: v.string(),
     grossMinor: v.number(),
     netMinor: v.number(),
+    commissionBaseMinor: v.optional(v.number()),
     currency: v.string(),
     purchasedAt: v.number(),
     eventDate: v.optional(v.number()),
@@ -287,6 +367,9 @@ export const listAffiliates = query({
       ownerEmail: a.ownerEmail ?? null,
       displayName: a.displayName ?? null,
       status: a.status,
+      /** Code promo Stripe rattaché → le code est saisissable au checkout. */
+      shareCode: a.stripePromotionCodeId ? a.code : null,
+      stripePromotionCodeId: a.stripePromotionCodeId ?? null,
       createdAt: a.createdAt,
     }));
   },
@@ -326,6 +409,8 @@ export const listReferrals = query({
       rewardType: r.rewardType,
       rewardMinor: r.rewardMinor,
       netMinor: r.netMinor,
+      /** Assiette HT réellement utilisée ; null sur les lignes antérieures. */
+      commissionBaseMinor: r.commissionBaseMinor ?? null,
       currency: r.currency,
       vestsAt: r.vestsAt,
       createdAt: r.createdAt,
@@ -662,5 +747,138 @@ export const releaseStaleCreditReservations = internalMutation({
       }
     }
     return { released };
+  },
+});
+
+/* ======================= Payout partenaire (cash) ======================= */
+
+/**
+ * Marque une commission `vested` comme VERSÉE (admin, après virement).
+ * Pendant du `markReferralSettled` interne, mais appelable depuis le
+ * back-office : sans ça, le ledger n'avait aucun moyen de sortir de `vested`
+ * pour un partenaire cash — les commissions s'empilaient en « dû » à vie.
+ *
+ * Idempotent (sans effet si déjà terminale) et tracé dans `adminAuditLog` :
+ * un versement d'argent réel doit laisser une trace nominative.
+ */
+export const markReferralPaid = mutation({
+  args: {
+    adminId: v.id('users'),
+    referralId: v.id('affiliateReferrals'),
+    /** Référence du virement (IBAN partiel, id de virement, n° de facture…). */
+    payoutReference: v.optional(v.string()),
+  },
+  handler: async (ctx, { adminId, referralId, payoutReference }) => {
+    await assertAdmin(ctx, adminId);
+    const ref = await ctx.db.get(referralId);
+    if (!ref) throw new Error('REFERRAL_NOT_FOUND');
+    if (ref.status !== 'vested') return { outcome: 'noop' as const, status: ref.status };
+
+    const now = Date.now();
+    await ctx.db.patch(referralId, {
+      status: settledStatusFor(ref.rewardType),
+      paidAt: now,
+      updatedAt: now,
+    });
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'mark_referral_paid',
+      targetType: 'affiliate',
+      targetId: referralId,
+      details: JSON.stringify({
+        code: ref.code,
+        rewardMinor: ref.rewardMinor,
+        currency: ref.currency,
+        rewardType: ref.rewardType,
+        ...(payoutReference ? { payoutReference } : {}),
+      }),
+      createdAt: now,
+    });
+    return { outcome: 'settled' as const, status: settledStatusFor(ref.rewardType) };
+  },
+});
+
+/* ======================= Espace partenaire (lecture) ======================= */
+
+/**
+ * Tableau de bord d'un partenaire : SES codes et SES commissions, rien d'autre.
+ *
+ * Volontairement scopé à `by_owner` — un partenaire ne voit jamais le ledger
+ * global (c'est `listReferrals`, réservé admin). Aucune donnée acheteur n'est
+ * exposée (ni nom, ni email, ni event) : le partenaire a besoin du montant et
+ * du statut, pas de l'identité de ses filleuls.
+ */
+export const partnerDashboard = query({
+  args: { userId: v.id('users') },
+  handler: async (ctx, { userId }) => {
+    const affiliates = await ctx.db
+      .query('affiliates')
+      .withIndex('by_owner', (q) => q.eq('ownerUserId', userId))
+      .collect();
+    const partners = affiliates.filter((a) => a.kind === 'partner');
+    if (partners.length === 0) return { isPartner: false as const };
+
+    type Row = {
+      id: Id<'affiliateReferrals'>;
+      code: string;
+      status: ReferralStatus;
+      rewardMinor: number;
+      netMinor: number;
+      currency: string;
+      vestsAt: number;
+      createdAt: number;
+    };
+    const rows: Row[] = [];
+    for (const aff of partners) {
+      const refs = await ctx.db
+        .query('affiliateReferrals')
+        .withIndex('by_affiliate', (q) => q.eq('affiliateId', aff._id))
+        .order('desc')
+        .take(500);
+      for (const r of refs) {
+        rows.push({
+          id: r._id,
+          code: r.code,
+          status: r.status,
+          rewardMinor: r.rewardMinor,
+          netMinor: r.netMinor,
+          currency: r.currency,
+          vestsAt: r.vestsAt,
+          createdAt: r.createdAt,
+        });
+      }
+    }
+    rows.sort((a, b) => b.createdAt - a.createdAt);
+
+    // Agrégats par devise × statut — le ledger ne convertit jamais, donc on
+    // additionne par devise native (un partenaire multi-marché verra 2 lignes).
+    const totals = new Map<string, { currency: string; status: ReferralStatus; minor: number }>();
+    for (const r of rows) {
+      if (r.status === 'reversed') continue;
+      const key = `${r.currency}:${r.status}`;
+      const prev = totals.get(key);
+      if (prev) prev.minor += r.rewardMinor;
+      else totals.set(key, { currency: r.currency, status: r.status, minor: r.rewardMinor });
+    }
+
+    return {
+      isPartner: true as const,
+      codes: partners.map((a) => ({
+        code: a.code,
+        rateBps: a.rateBps,
+        buyerDiscountBps: a.buyerDiscountBps,
+        status: a.status,
+        displayName: a.displayName ?? null,
+        /**
+         * Le code est-il RÉELLEMENT saisissable au checkout ? Vrai seulement
+         * si un code promo Stripe existe. Sans lui, afficher « partage ton
+         * code » serait un mensonge : l'audience taperait un code refusé.
+         */
+        shareable: Boolean(a.stripePromotionCodeId),
+      })),
+      referrals: rows.slice(0, 100),
+      totals: [...totals.values()],
+      salesCount: rows.filter((r) => r.status !== 'reversed').length,
+    };
   },
 });

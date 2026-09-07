@@ -5,10 +5,12 @@ import { internal } from './_generated/api';
 import { toIntlTag } from '../lib/i18n/locale-tags';
 import { assertOrgRead } from './lib/orgAuth';
 import { proTierAtLeast } from './lib/entitlements';
+import { MS_PER_DAY, POST_EVENT_UPSELL_RETENTION_DAYS, galleryExpiresAtFor } from './lib/eventPlan';
 import {
   applyReferral,
   ensureReferralAffiliate,
   consumeCreditReservation,
+  findActiveAffiliateByCode,
   releaseCreditReservation,
 } from './affiliate';
 
@@ -28,12 +30,7 @@ const PLAN = v.union(v.literal('essential'), v.literal('premium'));
 
 // Gallery retention is feature-based now: Essentiel = J+30, Premium = J+180.
 // Post-event upsell pushes this to J+5y (cf. extendRetentionPostEvent below).
-const GALLERY_RETENTION_DAYS: Record<'essential' | 'premium', number> = {
-  essential: 30,
-  premium: 180,
-};
-const POST_EVENT_UPSELL_RETENTION_DAYS = 5 * 365;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+// Règle partagée avec `admin:grantEventPlan` (forfait offert) — cf. lib/eventPlan.
 
 // keep in sync with lib/payments/reconcile.ts
 // `convex/` and `lib/` cannot import each other (separate tsconfig projects),
@@ -54,7 +51,7 @@ function computeEventReconciliation(input: {
   now: number;
 }): ReconciliationPatch | null {
   const { event, payment, now } = input;
-  const expectedExpiresAt = event.eventDate + GALLERY_RETENTION_DAYS[payment.plan] * MS_PER_DAY;
+  const expectedExpiresAt = galleryExpiresAtFor(payment.plan, event.eventDate);
   const needsUpdate =
     event.planTier !== payment.plan ||
     event.paidAt === undefined ||
@@ -125,8 +122,40 @@ export const markSucceeded = mutation({
     provider: PROVIDER,
     providerSessionId: v.string(),
     providerEventId: v.string(),
+    /**
+     * Montant RÉELLEMENT encaissé d'après le provider (après coupon / code
+     * promo). Base de calcul de la commission d'affiliation — `payment.amountMinor`
+     * est le prix catalogue, qui surévaluait la commission dès qu'une remise
+     * s'appliquait. Absent (webhook legacy / provider mock) → repli sur le
+     * montant du paiement, comportement historique.
+     */
+    netMinor: v.optional(v.number()),
+    /**
+     * Assiette HORS TAXES de la commission d'affiliation, calculée côté app
+     * (`lib/payments/vat.ts`, la même règle que les factures). La TVA n'étant
+     * pas un revenu, la commissionner reviendrait à payer le partenaire dessus.
+     * Absente → repli sur `netMinor`.
+     */
+    commissionBaseMinor: v.optional(v.number()),
+    /**
+     * Code promo saisi au checkout. Rattrape l'attribution quand l'acheteur a
+     * TAPÉ le code d'un partenaire au lieu de cliquer son lien `?ref=` (aucun
+     * cookie `wdb_ref` → aucun `affiliateId` sur le paiement).
+     */
+    promotionCode: v.optional(v.string()),
   },
-  handler: async (ctx, { webhookSecret, provider, providerSessionId, providerEventId }) => {
+  handler: async (
+    ctx,
+    {
+      webhookSecret,
+      provider,
+      providerSessionId,
+      providerEventId,
+      netMinor,
+      commissionBaseMinor,
+      promotionCode,
+    },
+  ) => {
     assertWebhookSecret(webhookSecret);
     const payment = await ctx.db
       .query('payments')
@@ -191,13 +220,33 @@ export const markSucceeded = mutation({
     // marqué le paiement `succeeded` mais a échoué ici, le rejeu rattrape (le
     // crédit doit être consommé, sinon il reste dépensable). Best-effort strict —
     // ne DOIT jamais faire échouer la confirmation du paiement.
-    if (payment.affiliateId) {
+    //
+    // Rattrapage d'attribution : pas de cookie `wdb_ref` (l'acheteur a tapé le
+    // code au lieu de cliquer le lien) mais un code promo appliqué qui
+    // correspond à un affilié actif → on rattache le paiement AVANT de créditer
+    // le ledger. Sans ça, tout achat via code tapé perdait sa commission.
+    let attributedAffiliateId = payment.affiliateId;
+    if (!attributedAffiliateId && promotionCode) {
+      try {
+        const aff = await findActiveAffiliateByCode(ctx, promotionCode);
+        if (aff) {
+          attributedAffiliateId = aff._id;
+          await ctx.db.patch(payment._id, { affiliateId: aff._id, updatedAt: now });
+        }
+      } catch {
+        // best-effort — l'attribution ne bloque jamais la confirmation.
+      }
+    }
+
+    if (attributedAffiliateId) {
       try {
         await applyReferral(ctx, {
-          affiliateId: payment.affiliateId,
+          affiliateId: attributedAffiliateId,
           sourceSessionId: payment.providerSessionId,
           grossMinor: payment.amountMinor,
-          netMinor: payment.amountMinor,
+          // Commission assise sur l'encaissement réel, pas sur le catalogue.
+          netMinor: netMinor !== undefined && netMinor >= 0 ? netMinor : payment.amountMinor,
+          commissionBaseMinor,
           currency: payment.currency,
           purchasedAt: now,
           eventDate: event?.eventDate,

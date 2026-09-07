@@ -10,6 +10,9 @@ const stripeMock = {
   webhooks: {
     constructEvent: vi.fn(),
   },
+  promotionCodes: {
+    retrieve: vi.fn(),
+  },
 };
 
 vi.mock('stripe', () => ({
@@ -27,6 +30,7 @@ beforeEach(() => {
   stripeMock.checkout.sessions.create.mockReset();
   stripeMock.checkout.sessions.retrieve.mockReset();
   stripeMock.webhooks.constructEvent.mockReset();
+  stripeMock.promotionCodes.retrieve.mockReset();
   vi.resetModules();
 });
 
@@ -254,5 +258,141 @@ describe('payments/drivers/stripe — retrieveSessionStatus', () => {
     const result = await stripeDriver.retrieveSessionStatus('cs_xof');
     expect(result.amountMinor).toBe(3200000);
     expect(result.currency).toBe('XOF');
+  });
+});
+
+/**
+ * Attribution partenaire quand l'acheteur TAPE le code au checkout au lieu de
+ * cliquer le lien `?ref=` : aucun cookie n'est posé, donc le seul indice
+ * restant est le code promo porté par la session. Dans un payload de webhook,
+ * `discounts[].promotion_code` est un ID (`promo_…`) — il faut le résoudre.
+ */
+describe('payments/drivers/stripe — code promo remonté pour l’attribution', () => {
+  it('résout l’ID de code promo en code lisible', async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_promo',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_promo',
+          currency: 'eur',
+          amount_total: 5310,
+          payment_status: 'paid',
+          discounts: [{ promotion_code: 'promo_123' }],
+        },
+      },
+    });
+    stripeMock.promotionCodes.retrieve.mockResolvedValue({ id: 'promo_123', code: 'SARAH' });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    const result = await stripeDriver.verifyAndParseWebhook('{}', 'sig');
+    expect(stripeMock.promotionCodes.retrieve).toHaveBeenCalledWith('promo_123');
+    expect(result.promotionCode).toBe('SARAH');
+    // Le net encaissé (après remise) est bien ce qui remonte, pas le catalogue.
+    expect(result.amountMinor).toBe(5310);
+  });
+
+  it('accepte un code promo déjà développé sans rappeler l’API', async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_promo2',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_promo2',
+          currency: 'eur',
+          amount_total: 5310,
+          payment_status: 'paid',
+          discounts: [{ promotion_code: { id: 'promo_9', code: 'SARAH' } }],
+        },
+      },
+    });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    const result = await stripeDriver.verifyAndParseWebhook('{}', 'sig');
+    expect(result.promotionCode).toBe('SARAH');
+    expect(stripeMock.promotionCodes.retrieve).not.toHaveBeenCalled();
+  });
+
+  it('sans code promo : champ absent, aucun appel API', async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_plain',
+      type: 'checkout.session.completed',
+      data: {
+        object: { id: 'cs_plain', currency: 'eur', amount_total: 5900, payment_status: 'paid' },
+      },
+    });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    const result = await stripeDriver.verifyAndParseWebhook('{}', 'sig');
+    expect(result.promotionCode).toBeUndefined();
+    expect(stripeMock.promotionCodes.retrieve).not.toHaveBeenCalled();
+  });
+
+  it('une erreur Stripe ne fait jamais échouer la confirmation du paiement', async () => {
+    // Perdre l'attribution est regrettable ; perdre le paiement serait pire.
+    stripeMock.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_boom',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_boom',
+          currency: 'eur',
+          amount_total: 5900,
+          payment_status: 'paid',
+          discounts: [{ promotion_code: 'promo_dead' }],
+        },
+      },
+    });
+    stripeMock.promotionCodes.retrieve.mockRejectedValue(new Error('stripe down'));
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    const result = await stripeDriver.verifyAndParseWebhook('{}', 'sig');
+    expect(result.status).toBe('succeeded');
+    expect(result.promotionCode).toBeUndefined();
+  });
+});
+
+describe('payments/drivers/stripe — session à 0 € (coupon 100 %)', () => {
+  it('compte comme payée quand la session est complete et sans montant dû', async () => {
+    // Stripe marque `no_payment_required` (pas `paid`) : sans ce cas, la
+    // réconciliation de secours voyait un accès offert comme impayé à vie.
+    stripeMock.checkout.sessions.retrieve.mockResolvedValue({
+      id: 'cs_free',
+      status: 'complete',
+      payment_status: 'no_payment_required',
+      amount_total: 0,
+      currency: 'eur',
+    });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    const status = await stripeDriver.retrieveSessionStatus('cs_free');
+    expect(status.paid).toBe(true);
+    expect(status.amountMinor).toBe(0);
+  });
+
+  it('une session ouverte sans montant dû n’est PAS considérée payée', async () => {
+    stripeMock.checkout.sessions.retrieve.mockResolvedValue({
+      id: 'cs_open',
+      status: 'open',
+      payment_status: 'no_payment_required',
+      amount_total: 0,
+      currency: 'eur',
+    });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    expect((await stripeDriver.retrieveSessionStatus('cs_open')).paid).toBe(false);
+  });
+
+  it('une session impayée reste impayée', async () => {
+    stripeMock.checkout.sessions.retrieve.mockResolvedValue({
+      id: 'cs_unpaid',
+      status: 'complete',
+      payment_status: 'unpaid',
+      amount_total: 5900,
+      currency: 'eur',
+    });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    expect((await stripeDriver.retrieveSessionStatus('cs_unpaid')).paid).toBe(false);
   });
 });

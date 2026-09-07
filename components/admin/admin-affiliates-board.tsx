@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Handshake, Loader2, Plus } from 'lucide-react';
 import {
   adminCreateAffiliateAction,
+  adminEnsureAffiliateCouponAction,
+  adminMarkReferralPaidAction,
   adminSetAffiliateStatusAction,
 } from '@/app/[locale]/(app)/admin/actions';
 
@@ -18,6 +20,9 @@ interface Affiliate {
   ownerEmail: string | null;
   displayName: string | null;
   status: 'active' | 'disabled';
+  /** Code réellement saisissable au checkout (code promo Stripe créé). */
+  shareCode: string | null;
+  stripePromotionCodeId: string | null;
   createdAt: number;
 }
 
@@ -29,6 +34,7 @@ interface Referral {
   rewardType: 'credit' | 'cash';
   rewardMinor: number;
   netMinor: number;
+  commissionBaseMinor: number | null;
   currency: string;
   vestsAt: number;
   createdAt: number;
@@ -95,6 +101,14 @@ export function AdminAffiliatesBoard({
         setError(res.error);
         return;
       }
+      // Affilié créé mais coupon Stripe en échec : le lien attribue déjà, seul
+      // le code saisissable manque. On le dit plutôt que d'afficher un succès
+      // qui laisserait croire que le code est partageable.
+      if (res.couponError) {
+        setError(
+          `Affilié créé, mais code promo Stripe NON créé (${res.couponError}). Relance « Créer le code ».`,
+        );
+      }
       setCode('');
       setOwnerEmail('');
       setDisplayName('');
@@ -105,6 +119,46 @@ export function AdminAffiliatesBoard({
   function toggle(a: Affiliate) {
     startTransition(async () => {
       await adminSetAffiliateStatusAction(a.id, a.status === 'active' ? 'disabled' : 'active');
+      router.refresh();
+    });
+  }
+
+  /**
+   * Rattrapage : crée le code promo Stripe d'un affilié qui n'en a pas encore
+   * (échec réseau à la création, ou affilié ouvert avant que la création
+   * automatique n'existe).
+   */
+  function ensureCoupon(a: Affiliate) {
+    setError(null);
+    startTransition(async () => {
+      const res = await adminEnsureAffiliateCouponAction(a.id);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  /**
+   * Versement d'une commission acquise. Le virement lui-même est manuel (hors
+   * app) ; ce bouton acte le versement dans le ledger — sans lui, une
+   * commission `vested` restait due indéfiniment, aucune sortie de statut
+   * n'étant exposée au back-office.
+   */
+  function markPaid(r: Referral) {
+    setError(null);
+    const reference = window.prompt(
+      `Marquer ${fmtMinor(r.rewardMinor, r.currency)} (${r.code}) comme versé.\n\nRéférence du virement (facultatif) :`,
+      '',
+    );
+    if (reference === null) return;
+    startTransition(async () => {
+      const res = await adminMarkReferralPaidAction(r.id, reference.trim() || undefined);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
       router.refresh();
     });
   }
@@ -277,6 +331,7 @@ export function AdminAffiliatesBoard({
                 <th className="px-4 py-2.5">Type</th>
                 <th className="px-4 py-2.5">Récompense</th>
                 <th className="px-4 py-2.5">Comm. / Remise</th>
+                <th className="px-4 py-2.5">Code partageable</th>
                 <th className="px-4 py-2.5">Contact</th>
                 <th className="px-4 py-2.5">Statut</th>
                 <th className="px-4 py-2.5" />
@@ -292,6 +347,27 @@ export function AdminAffiliatesBoard({
                   <td className="px-4 py-2.5">{a.rewardType === 'credit' ? 'Crédit' : 'Cash'}</td>
                   <td className="px-4 py-2.5">
                     {a.rateBps / 100}% / {a.buyerDiscountBps / 100}%
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {a.shareCode ? (
+                      <span className="font-mono">{a.shareCode}</span>
+                    ) : a.buyerDiscountBps > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => ensureCoupon(a)}
+                        disabled={pending}
+                        className="rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs disabled:opacity-50"
+                      >
+                        Créer le code
+                      </button>
+                    ) : (
+                      <span
+                        className="text-[color:var(--color-ink-500)]"
+                        title="Sans remise filleul, il n'y a rien à faire taper au checkout — seul le lien attribue."
+                      >
+                        lien seul
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
                     {a.displayName ?? a.ownerEmail ?? '—'}
@@ -343,9 +419,11 @@ export function AdminAffiliatesBoard({
               <tr>
                 <th className="px-4 py-2.5">Code</th>
                 <th className="px-4 py-2.5">Vente (net)</th>
+                <th className="px-4 py-2.5">Assiette HT</th>
                 <th className="px-4 py-2.5">Récompense</th>
                 <th className="px-4 py-2.5">Statut</th>
                 <th className="px-4 py-2.5">Acquis le</th>
+                <th className="px-4 py-2.5">Versement</th>
               </tr>
             </thead>
             <tbody>
@@ -353,6 +431,13 @@ export function AdminAffiliatesBoard({
                 <tr key={r.id} className="border-t border-[color:var(--color-border)]">
                   <td className="px-4 py-2.5 font-mono">{r.code}</td>
                   <td className="px-4 py-2.5">{fmtMinor(r.netMinor, r.currency)}</td>
+                  {/* Ce sur quoi la commission a réellement été calculée : c'est
+                      ici qu'on tranche un litige sur un montant. */}
+                  <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
+                    {r.commissionBaseMinor === null
+                      ? '—'
+                      : fmtMinor(r.commissionBaseMinor, r.currency)}
+                  </td>
                   <td className="px-4 py-2.5 font-medium">
                     {fmtMinor(r.rewardMinor, r.currency)}
                     <span className="ml-1 text-[color:var(--color-ink-500)]">
@@ -363,12 +448,26 @@ export function AdminAffiliatesBoard({
                   <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
                     {new Date(r.vestsAt).toLocaleDateString('fr-FR')}
                   </td>
+                  <td className="px-4 py-2.5">
+                    {r.status === 'vested' ? (
+                      <button
+                        type="button"
+                        onClick={() => markPaid(r)}
+                        disabled={pending}
+                        className="rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs font-medium transition-colors hover:bg-[color:var(--color-surface)] disabled:opacity-50"
+                      >
+                        Marquer versé
+                      </button>
+                    ) : (
+                      <span className="text-[color:var(--color-ink-500)]">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {referrals.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={7}
                     className="px-4 py-8 text-center text-sm text-[color:var(--color-ink-500)]"
                   >
                     Aucune attribution pour l&apos;instant.

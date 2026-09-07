@@ -29,6 +29,9 @@ const ROUTES: ReadonlyArray<RouteConfig> = [
   { path: '/legal/terms', priority: 0.5, changeFrequency: 'yearly' },
   { path: '/legal/privacy', priority: 0.5, changeFrequency: 'yearly' },
   { path: '/legal/cookies', priority: 0.5, changeFrequency: 'yearly' },
+  // Programme sur invitation, mais page publique et indexable : une créatrice
+  // doit pouvoir lire les conditions AVANT d'accepter, sans compte.
+  { path: '/legal/affiliation', priority: 0.4, changeFrequency: 'yearly' },
 ];
 
 function localizedUrl(baseUrl: string, locale: string, path: string): string {
