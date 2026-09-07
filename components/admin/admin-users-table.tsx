@@ -15,6 +15,7 @@ import { useServerAction } from '@/components/admin/use-admin-action';
 import {
   adminSuspendUserAction,
   adminChangeUserRoleAction,
+  adminSetAffiliateOwnerAction,
 } from '@/app/[locale]/(app)/admin/actions';
 
 type User = {
@@ -26,6 +27,23 @@ type User = {
   planTier?: string;
   createdAt: number;
   lastSeenAt?: number;
+  /**
+   * Affilié rattaché à ce compte. Un partenaire peut être aussi bien un couple
+   * qu'une agence : c'est pour cela que le rôle ne suffit pas à le repérer.
+   */
+  affiliate?: {
+    id: string;
+    code: string;
+    kind: 'referral' | 'partner';
+    status: 'active' | 'disabled';
+  } | null;
+};
+
+type PartnerCode = {
+  id: string;
+  code: string;
+  displayName: string | null;
+  ownerEmail: string | null;
 };
 
 const ROLE_VARIANT: Record<string, 'neutral' | 'primary' | 'accent' | 'warning' | 'destructive'> = {
@@ -35,19 +53,35 @@ const ROLE_VARIANT: Record<string, 'neutral' | 'primary' | 'accent' | 'warning' 
   admin: 'warning',
 };
 
-export function AdminUsersTable({ users }: { users: User[] }) {
+export function AdminUsersTable({
+  users,
+  partnerCodes = [],
+}: {
+  users: User[];
+  partnerCodes?: PartnerCode[];
+}) {
   const t = useTranslations('Admin');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [partnersOnly, setPartnersOnly] = useState(false);
+
+  // Codes partenaire encore libres : proposer un code déjà rattaché ailleurs
+  // ne mènerait qu'à un refus serveur (`USER_ALREADY_HAS_AFFILIATE`).
+  const takenAffiliateIds = new Set(
+    users.map((u) => u.affiliate?.id).filter((id): id is string => Boolean(id)),
+  );
+  const freeCodes = partnerCodes.filter((c) => !takenAffiliateIds.has(c.id));
 
   const filtered = users.filter((u) => {
     const matchSearch =
       !search ||
       u.fullName?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase()) ||
-      u.phone?.includes(search);
+      u.phone?.includes(search) ||
+      u.affiliate?.code.toLowerCase().includes(search.toLowerCase());
     const matchRole = roleFilter === 'all' || u.role === roleFilter;
-    return matchSearch && matchRole;
+    const matchPartner = !partnersOnly || u.affiliate?.kind === 'partner';
+    return matchSearch && matchRole && matchPartner;
   });
 
   return (
@@ -72,6 +106,16 @@ export function AdminUsersTable({ users }: { users: User[] }) {
             <SelectItem value="admin">{t('roles.admin')}</SelectItem>
           </SelectContent>
         </Select>
+        <label className="flex items-center gap-2 text-sm text-[color:var(--color-foreground)]">
+          <input
+            type="checkbox"
+            checked={partnersOnly}
+            onChange={(e) => setPartnersOnly(e.target.checked)}
+            className="h-4 w-4"
+            data-testid="filter-partners-only"
+          />
+          {t('users.partnersOnly')}
+        </label>
         <span className="font-mono text-xs text-[color:var(--color-muted-foreground)]">
           {t('users.count', { count: filtered.length })}
         </span>
@@ -85,13 +129,14 @@ export function AdminUsersTable({ users }: { users: User[] }) {
               <Th>{t('users.colContact')}</Th>
               <Th>{t('users.colRole')}</Th>
               <Th>{t('users.colPlan')}</Th>
+              <Th>{t('users.colPartner')}</Th>
               <Th>{t('users.colRegisteredAt')}</Th>
               <Th>{t('common.colActions')}</Th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((u) => (
-              <UserRow key={u._id} user={u} />
+              <UserRow key={u._id} user={u} freeCodes={freeCodes} />
             ))}
           </tbody>
         </table>
@@ -108,11 +153,12 @@ function Th({ children }: { children: React.ReactNode }) {
   );
 }
 
-function UserRow({ user }: { user: User }) {
+function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) {
   const t = useTranslations('Admin');
   const locale = useLocale();
   const { execute: suspend, loading: suspending } = useServerAction(adminSuspendUserAction);
   const { execute: changeRole, loading: changing } = useServerAction(adminChangeUserRoleAction);
+  const { execute: setOwner, loading: attaching } = useServerAction(adminSetAffiliateOwnerAction);
   const { confirm, confirmDialog } = useConfirm();
 
   return (
@@ -130,6 +176,51 @@ function UserRow({ user }: { user: User }) {
         </td>
         <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
           {user.planTier ?? '—'}
+        </td>
+        <td className="px-4 py-3">
+          {user.affiliate ? (
+            <div className="flex flex-col items-start gap-1">
+              <Badge variant={user.affiliate.kind === 'partner' ? 'accent' : 'neutral'}>
+                {user.affiliate.code}
+              </Badge>
+              {/* Seul un partenariat se détache ici : le code de parrainage
+                  particulier est créé PAR le compte du parrain, le détacher
+                  laisserait une ligne orpheline. */}
+              {user.affiliate.kind === 'partner' ? (
+                <button
+                  onClick={async () => {
+                    if (await confirm({ title: t('users.confirmDetachPartner') })) {
+                      setOwner(user.affiliate!.id, null);
+                    }
+                  }}
+                  disabled={attaching}
+                  className="text-[11px] text-[color:var(--color-muted-foreground)] underline underline-offset-2 disabled:opacity-50"
+                >
+                  {t('users.detachPartner')}
+                </button>
+              ) : null}
+            </div>
+          ) : freeCodes.length > 0 ? (
+            <Select
+              value=""
+              disabled={attaching}
+              onValueChange={(affiliateId) => setOwner(affiliateId, user._id)}
+            >
+              <SelectTrigger className="rounded-md border border-[color:var(--color-border)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-muted-foreground)]">
+                <SelectValue placeholder={t('users.attachPartner')} />
+              </SelectTrigger>
+              <SelectContent>
+                {freeCodes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.code}
+                    {c.displayName ? ` — ${c.displayName}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <span className="text-[color:var(--color-muted-foreground)]">—</span>
+          )}
         </td>
         <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
           {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(

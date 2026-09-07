@@ -159,16 +159,45 @@ export const listUsers = query({
   handler: async (ctx, { adminId }) => {
     await assertAdmin(ctx, adminId);
     const users = await ctx.db.query('users').collect();
-    return users.map((u) => ({
-      _id: u._id,
-      phone: u.phone,
-      email: u.email,
-      fullName: u.fullName,
-      role: u.role,
-      planTier: u.planTier,
-      createdAt: u.createdAt,
-      lastSeenAt: u.lastSeenAt,
-    }));
+
+    // Qui est partenaire ? L'information vit sur `affiliates.ownerUserId`, pas
+    // sur l'utilisateur : sans cette jointure, l'admin ne pouvait le savoir
+    // qu'en ouvrant l'écran affiliation et en recoupant des e-mails à la main.
+    // Un partenaire peut être aussi bien un couple qu'une agence — c'est
+    // justement pourquoi le rôle ne suffit pas à le dire.
+    const affiliates = await ctx.db.query('affiliates').collect();
+    const byOwner = new Map<string, (typeof affiliates)[number]>();
+    for (const a of affiliates) {
+      if (!a.ownerUserId) continue;
+      const current = byOwner.get(a.ownerUserId);
+      // Un compte peut porter son code de parrainage personnel ET un code
+      // partenaire : c'est le partenariat qui doit remonter.
+      if (!current || (current.kind !== 'partner' && a.kind === 'partner')) {
+        byOwner.set(a.ownerUserId, a);
+      }
+    }
+
+    return users.map((u) => {
+      const affiliate = byOwner.get(u._id);
+      return {
+        _id: u._id,
+        phone: u.phone,
+        email: u.email,
+        fullName: u.fullName,
+        role: u.role,
+        planTier: u.planTier,
+        createdAt: u.createdAt,
+        lastSeenAt: u.lastSeenAt,
+        affiliate: affiliate
+          ? {
+              id: affiliate._id,
+              code: affiliate.code,
+              kind: affiliate.kind,
+              status: affiliate.status,
+            }
+          : null,
+      };
+    });
   },
 });
 

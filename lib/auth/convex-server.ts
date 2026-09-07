@@ -315,6 +315,7 @@ const rawConvexApi = {
   getAffiliateByCode: api.affiliate.getAffiliateByCode,
   createAffiliate: api.affiliate.createAffiliate,
   setAffiliateStatus: api.affiliate.setAffiliateStatus,
+  setAffiliateOwner: api.affiliate.setAffiliateOwner,
   setAffiliateStripeCoupon: api.affiliate.setAffiliateStripeCoupon,
   getAffiliateForAdmin: api.affiliate.getAffiliateForAdmin,
   listAffiliates: api.affiliate.listAffiliates,

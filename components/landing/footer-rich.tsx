@@ -29,6 +29,7 @@ const LEGAL_LINKS = [
   { key: 'terms', href: '/legal/terms' as const },
   { key: 'privacy', href: '/legal/privacy' as const },
   { key: 'cookies', href: '/legal/cookies' as const },
+  { key: 'mentions', href: '/legal/mentions' as const },
   { key: 'rgpd', href: '/legal/privacy' as const },
 ] as const;
 

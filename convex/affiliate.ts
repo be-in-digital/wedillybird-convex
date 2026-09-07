@@ -94,6 +94,62 @@ export const createAffiliate = mutation({
   },
 });
 
+/**
+ * Rattache (ou détache) un affilié à un compte utilisateur.
+ *
+ * `ownerUserId` n'était posé QUE par la boucle de parrainage particulier : un
+ * partenaire créé depuis l'admin n'avait qu'un `ownerEmail` en texte libre, et
+ * son espace `/partenaire` — scopé sur `by_owner` — restait donc introuvable.
+ * Il avait un code qui rapportait et aucune page pour le constater.
+ *
+ * Le rattachement est explicite plutôt que déduit de l'e-mail : deviner sur une
+ * chaîne saisie à la main donnerait à quelqu'un les commissions d'un autre.
+ */
+export const setAffiliateOwner = mutation({
+  args: {
+    adminId: v.id('users'),
+    affiliateId: v.id('affiliates'),
+    /** `null` détache. */
+    ownerUserId: v.union(v.id('users'), v.null()),
+  },
+  handler: async (ctx, { adminId, affiliateId, ownerUserId }) => {
+    await assertAdmin(ctx, adminId);
+    const affiliate = await ctx.db.get(affiliateId);
+    if (!affiliate) throw new Error('AFFILIATE_NOT_FOUND');
+
+    if (ownerUserId) {
+      const user = await ctx.db.get(ownerUserId);
+      if (!user) throw new Error('USER_NOT_FOUND');
+
+      // Un compte ne peut pas porter deux affiliés de même nature : deux codes
+      // partenaire sur une même personne rendraient `partnerDashboard`
+      // ambigu, et l'attribution avec.
+      const existing = await ctx.db
+        .query('affiliates')
+        .withIndex('by_owner', (q) => q.eq('ownerUserId', ownerUserId))
+        .collect();
+      if (existing.some((a) => a._id !== affiliateId && a.kind === affiliate.kind)) {
+        throw new Error('USER_ALREADY_HAS_AFFILIATE');
+      }
+    }
+
+    const now = Date.now();
+    await ctx.db.patch(affiliateId, {
+      ownerUserId: ownerUserId ?? undefined,
+      updatedAt: now,
+    });
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: ownerUserId ? 'attach_affiliate_owner' : 'detach_affiliate_owner',
+      targetType: 'affiliate',
+      targetId: affiliateId,
+      details: JSON.stringify({ code: affiliate.code, ownerUserId: ownerUserId ?? null }),
+      createdAt: now,
+    });
+    return { ok: true as const };
+  },
+});
+
 /** Active/désactive un affilié (admin). */
 export const setAffiliateStatus = mutation({
   args: {

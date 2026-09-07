@@ -689,6 +689,29 @@ async function createPartnerCouponForAffiliate(
  * pour un même partenariat, ce sont deux comptes agence offerts. Regénérer un
  * lien perdu doit rester trivial, mais jamais cumulatif.
  */
+/**
+ * Rattache un affilié à un compte utilisateur (ou l'en détache).
+ *
+ * C'est ce rattachement qui rend l'espace `/partenaire` atteignable :
+ * `partnerDashboard` scope sur `by_owner`, donc sans `ownerUserId` un
+ * partenaire a un code qui rapporte et aucune page pour le constater.
+ */
+export async function adminSetAffiliateOwnerAction(
+  affiliateId: string,
+  ownerUserId: string | null,
+): Promise<ActionResult> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.setAffiliateOwner, { adminId, affiliateId, ownerUserId });
+    revalidatePath('/admin/users');
+    revalidatePath('/admin/affiliates');
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: msg(e) };
+  }
+}
+
 export async function adminCreatePartnerInviteAction(
   affiliateId: string,
   input?: { inviteeEmail?: string; inviteeName?: string },

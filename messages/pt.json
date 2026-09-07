@@ -92,7 +92,12 @@
       "confirmSuspend": "Suspender {name}?",
       "suspend": "Suspender",
       "confirmChangeRole": "Mudar a função para «{role}»?",
-      "rolePlaceholder": "Função…"
+      "rolePlaceholder": "Função…",
+      "colPartner": "Parceiro",
+      "partnersOnly": "Apenas parceiros",
+      "attachPartner": "Associar um código",
+      "detachPartner": "Desassociar",
+      "confirmDetachPartner": "Desassociar este código de parceiro desta conta?"
     },
     "events": {
       "searchPlaceholder": "Buscar um evento…",
@@ -244,6 +249,7 @@
     "terms": "Termos",
     "privacy": "Privacidade",
     "cookies": "Cookies",
+    "mentions": "Menções legais",
     "faq": "FAQ",
     "contact": "Contacto"
   },
@@ -330,6 +336,30 @@
       "article10Body": "O Parceiro não recebe qualquer informação sobre a identidade dos compradores: o seu espaço mostra montantes, datas e estados, nunca um nome, um endereço de e-mail ou um casamento identificável.\nOs dados do Parceiro (identidade, contactos, dados bancários) são tratados para a gestão do programa e o pagamento das comissões, e conservados pelo tempo exigido pelas nossas obrigações contabilísticas. O exercício dos direitos consta da política de privacidade.",
       "article11Title": "11. Alteração, lei aplicável e litígios",
       "article11Body": "Podemos alterar as presentes condições. Qualquer alteração é notificada ao Parceiro trinta dias antes da sua entrada em vigor e não se aplica às vendas já atribuídas.\nAs presentes condições regem-se pelo direito francês. Qualquer litígio relativo à sua execução é da competência exclusiva dos tribunais de Paris, salvo disposição imperativa em contrário."
+    },
+    "mentions": {
+      "title": "Menções legais",
+      "lastUpdated": "Última atualização: 7 de setembro de 2026",
+      "publisherTitle": "Editor do site",
+      "tradeName": "Explora o serviço sob o nome comercial {value}",
+      "capital": "Capital social: {value} €",
+      "siren": "SIREN {value}",
+      "siret": "SIRET {value}",
+      "rcs": "RCS {city} {value}",
+      "vat": "N.º de IVA intracomunitário: {value}",
+      "contact": "Contacto: {value}",
+      "directorTitle": "Diretor de publicação",
+      "directorBody": "{name}",
+      "hostTitle": "Alojamento",
+      "hostBody": "O site é alojado por {name} ({url}).",
+      "ipTitle": "Propriedade intelectual",
+      "ipBody": "Todos os conteúdos do site — marca, textos, imagens, cinemáticas de convite, código — estão protegidos pelo direito de propriedade intelectual. É proibida qualquer reprodução ou reutilização sem autorização escrita. Os conteúdos carregados pelos utilizadores (fotos, textos de convite) continuam a ser seus; concedem-nos apenas os direitos necessários para prestar o serviço.",
+      "dataTitle": "Dados pessoais",
+      "dataBody": "O tratamento dos dados pessoais, os prazos de conservação e o exercício dos seus direitos estão descritos na nossa política de privacidade, acessível a partir do rodapé.",
+      "cookiesTitle": "Cookies",
+      "cookiesBody": "A utilização de cookies e a forma de os recusar estão descritas na nossa política de cookies, acessível a partir do rodapé.",
+      "mediationTitle": "Mediação de consumo",
+      "mediationBody": "Nos termos do artigo L612-1 do código do consumo francês, pode recorrer gratuitamente ao mediador {name} ({url}) em caso de litígio não resolvido com o nosso serviço de apoio ao cliente."
     }
   },
   "Account": {
@@ -760,7 +790,8 @@
             "terms": "Termos",
             "privacy": "Privacidade",
             "cookies": "Cookies",
-            "rgpd": "Os teus direitos RGPD"
+            "rgpd": "Os teus direitos RGPD",
+            "mentions": "Menções legais"
           }
         }
       },
@@ -4358,6 +4389,10 @@
     "legalAffiliation": {
       "title": "Condições do programa de parceiros — Wedillybird",
       "description": "Condições do programa de parceiros Wedillybird: atribuição de vendas, comissão, aquisição, pagamento, obrigações do parceiro."
+    },
+    "legalMentions": {
+      "title": "Menções legais — Wedillybird",
+      "description": "Editor, alojamento e informações legais do serviço Wedillybird."
     }
   },
   "CookieConsent": {

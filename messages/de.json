@@ -92,7 +92,12 @@
       "confirmSuspend": "{name} sperren?",
       "suspend": "Sperren",
       "confirmChangeRole": "Rolle in „{role}“ ändern?",
-      "rolePlaceholder": "Rolle…"
+      "rolePlaceholder": "Rolle…",
+      "colPartner": "Partner",
+      "partnersOnly": "Nur Partner",
+      "attachPartner": "Code zuordnen",
+      "detachPartner": "Trennen",
+      "confirmDetachPartner": "Diesen Partnercode von diesem Konto trennen?"
     },
     "events": {
       "searchPlaceholder": "Ein Event suchen…",
@@ -244,6 +249,7 @@
     "terms": "AGB",
     "privacy": "Datenschutz",
     "cookies": "Cookies",
+    "mentions": "Impressum",
     "faq": "FAQ",
     "contact": "Kontakt"
   },
@@ -330,6 +336,30 @@
       "article10Body": "Der Partner erhält keine Informationen über die Identität der Käufer: Sein Bereich zeigt Beträge, Daten und Status — niemals einen Namen, eine E-Mail-Adresse oder eine identifizierbare Hochzeit.\nDie Daten des Partners (Identität, Kontaktdaten, Bankverbindung) werden zur Durchführung des Programms und zur Auszahlung der Provisionen verarbeitet und so lange aufbewahrt, wie es unsere buchhalterischen Pflichten verlangen. Wie Rechte ausgeübt werden, steht in der Datenschutzerklärung.",
       "article11Title": "11. Änderungen, anwendbares Recht und Streitigkeiten",
       "article11Body": "Wir können diese Bedingungen ändern. Jede Änderung wird dem Partner dreißig Tage vor Inkrafttreten mitgeteilt und gilt nicht für bereits zugeordnete Verkäufe.\nDiese Bedingungen unterliegen französischem Recht. Für Streitigkeiten über ihre Durchführung sind ausschließlich die Gerichte von Paris zuständig, vorbehaltlich zwingender entgegenstehender Vorschriften."
+    },
+    "mentions": {
+      "title": "Impressum",
+      "lastUpdated": "Zuletzt aktualisiert: 7. September 2026",
+      "publisherTitle": "Anbieter",
+      "tradeName": "Betreibt den Dienst unter dem Handelsnamen {value}",
+      "capital": "Stammkapital: {value} €",
+      "siren": "SIREN {value}",
+      "siret": "SIRET {value}",
+      "rcs": "Handelsregister {city}, Nr. {value}",
+      "vat": "USt-IdNr.: {value}",
+      "contact": "Kontakt: {value}",
+      "directorTitle": "Verantwortlich für den Inhalt",
+      "directorBody": "{name}",
+      "hostTitle": "Hosting",
+      "hostBody": "Die Website wird von {name} ({url}) gehostet.",
+      "ipTitle": "Urheberrecht",
+      "ipBody": "Sämtliche Inhalte der Website — Marke, Texte, Bilder, Einladungs-Cinematics, Code — sind urheberrechtlich geschützt. Jede Vervielfältigung oder Weiterverwendung ohne schriftliche Zustimmung ist untersagt. Von Nutzern hochgeladene Inhalte (Fotos, Einladungstexte) bleiben deren Eigentum; sie räumen uns nur die zur Erbringung des Dienstes nötigen Rechte ein.",
+      "dataTitle": "Personenbezogene Daten",
+      "dataBody": "Verarbeitung personenbezogener Daten, Speicherfristen und die Ausübung Ihrer Rechte sind in unserer Datenschutzerklärung beschrieben, verlinkt in der Fußzeile.",
+      "cookiesTitle": "Cookies",
+      "cookiesBody": "Der Einsatz von Cookies und deren Ablehnung sind in unserer Cookie-Richtlinie beschrieben, verlinkt in der Fußzeile.",
+      "mediationTitle": "Verbraucherschlichtung",
+      "mediationBody": "Gemäß Artikel L612-1 des französischen Verbrauchergesetzbuchs können Sie sich bei einem ungelösten Streitfall mit unserem Kundendienst kostenlos an die Schlichtungsstelle {name} ({url}) wenden."
     }
   },
   "Account": {
@@ -760,7 +790,8 @@
             "terms": "AGB",
             "privacy": "Datenschutz",
             "cookies": "Cookies",
-            "rgpd": "Deine DSGVO-Rechte"
+            "rgpd": "Deine DSGVO-Rechte",
+            "mentions": "Impressum"
           }
         }
       },
@@ -4358,6 +4389,10 @@
     "legalAffiliation": {
       "title": "Bedingungen des Partnerprogramms — Wedillybird",
       "description": "Bedingungen des Wedillybird-Partnerprogramms: Verkaufszuordnung, Provision, Fälligkeit, Auszahlung, Pflichten des Partners."
+    },
+    "legalMentions": {
+      "title": "Impressum — Wedillybird",
+      "description": "Anbieter, Hosting und rechtliche Angaben zum Dienst Wedillybird."
     }
   },
   "CookieConsent": {
