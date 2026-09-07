@@ -8,6 +8,7 @@ import { NotificationsPanel } from '@/components/notifications/notifications-pan
 import { Cockpit } from '@/components/pro/cockpit';
 import { PlanRequiredBanner } from '@/components/pro/plan-required-banner';
 import { orgHasActiveAccess } from '@/lib/payments/entitlements';
+import { CompedTrialBanner } from '@/components/pro/comped-trial-banner';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('ProPages');
@@ -21,6 +22,14 @@ export async function generateMetadata(): Promise<Metadata> {
  * `pro:cockpit`, puis rend le shell sidebar + le cockpit. Sans organisation →
  * redirection vers l'onboarding pro.
  */
+/**
+ * Lecture de l'horloge hors du corps du composant : `Date.now()` appelé pendant
+ * le rendu est signalé comme impur. Même parade que `components/pro/cockpit.tsx`.
+ */
+function clockNow(): number {
+  return Date.now();
+}
+
 export default async function ProDashboardPage({
   params,
 }: {
@@ -39,6 +48,7 @@ export default async function ProDashboardPage({
   ]);
   if (!data) redirect({ href: '/pro/onboarding', locale });
 
+  const now = clockNow();
   // Sans forfait actif (ni abonnement ni crédit PAYG), le back-office est
   // verrouillé côté serveur : on affiche la bannière « choisir un forfait ».
   const hasAccess = orgHasActiveAccess(data!.org);
@@ -58,6 +68,13 @@ export default async function ProDashboardPage({
       {!hasAccess ? (
         <div className="container-page pt-8">
           <PlanRequiredBanner />
+        </div>
+      ) : null}
+      {/* Un compte offert n'a aucun abonnement Stripe derrière : rien ne
+          préviendra de sa fin. Le décompte est le seul avertissement. */}
+      {hasAccess && data!.org.compedSubscription ? (
+        <div className="container-page pt-8">
+          <CompedTrialBanner expiresAt={data!.org.compedSubscription.expiresAt} now={now} />
         </div>
       ) : null}
       <Cockpit

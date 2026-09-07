@@ -11,6 +11,10 @@ import {
   isCompActive,
 } from '../../../convex/lib/partnerInvite';
 import { eventQuotaForTier } from '../../../convex/lib/entitlements';
+import {
+  compDaysRemaining as appDaysRemaining,
+  isCompActive as appIsCompActive,
+} from '../../../lib/payments/comped-trial';
 
 describe('addMonthsUtc — mois calendaires, pas 30 jours', () => {
   it('ajoute six mois sans dériver', () => {
@@ -116,5 +120,35 @@ describe('le tier offert est indispensable', () => {
 
   it('le défaut est le tier le plus bas — tester, pas exploiter', () => {
     expect(DEFAULT_PARTNER_COMP_TIER).toBe('starter');
+  });
+});
+
+/**
+ * Le bundler Convex ne suit pas les imports de `lib/`, donc les helpers du
+ * cadeau existent en double : côté serveur (`convex/lib/partnerInvite.ts`) et
+ * côté app (`lib/payments/comped-trial.ts`, qui sert la bannière de décompte).
+ * Deux implémentations d'une même règle de date dérivent en silence — celle-ci
+ * dirait « il reste 1 jour » quand celle-là a déjà fermé l'accès.
+ */
+describe('miroir app-side du compte offert', () => {
+  const NOW = Date.UTC(2026, 8, 7, 12);
+  const hour = 60 * 60 * 1000;
+  const CASES = [
+    null,
+    undefined,
+    { expiresAt: NOW - 1 },
+    { expiresAt: NOW },
+    { expiresAt: NOW + 1 },
+    { expiresAt: NOW + 3 * hour },
+    { expiresAt: NOW + 25 * hour },
+    { expiresAt: NOW + 180 * 24 * hour },
+  ];
+
+  it('rend exactement la même vérité des deux côtés', () => {
+    for (const c of CASES) {
+      const label = JSON.stringify(c);
+      expect(appIsCompActive(c, NOW), label).toBe(isCompActive(c, NOW));
+      expect(appDaysRemaining(c, NOW), label).toBe(compDaysRemaining(c, NOW));
+    }
   });
 });

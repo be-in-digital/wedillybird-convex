@@ -493,6 +493,10 @@ export const myOrganization = query({
       // Crédits Pay-as-you-go : nécessaires côté UI pour décider de l'accès
       // back-office (une agence sans abonnement mais avec crédit PAYG a accès).
       paygCredits: org.paygCredits ?? 0,
+      // Le cadeau décide de l'accès au back-office : sans lui côté client, une
+      // agence à qui l'on a ouvert un compte verrait la bannière « choisissez
+      // un forfait » alors que le serveur la laisse entrer.
+      compedSubscription: org.compedSubscription ?? null,
       myRole: membership.role,
     };
   },

@@ -681,6 +681,50 @@ async function createPartnerCouponForAffiliate(
   return { shareCode: promo.code };
 }
 
+/**
+ * Crée le lien d'invitation d'un partenaire — « voici ton compte, six mois
+ * offerts, sans carte ».
+ *
+ * Créer un nouveau lien révoque le précédent côté Convex : deux liens vivants
+ * pour un même partenariat, ce sont deux comptes agence offerts. Regénérer un
+ * lien perdu doit rester trivial, mais jamais cumulatif.
+ */
+export async function adminCreatePartnerInviteAction(
+  affiliateId: string,
+  input?: { inviteeEmail?: string; inviteeName?: string },
+): Promise<ActionResult & { token?: string }> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    const res = await convex.mutation(convexApi.createPartnerInvite, {
+      adminId,
+      affiliateId,
+      ...(input?.inviteeEmail ? { inviteeEmail: input.inviteeEmail } : {}),
+      ...(input?.inviteeName ? { inviteeName: input.inviteeName } : {}),
+    });
+    revalidatePath('/admin/affiliates');
+    return { ok: true, token: res.token };
+  } catch (e: unknown) {
+    return { ok: false, error: msg(e) };
+  }
+}
+
+/** Coupe un lien encore inutilisé. Un lien déjà consommé n'est pas révocable. */
+export async function adminRevokePartnerInviteAction(inviteId: string): Promise<ActionResult> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.revokePartnerInvite, {
+      adminId,
+      inviteId,
+    });
+    revalidatePath('/admin/affiliates');
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: msg(e) };
+  }
+}
+
 export async function adminCreateAffiliateAction(input: {
   code: string;
   kind: 'referral' | 'partner';

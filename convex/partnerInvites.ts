@@ -156,19 +156,26 @@ export const revoke = mutation({
   },
 });
 
-/** Liens d'un affilié, du plus récent au plus ancien, avec leur état lisible. */
-export const listForAffiliate = query({
-  args: { adminId: v.id('users'), affiliateId: v.id('affiliates') },
+/**
+ * Liens d'invitation, du plus récent au plus ancien, avec leur état lisible.
+ * Sans `affiliateId`, rend tous les liens — le tableau des affiliés les affiche
+ * par ligne, et ils se comptent en dizaines, pas en milliers.
+ */
+export const listForAdmin = query({
+  args: { adminId: v.id('users'), affiliateId: v.optional(v.id('affiliates')) },
   handler: async (ctx, { adminId, affiliateId }) => {
     await assertAdmin(ctx, adminId);
     const now = Date.now();
-    const rows = await ctx.db
-      .query('partnerInvites')
-      .withIndex('by_affiliate', (q) => q.eq('affiliateId', affiliateId))
-      .order('desc')
-      .collect();
+    const rows = affiliateId
+      ? await ctx.db
+          .query('partnerInvites')
+          .withIndex('by_affiliate', (q) => q.eq('affiliateId', affiliateId))
+          .order('desc')
+          .collect()
+      : await ctx.db.query('partnerInvites').order('desc').collect();
     return rows.map((inv) => ({
       id: inv._id,
+      affiliateId: inv.affiliateId,
       // Le jeton n'est rendu que tant qu'il sert à quelque chose : un lien
       // consommé ou révoqué n'a plus de raison de circuler.
       token: inviteState(inv, now) === 'usable' ? inv.token : null,

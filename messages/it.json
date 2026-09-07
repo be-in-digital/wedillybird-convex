@@ -3206,7 +3206,10 @@
         "ledgerCoveredPayg": "pagati per evento",
         "ledgerNote": "Qui compaiono solo i <strong>superamenti</strong>; le tariffe base sono {context}. Trova le fatture consolidate nella <link>fatturazione dell'agenzia</link>."
       }
-    }
+    },
+    "compedTrialRemaining": "Il tuo account offerto termina fra {days} giorni.",
+    "compedTrialTomorrow": "Il tuo account offerto termina domani.",
+    "compedTrialCta": "Scegli un piano"
   },
   "Branding": {
     "title": "Identità visiva",
@@ -5621,5 +5624,35 @@
     "codeLabel": "Codice da condividere",
     "codeHint": "Da inserire al momento del pagamento. Stesso sconto, stessa commissione — comodo per le tue storie e i tuoi post.",
     "termsLink": "Leggere le condizioni del programma partner"
+  },
+  "PartnerInvite": {
+    "eyebrow": "Invito partner",
+    "title": "Il tuo account, {months} mesi offerti",
+    "subtitle": "Apri il tuo spazio agenzia e usa Wedillybird per {months} mesi per provarlo su matrimoni veri.",
+    "noCard": "Nessuna carta di credito richiesta.",
+    "nameLabel": "Nome della tua agenzia",
+    "namePlaceholder": "Studio Camille",
+    "nameHelp": "È il nome che vedranno le tue coppie. Potrai cambiarlo quando vuoi.",
+    "submit": "Apri il mio spazio ({months} mesi offerti)",
+    "codeHint": "Il tuo codice partner {code} è attivo: condividilo con la tua community per incassare la commissione.",
+    "deadTitle": "Questo link non è più valido",
+    "deadHelp": "Scrivici a contact@wedillybird.com e te ne rimandiamo uno.",
+    "dead": {
+      "unknown": "Questo link non esiste. Controlla di averlo copiato per intero.",
+      "consumed": "Questo link è già stato usato per aprire un account.",
+      "revoked": "Questo link è stato annullato.",
+      "expired": "Questo link è scaduto."
+    },
+    "errors": {
+      "unauthorized": "Accedi per aprire il tuo spazio.",
+      "invite_not_found": "Questo link non esiste.",
+      "invite_expired": "Questo link è scaduto.",
+      "invite_revoked": "Questo link è stato annullato.",
+      "invite_consumed": "Questo link è già stato usato.",
+      "org_already_subscribed": "La tua agenzia ha già un abbonamento attivo. Scrivici e ce ne occupiamo.",
+      "invalid_name": "Indica il nome della tua agenzia.",
+      "user_not_found": "Account non trovato. Accedi di nuovo.",
+      "unknown": "Per ora non riusciamo ad aprire il tuo spazio."
+    }
   }
 }

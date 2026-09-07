@@ -258,6 +258,45 @@ export async function acceptInviteAction(
   }
 }
 
+export type RedeemPartnerInviteResult =
+  | { ok: true; organizationId: string; compExpiresAt: number; partnerCode: string | null }
+  | { ok: false; error: string };
+
+/**
+ * Accepte un lien d'invitation partenaire : compte agence créé et six mois
+ * offerts, sans carte bancaire ni choix de forfait.
+ *
+ * Tout se joue dans une seule mutation Convex — organisation, cadeau,
+ * rattachement de l'affilié, consommation du jeton. Découper ici laisserait,
+ * en cas de panne au milieu, soit une agence sans cadeau (elle retombe sur le
+ * mur « choisissez un forfait »), soit un jeton brûlé sans agence.
+ */
+export async function redeemPartnerInviteAction(
+  token: string,
+  organizationName: string,
+): Promise<RedeemPartnerInviteResult> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: 'UNAUTHORIZED' };
+
+  try {
+    const convex = getConvexServerClient();
+    const result = await convex.mutation(convexApi.redeemPartnerInvite, {
+      token,
+      userId: session.userId,
+      organizationName,
+    });
+    revalidatePath('/pro/dashboard');
+    return {
+      ok: true,
+      organizationId: result.organizationId,
+      compExpiresAt: result.compExpiresAt,
+      partnerCode: result.partnerCode,
+    };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'UNKNOWN' };
+  }
+}
+
 export type UpdateBrandingResult =
   | { ok: true }
   | {

@@ -3206,7 +3206,10 @@
         "ledgerCoveredPayg": "réglés à l'événement",
         "ledgerNote": "Seuls les <strong>dépassements</strong> apparaissent ici ; les frais de base sont {context}. Retrouvez vos factures consolidées dans la <link>facturation de l'agence</link>."
       }
-    }
+    },
+    "compedTrialRemaining": "Votre compte offert se termine dans {days} jours.",
+    "compedTrialTomorrow": "Votre compte offert se termine demain.",
+    "compedTrialCta": "Choisir un forfait"
   },
   "Branding": {
     "title": "Identité visuelle",
@@ -5621,5 +5624,35 @@
     "codeLabel": "Code à partager",
     "codeHint": "À saisir au moment du paiement. Même remise, même commission — pratique pour vos stories et vos publications.",
     "termsLink": "Lire les conditions du programme partenaire"
+  },
+  "PartnerInvite": {
+    "eyebrow": "Invitation partenaire",
+    "title": "Votre compte, {months} mois offerts",
+    "subtitle": "Ouvrez votre espace agence et utilisez Wedillybird pendant {months} mois pour l'essayer en vraies conditions.",
+    "noCard": "Aucune carte bancaire demandée.",
+    "nameLabel": "Nom de votre agence",
+    "namePlaceholder": "Atelier Camille",
+    "nameHelp": "C'est le nom que verront vos couples. Vous pourrez le changer à tout moment.",
+    "submit": "Ouvrir mon espace ({months} mois offerts)",
+    "codeHint": "Votre code partenaire {code} est actif : partagez-le à votre communauté pour percevoir votre commission.",
+    "deadTitle": "Ce lien n'est plus valable",
+    "deadHelp": "Écrivez-nous à contact@wedillybird.com et nous vous en renverrons un.",
+    "dead": {
+      "unknown": "Ce lien n'existe pas. Vérifiez qu'il a bien été copié en entier.",
+      "consumed": "Ce lien a déjà servi à ouvrir un compte.",
+      "revoked": "Ce lien a été annulé.",
+      "expired": "Ce lien a expiré."
+    },
+    "errors": {
+      "unauthorized": "Connectez-vous pour ouvrir votre espace.",
+      "invite_not_found": "Ce lien n'existe pas.",
+      "invite_expired": "Ce lien a expiré.",
+      "invite_revoked": "Ce lien a été annulé.",
+      "invite_consumed": "Ce lien a déjà servi.",
+      "org_already_subscribed": "Votre agence a déjà un abonnement en cours. Contactez-nous, nous nous en occupons.",
+      "invalid_name": "Indiquez le nom de votre agence.",
+      "user_not_found": "Compte introuvable. Reconnectez-vous.",
+      "unknown": "Impossible d'ouvrir votre espace pour le moment."
+    }
   }
 }

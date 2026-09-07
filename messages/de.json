@@ -3206,7 +3206,10 @@
         "ledgerCoveredPayg": "pro Veranstaltung bezahlt",
         "ledgerNote": "Hier erscheinen nur <strong>Mehrverbräuche</strong>; die Grundgebühren sind {context}. Ihre konsolidierten Rechnungen finden Sie in der <link>Agentur-Abrechnung</link>."
       }
-    }
+    },
+    "compedTrialRemaining": "Ihr geschenktes Konto endet in {days} Tagen.",
+    "compedTrialTomorrow": "Ihr geschenktes Konto endet morgen.",
+    "compedTrialCta": "Tarif wählen"
   },
   "Branding": {
     "title": "Visuelle Identität",
@@ -5621,5 +5624,35 @@
     "codeLabel": "Code zum Teilen",
     "codeHint": "Beim Bezahlen einzugeben. Gleicher Rabatt, gleiche Provision — praktisch für Ihre Stories und Beiträge.",
     "termsLink": "Bedingungen des Partnerprogramms lesen"
+  },
+  "PartnerInvite": {
+    "eyebrow": "Partner-Einladung",
+    "title": "Ihr Konto, {months} Monate geschenkt",
+    "subtitle": "Eröffnen Sie Ihren Agentur-Bereich und nutzen Sie Wedillybird {months} Monate lang, um es an echten Hochzeiten zu testen.",
+    "noCard": "Es wird keine Kreditkarte verlangt.",
+    "nameLabel": "Name Ihrer Agentur",
+    "namePlaceholder": "Atelier Camille",
+    "nameHelp": "Diesen Namen sehen Ihre Paare. Sie können ihn jederzeit ändern.",
+    "submit": "Bereich eröffnen ({months} Monate geschenkt)",
+    "codeHint": "Ihr Partnercode {code} ist aktiv: Teilen Sie ihn mit Ihrer Community, um Ihre Provision zu erhalten.",
+    "deadTitle": "Dieser Link ist nicht mehr gültig",
+    "deadHelp": "Schreiben Sie an contact@wedillybird.com, wir senden Ihnen einen neuen.",
+    "dead": {
+      "unknown": "Diesen Link gibt es nicht. Prüfen Sie, ob er vollständig kopiert wurde.",
+      "consumed": "Mit diesem Link wurde bereits ein Konto eröffnet.",
+      "revoked": "Dieser Link wurde storniert.",
+      "expired": "Dieser Link ist abgelaufen."
+    },
+    "errors": {
+      "unauthorized": "Melden Sie sich an, um Ihren Bereich zu eröffnen.",
+      "invite_not_found": "Diesen Link gibt es nicht.",
+      "invite_expired": "Dieser Link ist abgelaufen.",
+      "invite_revoked": "Dieser Link wurde storniert.",
+      "invite_consumed": "Dieser Link wurde bereits verwendet.",
+      "org_already_subscribed": "Ihre Agentur hat bereits ein laufendes Abonnement. Melden Sie sich, wir kümmern uns darum.",
+      "invalid_name": "Geben Sie den Namen Ihrer Agentur an.",
+      "user_not_found": "Konto nicht gefunden. Bitte erneut anmelden.",
+      "unknown": "Ihr Bereich lässt sich derzeit nicht eröffnen."
+    }
   }
 }

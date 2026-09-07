@@ -3202,7 +3202,10 @@
         "ledgerCoveredPayg": "paid per event",
         "ledgerNote": "Only <strong>overages</strong> appear here; base fees are {context}. Find your consolidated invoices in the <link>agency billing</link>."
       }
-    }
+    },
+    "compedTrialRemaining": "Your free account ends in {days} days.",
+    "compedTrialTomorrow": "Your free account ends tomorrow.",
+    "compedTrialCta": "Choose a plan"
   },
   "Branding": {
     "title": "Visual identity",
@@ -5617,5 +5620,35 @@
     "codeLabel": "Code to share",
     "codeHint": "To be entered at checkout. Same discount, same commission — handy for your stories and posts.",
     "termsLink": "Read the partner programme terms"
+  },
+  "PartnerInvite": {
+    "eyebrow": "Partner invitation",
+    "title": "Your account, {months} months free",
+    "subtitle": "Open your agency workspace and use Wedillybird for {months} months to try it on real weddings.",
+    "noCard": "No card details required.",
+    "nameLabel": "Your agency name",
+    "namePlaceholder": "Camille Studio",
+    "nameHelp": "This is the name your couples will see. You can change it at any time.",
+    "submit": "Open my workspace ({months} months free)",
+    "codeHint": "Your partner code {code} is live: share it with your community to earn your commission.",
+    "deadTitle": "This link is no longer valid",
+    "deadHelp": "Write to contact@wedillybird.com and we'll send you a new one.",
+    "dead": {
+      "unknown": "This link doesn't exist. Check that it was copied in full.",
+      "consumed": "This link has already been used to open an account.",
+      "revoked": "This link was cancelled.",
+      "expired": "This link has expired."
+    },
+    "errors": {
+      "unauthorized": "Sign in to open your workspace.",
+      "invite_not_found": "This link doesn't exist.",
+      "invite_expired": "This link has expired.",
+      "invite_revoked": "This link was cancelled.",
+      "invite_consumed": "This link has already been used.",
+      "org_already_subscribed": "Your agency already has an active subscription. Get in touch and we'll sort it out.",
+      "invalid_name": "Enter your agency name.",
+      "user_not_found": "Account not found. Please sign in again.",
+      "unknown": "We couldn't open your workspace right now."
+    }
   }
 }

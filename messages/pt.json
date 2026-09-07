@@ -3206,7 +3206,10 @@
         "ledgerCoveredPayg": "pagos por evento",
         "ledgerNote": "Aqui aparecem apenas os <strong>excedentes</strong>; as taxas base estão {context}. Encontre as suas faturas consolidadas na <link>faturação da agência</link>."
       }
-    }
+    },
+    "compedTrialRemaining": "A sua conta oferecida termina daqui a {days} dias.",
+    "compedTrialTomorrow": "A sua conta oferecida termina amanhã.",
+    "compedTrialCta": "Escolher um plano"
   },
   "Branding": {
     "title": "Identidade visual",
@@ -5621,5 +5624,35 @@
     "codeLabel": "Código para partilhar",
     "codeHint": "A introduzir no momento do pagamento. Mesmo desconto, mesma comissão — prático para as suas stories e publicações.",
     "termsLink": "Ler as condições do programa de parceiros"
+  },
+  "PartnerInvite": {
+    "eyebrow": "Convite de parceiro",
+    "title": "A sua conta, {months} meses oferecidos",
+    "subtitle": "Abra o seu espaço de agência e use a Wedillybird durante {months} meses para a testar em casamentos reais.",
+    "noCard": "Não é pedido nenhum cartão bancário.",
+    "nameLabel": "Nome da sua agência",
+    "namePlaceholder": "Estúdio Camille",
+    "nameHelp": "É o nome que os seus casais verão. Pode alterá-lo quando quiser.",
+    "submit": "Abrir o meu espaço ({months} meses oferecidos)",
+    "codeHint": "O seu código de parceiro {code} está ativo: partilhe-o com a sua comunidade para receber a comissão.",
+    "deadTitle": "Esta ligação já não é válida",
+    "deadHelp": "Escreva-nos para contact@wedillybird.com e enviamos-lhe outra.",
+    "dead": {
+      "unknown": "Esta ligação não existe. Verifique se foi copiada por inteiro.",
+      "consumed": "Esta ligação já foi usada para abrir uma conta.",
+      "revoked": "Esta ligação foi anulada.",
+      "expired": "Esta ligação expirou."
+    },
+    "errors": {
+      "unauthorized": "Inicie sessão para abrir o seu espaço.",
+      "invite_not_found": "Esta ligação não existe.",
+      "invite_expired": "Esta ligação expirou.",
+      "invite_revoked": "Esta ligação foi anulada.",
+      "invite_consumed": "Esta ligação já foi usada.",
+      "org_already_subscribed": "A sua agência já tem uma subscrição ativa. Fale connosco e tratamos disso.",
+      "invalid_name": "Indique o nome da sua agência.",
+      "user_not_found": "Conta não encontrada. Inicie sessão novamente.",
+      "unknown": "Não foi possível abrir o seu espaço de momento."
+    }
   }
 }
