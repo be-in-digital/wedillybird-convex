@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { STRIPE_COUPON_NAME_MAX_LENGTH } from '@/lib/payments/coupon-name';
 
 const stripeMock = {
   checkout: {
@@ -12,6 +13,9 @@ const stripeMock = {
   },
   promotionCodes: {
     retrieve: vi.fn(),
+  },
+  coupons: {
+    create: vi.fn(),
   },
 };
 
@@ -31,6 +35,7 @@ beforeEach(() => {
   stripeMock.checkout.sessions.retrieve.mockReset();
   stripeMock.webhooks.constructEvent.mockReset();
   stripeMock.promotionCodes.retrieve.mockReset();
+  stripeMock.coupons.create.mockReset();
   vi.resetModules();
 });
 
@@ -394,5 +399,62 @@ describe('payments/drivers/stripe — session à 0 € (coupon 100 %)', () => {
     const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
 
     expect((await stripeDriver.retrieveSessionStatus('cs_unpaid')).paid).toBe(false);
+  });
+});
+
+describe('payments/drivers/stripe — nom de coupon borné à la limite Stripe', () => {
+  // Stripe REFUSE un `coupon.name` de plus de 40 caractères (400 « must be at
+  // most 40 characters ») au lieu de le tronquer. Dans le checkout, cette
+  // exception est avalée par un `catch` : l'acheteur perdait sa remise SANS
+  // qu'aucune erreur ne remonte. Le libellé cumulé faisait 52 caractères.
+  const KINDS = ['referral_credit', 'affiliate_discount', 'referral_credit_and_discount'] as const;
+
+  it.each(KINDS)('« %s » produit un nom acceptable par Stripe', async (kind) => {
+    stripeMock.coupons.create.mockResolvedValue({ id: 'coup_1' });
+    const { createOneTimeAmountCoupon } = await import('@/lib/payments/drivers/stripe');
+
+    await createOneTimeAmountCoupon(1500, 'EUR', kind);
+
+    const params = stripeMock.coupons.create.mock.calls[0]![0];
+    expect(Array.from(params.name as string).length).toBeLessThanOrEqual(
+      STRIPE_COUPON_NAME_MAX_LENGTH,
+    );
+    expect(params.name).toBeTruthy();
+    expect(params.metadata).toEqual({ wedillybird: kind });
+  });
+
+  it('tronque plutôt que de perdre un nom interne trop long saisi au back-office', async () => {
+    stripeMock.coupons.create.mockResolvedValue({ id: 'coup_2' });
+    const { createCoupon } = await import('@/lib/payments/drivers/stripe');
+
+    await createCoupon({
+      name: 'Un nom interne saisi à la main beaucoup trop long pour Stripe',
+      percentOff: 20,
+      duration: 'once',
+    });
+
+    const params = stripeMock.coupons.create.mock.calls[0]![0];
+    expect(Array.from(params.name as string).length).toBe(STRIPE_COUPON_NAME_MAX_LENGTH);
+  });
+
+  it('fusionne la metadata de l’appelant avec la trace de restriction produit', async () => {
+    stripeMock.coupons.create.mockResolvedValue({ id: 'coup_3' });
+    const { createCoupon } = await import('@/lib/payments/drivers/stripe');
+
+    await createCoupon({
+      name: 'SARAH12 · -10 %',
+      percentOff: 10,
+      duration: 'once',
+      appliesToProducts: ['prod_a', 'prod_b'],
+      metadata: { wedillybird: 'partner_code', wedillybird_affiliate_code: 'SARAH12' },
+    });
+
+    const params = stripeMock.coupons.create.mock.calls[0]![0];
+    expect(params.applies_to).toEqual({ products: ['prod_a', 'prod_b'] });
+    expect(params.metadata).toEqual({
+      wedillybird: 'partner_code',
+      wedillybird_affiliate_code: 'SARAH12',
+      wedillybird_applies_to: 'prod_a,prod_b',
+    });
   });
 });

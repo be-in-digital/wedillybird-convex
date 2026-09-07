@@ -16,6 +16,7 @@ import {
   type SubscriptionTier,
 } from '../subscriptions';
 import type { ConnectedBalance, ConnectedPayment, ConnectedPayout } from '../../pro/payments';
+import { clampCouponName } from '../coupon-name';
 
 let cached: Stripe | null = null;
 
@@ -1338,7 +1339,7 @@ export async function createOneTimeAmountCoupon(
     duration: 'once',
     max_redemptions: 1,
     redeem_by: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000),
-    name: COUPON_LABEL[kind],
+    name: clampCouponName(COUPON_LABEL[kind]),
     metadata: { wedillybird: kind },
   });
   return coupon.id;
@@ -1350,7 +1351,10 @@ const COUPON_LABEL: Record<
 > = {
   referral_credit: 'Crédit de parrainage Wedillybird',
   affiliate_discount: 'Remise partenaire Wedillybird',
-  referral_credit_and_discount: 'Remise partenaire + crédit de parrainage Wedillybird',
+  // Sans « Wedillybird » : le libellé complet faisait 52 caractères, au-delà
+  // de la limite Stripe de 40 — la création du coupon partait en 400 et le
+  // checkout perdait EN SILENCE la remise (cf. le catch de /api/checkout).
+  referral_credit_and_discount: 'Remise partenaire + crédit parrainage',
 };
 
 /**
@@ -1373,6 +1377,8 @@ export async function createCoupon(input: {
    * n'autorise pas la modif d'`applies_to`).
    */
   appliesToProducts?: string[];
+  /** Metadata libre, fusionnée avec celle posée par `appliesToProducts`. */
+  metadata?: Record<string, string>;
 }): Promise<AdminCoupon> {
   const stripe = getStripe();
   if ((input.percentOff == null) === (input.amountOffMinor == null)) {
@@ -1384,8 +1390,19 @@ export async function createCoupon(input: {
     throw new Error('COUPON_REPEATING_NEEDS_MONTHS');
   }
 
+  // Trace la restriction produit en metadata : l'API dahlia ne renvoie plus
+  // `applies_to` en lecture, donc mapCoupon la relit ici pour l'affichage (le
+  // filtrage produit lui-même reste appliqué par Stripe).
+  const products = input.appliesToProducts ?? [];
+  const metadata: Record<string, string> = {
+    ...(input.metadata ?? {}),
+    ...(products.length > 0 ? { wedillybird_applies_to: products.join(',') } : {}),
+  };
+
   const params: Stripe.CouponCreateParams = {
-    name: input.name,
+    // Stripe refuse (400) un `name` de plus de 40 caractères au lieu de le
+    // tronquer : sans cette borne, un nom un peu long fait perdre le coupon.
+    name: clampCouponName(input.name),
     duration: input.duration,
     ...(input.percentOff != null ? { percent_off: input.percentOff } : {}),
     ...(input.amountOffMinor != null
@@ -1394,15 +1411,8 @@ export async function createCoupon(input: {
     ...(input.duration === 'repeating' ? { duration_in_months: input.durationInMonths } : {}),
     ...(input.maxRedemptions != null ? { max_redemptions: input.maxRedemptions } : {}),
     ...(input.redeemBy != null ? { redeem_by: Math.floor(input.redeemBy / 1000) } : {}),
-    ...(input.appliesToProducts && input.appliesToProducts.length > 0
-      ? {
-          applies_to: { products: input.appliesToProducts },
-          // Trace la restriction en metadata : l'API dahlia ne renvoie plus
-          // `applies_to` en lecture, donc mapCoupon la relit ici pour l'affichage
-          // (le filtrage produit lui-même reste appliqué par Stripe).
-          metadata: { wedillybird_applies_to: input.appliesToProducts.join(',') },
-        }
-      : {}),
+    ...(products.length > 0 ? { applies_to: { products } } : {}),
+    ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
   };
   const coupon = await stripe.coupons.create(params);
   return mapCoupon(coupon);

@@ -30,6 +30,7 @@ import {
   adminRemoveOrgDiscountAction,
   type CreateCouponInput,
 } from '@/app/[locale]/(app)/admin/actions';
+import { STRIPE_COUPON_NAME_MAX_LENGTH } from '@/lib/payments/coupon-name';
 
 type Coupon = {
   id: string;
@@ -456,11 +457,14 @@ function CreateCouponDialog({ onDone }: { onDone: () => void }) {
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
-          <Field label="Nom interne">
+          {/* Stripe refuse (400) un nom de plus de 40 caractères au lieu de le
+              tronquer : on borne la saisie plutôt que de perdre le coupon. */}
+          <Field label={`Nom interne (${name.length}/${STRIPE_COUPON_NAME_MAX_LENGTH})`}>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              maxLength={STRIPE_COUPON_NAME_MAX_LENGTH}
               placeholder="Ex. Lancement -20%"
               className={inputCls}
             />

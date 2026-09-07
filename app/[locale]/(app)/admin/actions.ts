@@ -673,16 +673,30 @@ async function createPartnerCouponForAffiliate(
     duration: 'once',
     redeemBy: plan.redeemBy,
     appliesToProducts,
+    metadata: plan.metadata,
   });
   // Pas de `restrictToFirstTime` ici, contrairement à
   // `scripts/create-affiliate-code.ts` : un code partenaire doit marcher pour
   // TOUTE l'audience de la créatrice. Chaque réutilisation est une vente réelle
   // qui génère sa commission — c'est le programme qui fonctionne, pas un abus.
-  const promo = await createPromotionCode({
-    couponId: coupon.id,
-    code: affiliate.code,
-    expiresAt: plan.redeemBy,
-  });
+  let promo: Awaited<ReturnType<typeof createPromotionCode>>;
+  try {
+    promo = await createPromotionCode({
+      couponId: coupon.id,
+      code: affiliate.code,
+      expiresAt: plan.redeemBy,
+    });
+  } catch (e: unknown) {
+    // Un coupon sans code promo n'est atteignable par personne, et il ferait
+    // rater l'anti-doublon du prochain « Créer le code » : on le retire pour
+    // que le rattrapage reparte d'un état propre plutôt que d'empiler.
+    try {
+      await deleteCoupon(coupon.id);
+    } catch {
+      // Stripe indisponible — le coupon orphelin se nettoie au Dashboard.
+    }
+    throw e;
+  }
 
   await getConvexServerClient().mutation(convexApi.setAffiliateStripeCoupon, {
     adminId,

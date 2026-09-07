@@ -116,8 +116,12 @@ export async function POST(req: Request): Promise<Response> {
               : 'referral_credit',
         );
       }
-    } catch {
+    } catch (err) {
       // reserve OU création du coupon a échoué → relâche si on avait réservé.
+      // On journalise : sans trace, l'acheteur repart au tarif plein et perd
+      // sa remise sans que rien ne le signale (c'est ce qu'un libellé de
+      // coupon trop long pour Stripe a produit en silence).
+      console.error('[checkout] remise non appliquée', err);
       if (creditReserved) {
         try {
           await getConvexServerClient().mutation(convexApi.releaseCreditReservation, {
