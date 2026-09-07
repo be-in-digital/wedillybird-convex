@@ -355,6 +355,7 @@ export function AdminAffiliatesBoard({
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="NORAH10"
+              data-testid="affiliate-code"
             />
           </div>
           <div>
@@ -388,6 +389,7 @@ export function AdminAffiliatesBoard({
               className={inputCls}
               value={ratePct}
               onChange={(e) => setRatePct(Number(e.target.value))}
+              data-testid="affiliate-rate"
             />
           </div>
           <div>
@@ -399,6 +401,7 @@ export function AdminAffiliatesBoard({
               className={inputCls}
               value={discountPct}
               onChange={(e) => setDiscountPct(Number(e.target.value))}
+              data-testid="affiliate-discount"
             />
           </div>
           <div className="col-span-2 sm:col-span-1">
@@ -408,6 +411,7 @@ export function AdminAffiliatesBoard({
               value={ownerEmail}
               onChange={(e) => setOwnerEmail(e.target.value)}
               placeholder="norah@…"
+              data-testid="affiliate-owner-email"
             />
           </div>
           <div className="col-span-2 sm:col-span-2">
@@ -417,6 +421,7 @@ export function AdminAffiliatesBoard({
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Norah — @norah"
+              data-testid="affiliate-display-name"
             />
           </div>
         </div>
@@ -424,6 +429,7 @@ export function AdminAffiliatesBoard({
           <button
             type="button"
             onClick={create}
+            data-testid="affiliate-create"
             disabled={pending || !codeValid || overCap}
             className="inline-flex items-center gap-2 rounded-md bg-[color:var(--color-primary)] px-4 py-2 text-sm font-medium text-[color:var(--color-primary-foreground)] disabled:opacity-50"
           >
