@@ -85,7 +85,7 @@
     },
     "users": {
       "searchPlaceholder": "Search a user…",
-      "roleFilterAll": "All roles",
+      "roleFilterAll": "All customers",
       "count": "{count, plural, one {# result} other {# results}}",
       "colName": "Name",
       "colContact": "Contact",
