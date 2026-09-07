@@ -7,7 +7,7 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { PlanningBoard } from '@/components/pro/planning/planning-board';
 import { PlanRequiredBanner } from '@/components/pro/plan-required-banner';
-import { orgHasActiveAccess } from '@/lib/payments/entitlements';
+import { effectiveProTier, orgHasActiveAccess } from '@/lib/payments/entitlements';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('ProPages');
@@ -29,7 +29,7 @@ export default async function ProPlanningPage({
   const shellOrg = {
     name: org.name,
     primaryColor: org.primaryColor,
-    tier: org.subscriptionTier ?? null,
+    tier: effectiveProTier(org),
     role: org.myRole,
   };
   const hasAccess = orgHasActiveAccess(org);

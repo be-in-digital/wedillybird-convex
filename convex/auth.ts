@@ -20,7 +20,7 @@ import {
   verifyOtpHash,
 } from './lib/otp';
 import { isValidE164, normalizePhone } from './lib/phone';
-import { sendWhatsAppCloudTemplate } from './lib/whatsappCloud';
+import { isUndeliverableRecipient, sendWhatsAppCloudTemplate } from './lib/whatsappCloud';
 import { resolveChannel } from './lib/channelRouting';
 import { isTwilioConfigured, sendTwilioSms } from './lib/twilioSms';
 import { isValidEmail, normalizeEmail } from './lib/email';
@@ -142,6 +142,16 @@ export const requestOtp = action({
     if (!result.ok) {
       if (result.error === 'WHATSAPP_NOT_CONFIGURED') {
         throw new Error('WHATSAPP_NOT_CONFIGURED');
+      }
+      // La raison de Meta était jetée : un numéro qui ne reçoit jamais son code
+      // ne laissait AUCUNE trace exploitable, ni dans les logs ni à l'écran.
+      // On la journalise (jamais le code OTP lui-même) et on distingue le refus
+      // définitif du destinataire d'un incident passager.
+      console.error(
+        `[auth:whatsapp] envoi OTP refusé pour ${normalized} — code=${result.errorCode ?? 'n/a'} message=${result.error ?? 'n/a'}`,
+      );
+      if (isUndeliverableRecipient(result.errorCode)) {
+        throw new Error('WHATSAPP_UNDELIVERABLE');
       }
       throw new Error('WHATSAPP_SEND_FAILED');
     }
@@ -562,6 +572,16 @@ export const requestLinkPhone = action({
     if (!result.ok) {
       if (result.error === 'WHATSAPP_NOT_CONFIGURED') {
         throw new Error('WHATSAPP_NOT_CONFIGURED');
+      }
+      // La raison de Meta était jetée : un numéro qui ne reçoit jamais son code
+      // ne laissait AUCUNE trace exploitable, ni dans les logs ni à l'écran.
+      // On la journalise (jamais le code OTP lui-même) et on distingue le refus
+      // définitif du destinataire d'un incident passager.
+      console.error(
+        `[auth:whatsapp] envoi OTP refusé pour ${normalized} — code=${result.errorCode ?? 'n/a'} message=${result.error ?? 'n/a'}`,
+      );
+      if (isUndeliverableRecipient(result.errorCode)) {
+        throw new Error('WHATSAPP_UNDELIVERABLE');
       }
       throw new Error('WHATSAPP_SEND_FAILED');
     }

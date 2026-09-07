@@ -6,7 +6,7 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { ModulePlaceholder } from '@/components/pro/module-placeholder';
 import { CsvImport } from '@/components/pro/integrations/csv-import';
-import { tierHasFeature } from '@/lib/payments/entitlements';
+import { effectiveProTier, tierHasFeature } from '@/lib/payments/entitlements';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('ProPages');
@@ -35,7 +35,9 @@ export default async function ProIntegrationsPage({
       Icon: Code2,
     },
   ];
-  const tier = org.subscriptionTier ?? null;
+  // Palier EFFECTIF : un cadeau expiré ne doit pas laisser la fonctionnalité
+  // ouverte, alors que `subscriptionTier` reste écrit sur l'organisation.
+  const tier = effectiveProTier(org);
   const canImport = tierHasFeature(tier, 'crmPipeline'); // Business+
   const shellOrg = { name: org.name, primaryColor: org.primaryColor, tier, role: org.myRole };
 

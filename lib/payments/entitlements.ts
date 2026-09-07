@@ -193,6 +193,33 @@ export function orgHasActiveAccess(
   return (org.paygCredits ?? 0) > 0;
 }
 
+/**
+ * Palier **effectif** d'une organisation : son tier tant que sa couverture
+ * court, `null` dès qu'elle est éteinte.
+ *
+ * `subscriptionTier` est une colonne *persistante* : elle reste écrite sur
+ * l'organisation quand l'abonnement est résilié comme quand un compte offert
+ * expire — c'est voulu, la facturation et l'historique en ont besoin. Mais les
+ * écrans de fonctionnalités ne lisaient QUE cette colonne
+ * (`tierHasFeature(org.subscriptionTier, …)`), sans demander si la couverture
+ * existait encore. Une agence dont le cadeau a expiré gardait donc CRM, budget
+ * éditable, devis, contrats, encaissements, analytics et intégrations ouverts
+ * — gratuitement et sans fin, pendant que son tableau de bord lui réclamait un
+ * forfait. Inoffensif tant que le cadeau valait Starter (qui n'ouvre aucune de
+ * ces sept entrées) ; une fuite dès qu'il vaut Agency.
+ *
+ * C'est donc CE palier-ci que doivent lire les gates de fonctionnalités et les
+ * cadenas de la sidebar. La page de facturation, elle, continue de lire le tier
+ * brut : elle doit montrer le forfait qu'on a eu, même éteint.
+ */
+export function effectiveProTier(
+  org: (OrgAccessState & { subscriptionTier?: SubscriptionTier | null }) | null | undefined,
+  now: number = Date.now(),
+): SubscriptionTier | null {
+  if (!orgHasActiveAccess(org, now)) return null;
+  return org?.subscriptionTier ?? null;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Bandeau d'abonnement du cockpit agence                                     */
 /* -------------------------------------------------------------------------- */

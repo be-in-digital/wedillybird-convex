@@ -5,7 +5,7 @@ import { requireProContext } from '@/lib/pro/require-pro-context';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { ModulePlaceholder } from '@/components/pro/module-placeholder';
-import { tierHasFeature } from '@/lib/payments/entitlements';
+import { effectiveProTier, tierHasFeature } from '@/lib/payments/entitlements';
 import { formatEurMinor } from '@/lib/pro/format';
 import { CLIENT_STAGES, CLIENT_STAGE_LABEL } from '@/lib/pro/clients';
 
@@ -26,7 +26,9 @@ export default async function ProAnalyticsPage({
   setRequestLocale(locale);
   const { session, org, user } = await requireProContext(locale);
   const t = await getTranslations('ProPages');
-  const tier = org.subscriptionTier ?? null;
+  // Palier EFFECTIF : un cadeau expiré ne doit pas laisser la fonctionnalité
+  // ouverte, alors que `subscriptionTier` reste écrit sur l'organisation.
+  const tier = effectiveProTier(org);
   const shellOrg = { name: org.name, primaryColor: org.primaryColor, tier, role: org.myRole };
 
   if (!tierHasFeature(tier, 'analyticsMulti')) {

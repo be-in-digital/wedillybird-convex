@@ -965,7 +965,9 @@
       "rateLimited": "Trop de demandes. Patientez quelques minutes.",
       "expired": "Code expiré, demandez-en un nouveau.",
       "unknown": "Une erreur est survenue. Réessayez.",
-      "accountSuspended": "Ce compte a été suspendu. Contactez-nous à contact@wedillybird.com."
+      "accountSuspended": "Ce compte a été suspendu. Contactez-nous à contact@wedillybird.com.",
+      "whatsappUndeliverable": "Ce numéro ne peut pas recevoir le code par WhatsApp. Vérifiez qu'un compte WhatsApp actif y est associé, ou connectez-vous par e-mail.",
+      "sendFailed": "L'envoi du code a échoué. Réessayez dans un instant, ou connectez-vous par e-mail."
     },
     "tagline": "Préparez votre grand jour",
     "stepOneEyebrow": "ÉTAPE 01 — IDENTITÉ",

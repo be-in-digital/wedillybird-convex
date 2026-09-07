@@ -962,7 +962,9 @@
       "rateLimited": "Demasiados pedidos. Aguarda alguns minutos.",
       "expired": "Código expirado, pede um novo.",
       "unknown": "Ocorreu um erro. Tenta de novo.",
-      "accountSuspended": "Esta conta foi suspensa. Fale connosco em contact@wedillybird.com."
+      "accountSuspended": "Esta conta foi suspensa. Fale connosco em contact@wedillybird.com.",
+      "whatsappUndeliverable": "Este número não pode receber o código por WhatsApp. Verifique se tem uma conta WhatsApp ativa, ou inicie sessão por e-mail.",
+      "sendFailed": "Não foi possível enviar o código. Tente novamente daqui a pouco, ou inicie sessão por e-mail."
     },
     "tagline": "Prepare seu grande dia",
     "stepOneEyebrow": "PASSO 01 — IDENTIDADE",

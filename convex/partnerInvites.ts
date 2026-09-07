@@ -192,6 +192,9 @@ export const listForAdmin = query({
       inviteeEmail: inv.inviteeEmail ?? null,
       inviteeName: inv.inviteeName ?? null,
       grantTier: inv.grantTier,
+      // Le palier particulier se choisit désormais à la création : l'écran doit
+      // annoncer celui du lien, pas un Premium supposé.
+      grantEventTier: inv.grantEventTier ?? DEFAULT_PARTNER_COMP_EVENT_TIER,
       grantMonths: inv.grantMonths,
       expiresAt: inv.expiresAt,
       consumedAt: inv.consumedAt ?? null,

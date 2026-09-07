@@ -7,7 +7,7 @@ import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { NotificationsPanel } from '@/components/notifications/notifications-panel';
 import { Cockpit } from '@/components/pro/cockpit';
 import { PlanRequiredBanner } from '@/components/pro/plan-required-banner';
-import { orgHasActiveAccess } from '@/lib/payments/entitlements';
+import { effectiveProTier, orgHasActiveAccess } from '@/lib/payments/entitlements';
 import { CompedTrialBanner } from '@/components/pro/comped-trial-banner';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -59,7 +59,8 @@ export default async function ProDashboardPage({
       org={{
         name: data!.org.name,
         primaryColor: data!.org.primaryColor,
-        tier: data!.org.subscriptionTier ?? null,
+        // Cadenas de la sidebar : palier EFFECTIF, comme les pages qu'ils ouvrent.
+        tier: effectiveProTier(data!.org),
         role: data!.myRole,
       }}
       user={{ name: user?.fullName }}

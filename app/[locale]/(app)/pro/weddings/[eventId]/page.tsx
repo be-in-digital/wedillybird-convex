@@ -8,7 +8,7 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { ProSidebarShell } from '@/components/pro/pro-sidebar-shell';
 import { WeddingHubClient } from '@/components/pro/weddings/wedding-hub';
 import { CoupleLinkCard } from '@/components/pro/couple-link-card';
-import { PRO_TIER_LIMITS } from '@/lib/payments/entitlements';
+import { PRO_TIER_LIMITS, effectiveProTier } from '@/lib/payments/entitlements';
 import { nowMs } from '@/lib/pro/format';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -59,7 +59,7 @@ export default async function ProWeddingHubPage({
       convex.query(convexApi.coupleLinks, { eventId, requesterId: session.userId }).catch(() => []),
     ]);
 
-  const tier = org.subscriptionTier ?? null;
+  const tier = effectiveProTier(org);
   const now = nowMs();
   const messageQuota: [number, number] | undefined = tier
     ? [
