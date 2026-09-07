@@ -329,6 +329,7 @@ const rawConvexApi = {
   partnerDashboard: api.affiliate.partnerDashboard,
   createPartnerInvite: api.partnerInvites.create,
   revokePartnerInvite: api.partnerInvites.revoke,
+  sendPartnerInvite: api.emailActions.sendPartnerInvite,
   listPartnerInvites: api.partnerInvites.listForAdmin,
   getPartnerInviteByToken: api.partnerInvites.getByToken,
   redeemPartnerInvite: api.partnerInvites.redeem,

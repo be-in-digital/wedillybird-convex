@@ -1651,6 +1651,13 @@ export default defineSchema({
     consumedByUserId: v.optional(v.id('users')),
     consumedOrganizationId: v.optional(v.id('organizations')),
     revokedAt: v.optional(v.number()),
+    /**
+     * Traçabilité de l'envoi. Sans elle, l'admin n'a aucun moyen de savoir si
+     * le partenaire a déjà reçu son lien : il renvoie, ou n'ose pas renvoyer.
+     */
+    lastSentAt: v.optional(v.number()),
+    lastSentTo: v.optional(v.string()),
+    sendCount: v.optional(v.number()),
     createdBy: v.id('users'),
     createdAt: v.number(),
   })

@@ -4406,6 +4406,15 @@
       "footer": "Automated notification linked to Meta WhatsApp Business validation.",
       "textTemplate": "Template: {templateName}",
       "textReason": "Reason: {reason}"
+    },
+    "partnerInvite": {
+      "codeNotice": "Your partner code {code} will be active as soon as the account is open: share it with your audience to earn your commission.",
+      "ctaLabel": "Open my workspace ({months} months free)",
+      "intro": "We would like to have you as a partner. Here is a personal link to open your Wedillybird agency workspace: the first {months} months are free, so you can try it on real weddings.",
+      "linkExpiry": "This link is valid until {date}. The free months start the day you open your account.",
+      "noCard": "No payment card is required, neither now nor when the free months end.",
+      "preheader": "Open your agency workspace — {months} months free, no card required.",
+      "subject": "Your Wedillybird account, {months} months free"
     }
   },
   "Metadata": {

@@ -744,6 +744,33 @@ export async function adminCreatePartnerInviteAction(
   }
 }
 
+/**
+ * Envoie le lien d'invitation au partenaire.
+ *
+ * `action` et non `mutation` : l'envoi SES passe par une action Node côté
+ * Convex. Le contrôle du rôle admin est refait là-bas, sur le ctx qui voit la
+ * base — celui d'ici ne protège que l'appel.
+ */
+export async function adminSendPartnerInviteAction(
+  inviteId: string,
+  to?: string,
+): Promise<ActionResult & { to?: string }> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    const res = await convex.action(convexApi.sendPartnerInvite, {
+      adminId,
+      inviteId,
+      ...(to ? { to } : {}),
+    });
+    if (!res.ok) return { ok: false, error: res.error };
+    revalidatePath('/admin/affiliates');
+    return { ok: true, to: res.to };
+  } catch (e: unknown) {
+    return { ok: false, error: msg(e) };
+  }
+}
+
 /** Coupe un lien encore inutilisé. Un lien déjà consommé n'est pas révocable. */
 export async function adminRevokePartnerInviteAction(inviteId: string): Promise<ActionResult> {
   try {

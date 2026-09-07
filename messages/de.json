@@ -4410,6 +4410,15 @@
       "footer": "Automatische Benachrichtigung im Zusammenhang mit der Meta WhatsApp Business-Validierung.",
       "textTemplate": "Template: {templateName}",
       "textReason": "Grund: {reason}"
+    },
+    "partnerInvite": {
+      "codeNotice": "Ihr Partnercode {code} ist ab der Kontoeröffnung aktiv: Teilen Sie ihn mit Ihrer Community, um Ihre Provision zu erhalten.",
+      "ctaLabel": "Meinen Bereich eröffnen ({months} Monate gratis)",
+      "intro": "Wir würden Sie gerne als Partner gewinnen. Hier ist ein persönlicher Link, um Ihren Wedillybird-Agenturbereich zu eröffnen: die ersten {months} Monate sind gratis, damit Sie ihn an echten Hochzeiten testen können.",
+      "linkExpiry": "Dieser Link ist bis zum {date} gültig. Die Gratismonate beginnen an dem Tag, an dem Sie Ihr Konto eröffnen.",
+      "noCard": "Es wird keine Zahlungskarte verlangt, weder jetzt noch am Ende der Gratismonate.",
+      "preheader": "Eröffnen Sie Ihren Agenturbereich — {months} Monate gratis, ohne Karte.",
+      "subject": "Ihr Wedillybird-Konto, {months} Monate gratis"
     }
   },
   "Metadata": {
