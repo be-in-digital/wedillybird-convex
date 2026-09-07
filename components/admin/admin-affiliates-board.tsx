@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { Handshake, Loader2, Plus } from 'lucide-react';
 import {
   adminCreateAffiliateAction,
+  adminCreatePartnerInviteAction,
   adminEnsureAffiliateCouponAction,
   adminMarkReferralPaidAction,
+  adminRevokePartnerInviteAction,
   adminSetAffiliateStatusAction,
 } from '@/app/[locale]/(app)/admin/actions';
 
@@ -23,6 +25,21 @@ interface Affiliate {
   /** Code réellement saisissable au checkout (code promo Stripe créé). */
   shareCode: string | null;
   stripePromotionCodeId: string | null;
+  createdAt: number;
+}
+
+interface PartnerInvite {
+  id: string;
+  affiliateId: string;
+  /** Rendu uniquement tant que le lien sert — jamais pour un lien mort. */
+  token: string | null;
+  state: 'usable' | 'consumed' | 'revoked' | 'expired';
+  inviteeEmail: string | null;
+  inviteeName: string | null;
+  grantTier: 'starter' | 'business' | 'agency';
+  grantMonths: number;
+  expiresAt: number;
+  consumedAt: number | null;
   createdAt: number;
 }
 
@@ -55,12 +72,21 @@ function fmtMinor(minor: number, currency: string): string {
   return `${(minor / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} ${currency}`;
 }
 
+const INVITE_STATE_LABEL: Record<PartnerInvite['state'], string> = {
+  usable: 'Lien actif',
+  consumed: 'Compte ouvert',
+  revoked: 'Annulé',
+  expired: 'Expiré',
+};
+
 export function AdminAffiliatesBoard({
   affiliates,
   referrals,
+  invites = [],
 }: {
   affiliates: Affiliate[];
   referrals: Referral[];
+  invites?: PartnerInvite[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -164,6 +190,53 @@ export function AdminAffiliatesBoard({
   }
 
   // Agrégats du ledger : somme par (devise, statut) pour les récompenses dues.
+  /**
+   * Le lien le plus récent de chaque partenaire. Un seul lien vit à la fois
+   * (Convex révoque le précédent à la création), donc afficher le dernier
+   * suffit — et évite un historique qui n'aide personne dans un tableau.
+   */
+  const latestInvite = useMemo(() => {
+    const map = new Map<string, PartnerInvite>();
+    for (const inv of invites) {
+      const current = map.get(inv.affiliateId);
+      if (!current || inv.createdAt > current.createdAt) map.set(inv.affiliateId, inv);
+    }
+    return map;
+  }, [invites]);
+
+  /** Lien d'invitation complet, tel qu'on le copie pour l'envoyer. */
+  function inviteUrl(token: string): string {
+    const origin = typeof window === 'undefined' ? '' : window.location.origin;
+    return `${origin}/rejoindre/${token}`;
+  }
+
+  function createInvite(a: Affiliate) {
+    setError(null);
+    startTransition(async () => {
+      const res = await adminCreatePartnerInviteAction(a.id, {
+        ...(a.ownerEmail ? { inviteeEmail: a.ownerEmail } : {}),
+        ...(a.displayName ? { inviteeName: a.displayName } : {}),
+      });
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  function revokeInvite(inviteId: string) {
+    setError(null);
+    startTransition(async () => {
+      const res = await adminRevokePartnerInviteAction(inviteId);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
   const totals = useMemo(() => {
     const map = new Map<string, { currency: string; status: Referral['status']; minor: number }>();
     for (const r of referrals) {
@@ -333,6 +406,7 @@ export function AdminAffiliatesBoard({
                 <th className="px-4 py-2.5">Comm. / Remise</th>
                 <th className="px-4 py-2.5">Code partageable</th>
                 <th className="px-4 py-2.5">Contact</th>
+                <th className="px-4 py-2.5">Compte offert</th>
                 <th className="px-4 py-2.5">Statut</th>
                 <th className="px-4 py-2.5" />
               </tr>
@@ -372,6 +446,21 @@ export function AdminAffiliatesBoard({
                   <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
                     {a.displayName ?? a.ownerEmail ?? '—'}
                   </td>
+                  {/* Le lien d'invitation n'a de sens que pour un partenaire :
+                      le parrainage particulier n'ouvre pas de compte agence. */}
+                  <td className="px-4 py-2.5">
+                    {a.kind !== 'partner' ? (
+                      <span className="text-[color:var(--color-ink-500)]">—</span>
+                    ) : (
+                      <PartnerInviteCell
+                        invite={latestInvite.get(a.id) ?? null}
+                        pending={pending}
+                        onCreate={() => createInvite(a)}
+                        onRevoke={revokeInvite}
+                        buildUrl={inviteUrl}
+                      />
+                    )}
+                  </td>
                   <td className="px-4 py-2.5">
                     <span
                       className={
@@ -398,7 +487,7 @@ export function AdminAffiliatesBoard({
               {affiliates.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-8 text-center text-sm text-[color:var(--color-ink-500)]"
                   >
                     Aucun affilié. Créez-en un ci-dessus (invitation-only).
@@ -478,6 +567,84 @@ export function AdminAffiliatesBoard({
           </table>
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * État du compte offert d'un partenaire, dans une seule cellule.
+ *
+ * Le jeton n'est rendu par le serveur que tant que le lien sert : un lien
+ * consommé ou révoqué n'a plus de raison de circuler, donc il n'y a rien à
+ * copier — seulement un état à lire. « Nouveau lien » reste proposé dans tous
+ * les cas : regénérer un lien perdu doit rester trivial (et révoque
+ * automatiquement le précédent côté serveur).
+ */
+function PartnerInviteCell({
+  invite,
+  pending,
+  onCreate,
+  onRevoke,
+  buildUrl,
+}: {
+  invite: PartnerInvite | null;
+  pending: boolean;
+  onCreate: () => void;
+  onRevoke: (inviteId: string) => void;
+  buildUrl: (token: string) => string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  if (!invite) {
+    return (
+      <button
+        type="button"
+        onClick={onCreate}
+        disabled={pending}
+        className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+      >
+        Créer le lien
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <span className="text-xs text-[color:var(--color-ink-500)]">
+        {INVITE_STATE_LABEL[invite.state]} · {invite.grantMonths} mois {invite.grantTier}
+      </span>
+      {invite.state === 'usable' && invite.token ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(buildUrl(invite.token!));
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 2000);
+            }}
+            className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 font-mono text-[11px]"
+          >
+            {copied ? 'Copié' : 'Copier le lien'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onRevoke(invite.id)}
+            disabled={pending}
+            className="rounded-md px-1.5 py-1 text-[11px] text-[color:var(--color-ink-500)] underline underline-offset-2 disabled:opacity-50"
+          >
+            Annuler
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onCreate}
+          disabled={pending}
+          className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+        >
+          Nouveau lien
+        </button>
+      )}
     </div>
   );
 }

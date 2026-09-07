@@ -81,6 +81,7 @@ describe('mentions manquantes', () => {
       'registeredAddress',
       'rcsCity',
       'publicationDirector',
+      'consumerMediator',
     ]);
   });
 

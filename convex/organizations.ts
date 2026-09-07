@@ -9,7 +9,7 @@ import {
 import { internal } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
 import { BUDGET_CURRENCY } from './lib/currency';
-import { pickUniqueSlug } from './lib/uniqueSlug';
+import { pickUniqueSlug, slugifyOrgName } from './lib/uniqueSlug';
 import { seatLimitForTier } from './lib/entitlements';
 
 const ROLE = v.union(
@@ -18,16 +18,6 @@ const ROLE = v.union(
   v.literal('planner'),
   v.literal('viewer'),
 );
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40);
-}
 
 function randomSuffix(): string {
   return Math.random().toString(36).slice(2, 6);
@@ -80,7 +70,7 @@ export const create = mutation({
     const trimmed = args.name.trim();
     if (trimmed.length < 1 || trimmed.length > 120) throw new Error('INVALID_NAME');
 
-    const baseSlug = slugify(trimmed) || `org-${randomSuffix()}`;
+    const baseSlug = slugifyOrgName(trimmed) || `org-${randomSuffix()}`;
     const slug = await pickUniqueSlug(ctx, 'organizations', 'by_slug', 'slug', baseSlug);
     const now = Date.now();
 
@@ -503,6 +493,10 @@ export const myOrganization = query({
       // Crédits Pay-as-you-go : nécessaires côté UI pour décider de l'accès
       // back-office (une agence sans abonnement mais avec crédit PAYG a accès).
       paygCredits: org.paygCredits ?? 0,
+      // Le cadeau décide de l'accès au back-office : sans lui côté client, une
+      // agence à qui l'on a ouvert un compte verrait la bannière « choisissez
+      // un forfait » alors que le serveur la laisse entrer.
+      compedSubscription: org.compedSubscription ?? null,
       myRole: membership.role,
     };
   },

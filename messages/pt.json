@@ -92,7 +92,12 @@
       "confirmSuspend": "Suspender {name}?",
       "suspend": "Suspender",
       "confirmChangeRole": "Mudar a função para «{role}»?",
-      "rolePlaceholder": "Função…"
+      "rolePlaceholder": "Função…",
+      "colPartner": "Parceiro",
+      "partnersOnly": "Apenas parceiros",
+      "attachPartner": "Associar um código",
+      "detachPartner": "Desassociar",
+      "confirmDetachPartner": "Desassociar este código de parceiro desta conta?"
     },
     "events": {
       "searchPlaceholder": "Buscar um evento…",
@@ -244,6 +249,7 @@
     "terms": "Termos",
     "privacy": "Privacidade",
     "cookies": "Cookies",
+    "mentions": "Menções legais",
     "faq": "FAQ",
     "contact": "Contacto"
   },
@@ -330,6 +336,30 @@
       "article10Body": "O Parceiro não recebe qualquer informação sobre a identidade dos compradores: o seu espaço mostra montantes, datas e estados, nunca um nome, um endereço de e-mail ou um casamento identificável.\nOs dados do Parceiro (identidade, contactos, dados bancários) são tratados para a gestão do programa e o pagamento das comissões, e conservados pelo tempo exigido pelas nossas obrigações contabilísticas. O exercício dos direitos consta da política de privacidade.",
       "article11Title": "11. Alteração, lei aplicável e litígios",
       "article11Body": "Podemos alterar as presentes condições. Qualquer alteração é notificada ao Parceiro trinta dias antes da sua entrada em vigor e não se aplica às vendas já atribuídas.\nAs presentes condições regem-se pelo direito francês. Qualquer litígio relativo à sua execução é da competência exclusiva dos tribunais de Paris, salvo disposição imperativa em contrário."
+    },
+    "mentions": {
+      "title": "Menções legais",
+      "lastUpdated": "Última atualização: 7 de setembro de 2026",
+      "publisherTitle": "Editor do site",
+      "tradeName": "Explora o serviço sob o nome comercial {value}",
+      "capital": "Capital social: {value} €",
+      "siren": "SIREN {value}",
+      "siret": "SIRET {value}",
+      "rcs": "RCS {city} {value}",
+      "vat": "N.º de IVA intracomunitário: {value}",
+      "contact": "Contacto: {value}",
+      "directorTitle": "Diretor de publicação",
+      "directorBody": "{name}",
+      "hostTitle": "Alojamento",
+      "hostBody": "O site é alojado por {name} ({url}).",
+      "ipTitle": "Propriedade intelectual",
+      "ipBody": "Todos os conteúdos do site — marca, textos, imagens, cinemáticas de convite, código — estão protegidos pelo direito de propriedade intelectual. É proibida qualquer reprodução ou reutilização sem autorização escrita. Os conteúdos carregados pelos utilizadores (fotos, textos de convite) continuam a ser seus; concedem-nos apenas os direitos necessários para prestar o serviço.",
+      "dataTitle": "Dados pessoais",
+      "dataBody": "O tratamento dos dados pessoais, os prazos de conservação e o exercício dos seus direitos estão descritos na nossa política de privacidade, acessível a partir do rodapé.",
+      "cookiesTitle": "Cookies",
+      "cookiesBody": "A utilização de cookies e a forma de os recusar estão descritas na nossa política de cookies, acessível a partir do rodapé.",
+      "mediationTitle": "Mediação de consumo",
+      "mediationBody": "Nos termos do artigo L612-1 do código do consumo francês, pode recorrer gratuitamente ao mediador {name} ({url}) em caso de litígio não resolvido com o nosso serviço de apoio ao cliente."
     }
   },
   "Account": {
@@ -760,7 +790,8 @@
             "terms": "Termos",
             "privacy": "Privacidade",
             "cookies": "Cookies",
-            "rgpd": "Os teus direitos RGPD"
+            "rgpd": "Os teus direitos RGPD",
+            "mentions": "Menções legais"
           }
         }
       },
@@ -3211,7 +3242,10 @@
         "ledgerCoveredPayg": "pagos por evento",
         "ledgerNote": "Aqui aparecem apenas os <strong>excedentes</strong>; as taxas base estão {context}. Encontre as suas faturas consolidadas na <link>faturação da agência</link>."
       }
-    }
+    },
+    "compedTrialRemaining": "A sua conta oferecida termina daqui a {days} dias.",
+    "compedTrialTomorrow": "A sua conta oferecida termina amanhã.",
+    "compedTrialCta": "Escolher um plano"
   },
   "Branding": {
     "title": "Identidade visual",
@@ -4373,6 +4407,10 @@
     "legalAffiliation": {
       "title": "Condições do programa de parceiros — Wedillybird",
       "description": "Condições do programa de parceiros Wedillybird: atribuição de vendas, comissão, aquisição, pagamento, obrigações do parceiro."
+    },
+    "legalMentions": {
+      "title": "Menções legais — Wedillybird",
+      "description": "Editor, alojamento e informações legais do serviço Wedillybird."
     }
   },
   "CookieConsent": {
@@ -5673,6 +5711,40 @@
     "codeLabel": "Código para partilhar",
     "codeHint": "A introduzir no momento do pagamento. Mesmo desconto, mesma comissão — prático para as suas stories e publicações.",
     "termsLink": "Ler as condições do programa de parceiros"
+  },
+  "PartnerInvite": {
+    "eyebrow": "Convite de parceiro",
+    "title": "A sua conta, {months} meses oferecidos",
+    "subtitle": "Abra o seu espaço de agência e use a Wedillybird durante {months} meses para a testar em casamentos reais.",
+    "noCard": "Não é pedido nenhum cartão bancário.",
+    "nameLabel": "Nome da sua agência",
+    "namePlaceholder": "Estúdio Camille",
+    "nameHelp": "É o nome que os seus casais verão. Pode alterá-lo quando quiser.",
+    "submit": "Abrir o meu espaço ({months} meses oferecidos)",
+    "codeHint": "O seu código de parceiro {code} está ativo: partilhe-o com a sua comunidade para receber a comissão.",
+    "deadTitle": "Esta ligação já não é válida",
+    "deadHelp": "Escreva-nos para contact@wedillybird.com e enviamos-lhe outra.",
+    "dead": {
+      "unknown": "Esta ligação não existe. Verifique se foi copiada por inteiro.",
+      "consumed": "Esta ligação já foi usada para abrir uma conta.",
+      "revoked": "Esta ligação foi anulada.",
+      "expired": "Esta ligação expirou."
+    },
+    "errors": {
+      "unauthorized": "Inicie sessão para abrir o seu espaço.",
+      "invite_not_found": "Esta ligação não existe.",
+      "invite_expired": "Esta ligação expirou.",
+      "invite_revoked": "Esta ligação foi anulada.",
+      "invite_consumed": "Esta ligação já foi usada.",
+      "org_already_subscribed": "A sua agência já tem uma subscrição ativa. Fale connosco e tratamos disso.",
+      "invalid_name": "Indique o nome da sua agência.",
+      "user_not_found": "Conta não encontrada. Inicie sessão novamente.",
+      "unknown": "Não foi possível abrir o seu espaço de momento."
+    },
+    "metaTitle": "O seu convite de parceiro — Wedillybird",
+    "signInCta": "Criar a minha conta e aceitar",
+    "signInHint": "Voltará aqui logo a seguir. Não lhe será pedido nenhum cartão bancário.",
+    "deadBackHome": "Voltar ao início"
   },
   "SeatPass": {
     "summary": {

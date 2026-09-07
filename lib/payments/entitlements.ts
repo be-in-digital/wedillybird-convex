@@ -158,23 +158,38 @@ export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled'
 export interface OrgAccessState {
   subscriptionStatus?: SubscriptionStatus | null;
   paygCredits?: number | null;
+  /** Compte offert (partenariat, démo) — actif tant que `expiresAt` est devant. */
+  compedSubscription?: { expiresAt: number } | null;
 }
 
 /**
  * L'organisation a-t-elle **choisi un forfait** et donc accès aux
  * fonctionnalités du back-office (créer un mariage, rétroplanning, prestataires…) ?
  *
- * `true` si abonnement `active`/`trialing`, OU crédits Pay-as-you-go > 0 (au
- * moins un événement payé). `false` pour une agence fraîchement onboardée (rien
- * choisi) ou un abonnement `past_due`/`canceled`/`unpaid` sans crédit PAYG.
+ * `true` si abonnement `active`/`trialing`, OU **compte offert non expiré**, OU
+ * crédits Pay-as-you-go > 0 (au moins un événement payé). `false` pour une
+ * agence fraîchement onboardée (rien choisi) ou un abonnement
+ * `past_due`/`canceled`/`unpaid` sans crédit PAYG.
+ *
+ * La branche « compte offert » est datée : un cadeau n'a aucun abonnement
+ * Stripe derrière, donc rien ne viendrait le clore à l'échéance. C'est la
+ * lecture d'`expiresAt` à chaque appel qui fait que « six mois » veut dire six
+ * mois.
  *
  * **Miroir exact** de `convex/lib/entitlements.ts:orgHasActiveAccess` (le
- * garde-fou serveur qui fait foi) — garder les deux en phase. Sert à afficher
- * la bannière « choisir un forfait » et à masquer les actions de création.
+ * garde-fou serveur qui fait foi) — garder les deux en phase, y compris la
+ * comparaison de date. Le bundler Convex ne suivant pas les imports de `lib/`,
+ * la duplication est assumée ; un test croise les deux implémentations. Sert à
+ * afficher la bannière « choisir un forfait » et à masquer les actions de
+ * création.
  */
-export function orgHasActiveAccess(org: OrgAccessState | null | undefined): boolean {
+export function orgHasActiveAccess(
+  org: OrgAccessState | null | undefined,
+  now: number = Date.now(),
+): boolean {
   if (!org) return false;
   if (org.subscriptionStatus === 'active' || org.subscriptionStatus === 'trialing') return true;
+  if (org.compedSubscription && org.compedSubscription.expiresAt > now) return true;
   return (org.paygCredits ?? 0) > 0;
 }
 

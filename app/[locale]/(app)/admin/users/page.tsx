@@ -13,10 +13,17 @@ export default async function AdminUsersPage({ params }: { params: Promise<{ loc
   if (!session) redirect({ href: '/sign-in', locale });
 
   const convex = getConvexServerClient();
-  const [user, users] = await Promise.all([
+  const [user, users, affiliates] = await Promise.all([
     convex.query(convexApi.currentUser, { userId: session!.userId }),
     convex.query(convexApi.adminListUsers, { adminId: session!.userId }),
+    convex.query(convexApi.listAffiliates, { adminId: session!.userId }),
   ]);
+  // Codes partenaire encore sans compte rattaché : c'est ce qu'on peut relier
+  // depuis cette page. Le parrainage particulier est exclu — il est créé PAR le
+  // compte du parrain, il ne se rattache pas à la main.
+  const attachablePartnerCodes = affiliates
+    .filter((a) => a.kind === 'partner')
+    .map((a) => ({ id: a.id, code: a.code, displayName: a.displayName, ownerEmail: a.ownerEmail }));
 
   return (
     <AdminShell current="users" adminName={user?.fullName}>
@@ -36,7 +43,7 @@ export default async function AdminUsersPage({ params }: { params: Promise<{ loc
             {users.length} utilisateurs enregistrés
           </p>
         </header>
-        <AdminUsersTable users={users} />
+        <AdminUsersTable users={users} partnerCodes={attachablePartnerCodes} />
       </div>
     </AdminShell>
   );
