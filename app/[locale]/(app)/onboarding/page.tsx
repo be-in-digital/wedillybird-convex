@@ -47,5 +47,15 @@ export default async function OnboardingPage({ params }: { params: Promise<{ loc
   // un canal est perdu.
   // - Si l'user vient de magic link → email déjà rempli, on demandera le phone.
   // - Si l'user vient de WhatsApp → phone déjà rempli, on demandera l'email.
-  return <OnboardingWizard initialEmail={user?.email ?? ''} initialPhone={user?.phone ?? ''} />;
+  // `initialRole` : un compte peut arriver ici avec un rôle déjà posé mais sans
+  // nom — un admin promu par ADMIN_PHONE/ADMIN_EMAIL, ou un partenaire passé
+  // `pro` en consommant son lien d'invitation. Le wizard masque alors le step
+  // « rôle » (le lui demander le rétrograderait).
+  return (
+    <OnboardingWizard
+      initialEmail={user?.email ?? ''}
+      initialPhone={user?.phone ?? ''}
+      initialRole={user?.role ?? null}
+    />
+  );
 }

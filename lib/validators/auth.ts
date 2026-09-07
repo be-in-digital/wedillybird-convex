@@ -34,7 +34,9 @@ export const verifyOtpSchema = z.object({
 
 export const onboardingSchema = z.object({
   fullName: z.string().trim().min(2, 'Validation.nameTooShort').max(80, 'Validation.nameTooLong'),
-  role: z.enum(['couple', 'pro']),
+  // Optionnel : le wizard masque le step « rôle » pour un compte qui en a
+  // déjà un (admin, partenaire déjà pro). Le serveur ne rétrograde jamais.
+  role: z.enum(['couple', 'pro']).optional(),
   email: emailSchema,
 });
 

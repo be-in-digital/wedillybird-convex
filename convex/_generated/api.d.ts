@@ -41,6 +41,7 @@ import type * as lib_guestStats from "../lib/guestStats.js";
 import type * as lib_invitationDesign from "../lib/invitationDesign.js";
 import type * as lib_magicLink from "../lib/magicLink.js";
 import type * as lib_notify from "../lib/notify.js";
+import type * as lib_onboardingRole from "../lib/onboardingRole.js";
 import type * as lib_orgAuth from "../lib/orgAuth.js";
 import type * as lib_otp from "../lib/otp.js";
 import type * as lib_partnerInvite from "../lib/partnerInvite.js";
@@ -120,6 +121,7 @@ declare const fullApi: ApiFromModules<{
   "lib/invitationDesign": typeof lib_invitationDesign;
   "lib/magicLink": typeof lib_magicLink;
   "lib/notify": typeof lib_notify;
+  "lib/onboardingRole": typeof lib_onboardingRole;
   "lib/orgAuth": typeof lib_orgAuth;
   "lib/otp": typeof lib_otp;
   "lib/partnerInvite": typeof lib_partnerInvite;

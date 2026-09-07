@@ -20,6 +20,7 @@ import { analytics } from '@/lib/analytics/posthog-client';
 import { completeOnboardingAction } from '@/app/[locale]/(auth)/actions';
 import { isValidEmail } from '@/lib/validators/email';
 import { currencyForLocale, currencyOptions, type BudgetCurrency } from '@/lib/currency';
+import { isSettledRole, type StoredRole } from '@/lib/auth/onboarding-role';
 
 type Role = 'couple' | 'pro';
 type StepKey = 'profile' | 'secure' | 'role';
@@ -56,7 +57,9 @@ const STEP_EYEBROW_KEYS: Record<StepKey, 'eyebrow.profile' | 'eyebrow.secure' | 
  * Steps dynamiques :
  *  - profile : nom + email (obligatoire)
  *  - secure  : phone WhatsApp via OTP (n'apparaît que si l'user n'en a pas)
- *  - role    : couple vs pro (toujours dernier)
+ *  - role    : couple vs pro (toujours dernier, et **masqué** si le compte a
+ *    déjà un rôle : admin plateforme, ou partenaire déjà passé `pro` via son
+ *    lien d'invitation — leur poser la question les rétrograderait)
  *
  * Logique d'apparition du step `secure` :
  *  - initialEmail rempli + initialPhone vide (magic link) → step `secure` ajouté.
@@ -68,9 +71,11 @@ const STEP_EYEBROW_KEYS: Record<StepKey, 'eyebrow.profile' | 'eyebrow.secure' | 
 export function OnboardingWizard({
   initialEmail = '',
   initialPhone = '',
+  initialRole = null,
 }: {
   initialEmail?: string;
   initialPhone?: string;
+  initialRole?: StoredRole | null;
 }) {
   const t = useTranslations('Onboarding');
   const tCommon = useTranslations('Common');
@@ -79,10 +84,14 @@ export function OnboardingWizard({
   const reduced = useReducedMotion();
 
   const needsPhone = initialPhone.trim().length === 0;
-  const steps = useMemo<ReadonlyArray<StepKey>>(
-    () => (needsPhone ? ['profile', 'secure', 'role'] : ['profile', 'role']),
-    [needsPhone],
-  );
+  // Rôle déjà établi (admin, partenaire déjà `pro`) → on saute le step.
+  const needsRole = !isSettledRole(initialRole);
+  const steps = useMemo<ReadonlyArray<StepKey>>(() => {
+    const list: StepKey[] = ['profile'];
+    if (needsPhone) list.push('secure');
+    if (needsRole) list.push('role');
+    return list;
+  }, [needsPhone, needsRole]);
 
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -108,6 +117,7 @@ export function OnboardingWizard({
 
   const canGoFromProfile = form.fullName.trim().length >= 2 && isValidEmail(form.email.trim());
   const canSubmitRole = currentStep === 'role' && form.role !== null;
+  const isLastStep = stepIndex === steps.length - 1;
 
   function goNext() {
     setDirection(1);
@@ -117,6 +127,18 @@ export function OnboardingWizard({
   function goPrev() {
     setDirection(-1);
     setStepIndex((i) => Math.max(i - 1, 0));
+  }
+
+  /**
+   * Sans step « rôle » (compte déjà admin ou pro), le dernier step est
+   * `profile` ou `secure` : c'est lui qui doit envoyer le formulaire.
+   */
+  function advanceOrSubmit() {
+    if (isLastStep) {
+      submit();
+      return;
+    }
+    goNext();
   }
 
   function handleProfileNext() {
@@ -129,7 +151,7 @@ export function OnboardingWizard({
     }
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
-    goNext();
+    advanceOrSubmit();
   }
 
   function sendPhoneCode() {
@@ -177,8 +199,8 @@ export function OnboardingWizard({
         });
         const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
         if (res.ok && json.ok) {
-          // succès → on avance vers le step rôle
-          goNext();
+          // succès → step rôle, ou envoi direct si le rôle est déjà établi
+          advanceOrSubmit();
           return;
         }
         setSecureError(mapLinkErrorToCopy(json.error ?? 'UNKNOWN', t));
@@ -189,12 +211,14 @@ export function OnboardingWizard({
   }
 
   function submit() {
-    if (!form.role) return;
+    // Le rôle n'est exigé que si le step est affiché.
+    if (needsRole && !form.role) return;
     const selectedRole = form.role;
     setError(null);
     const formData = new FormData();
     formData.set('fullName', form.fullName.trim());
-    formData.set('role', selectedRole);
+    // Rôle omis quand il est déjà établi : le serveur conserve l'existant.
+    if (selectedRole) formData.set('role', selectedRole);
     formData.set('email', form.email.trim());
     formData.set('currency', form.currency);
 
@@ -205,7 +229,11 @@ export function OnboardingWizard({
         // ok:true. On émet onboarding_completed avec le rôle choisi — l'user est
         // déjà identifié par le layout (app), l'event s'y rattache. No-op sans
         // consentement.
-        analytics.onboardingCompleted({ role: selectedRole });
+        // Sans step rôle, `initialRole` est forcément établi (couple/pro/admin).
+        const completedRole: 'couple' | 'pro' | 'admin' =
+          selectedRole ??
+          (initialRole === 'admin' || initialRole === 'couple' ? initialRole : 'pro');
+        analytics.onboardingCompleted({ role: completedRole });
         return;
       }
       if (result.fieldErrors) {
@@ -338,8 +366,8 @@ export function OnboardingWizard({
               </Select>
             </div>
 
-            <Button size="lg" onClick={handleProfileNext} disabled={!canGoFromProfile}>
-              {t('next')}
+            <Button size="lg" onClick={handleProfileNext} disabled={!canGoFromProfile || pending}>
+              {isLastStep ? (pending ? tCommon('loading') : t('finish')) : t('next')}
             </Button>
           </motion.section>
         ) : currentStep === 'secure' ? (
@@ -516,12 +544,6 @@ export function OnboardingWizard({
               })}
             </div>
 
-            {error ? (
-              <p role="alert" className="text-sm text-[color:var(--color-destructive)]">
-                {error}
-              </p>
-            ) : null}
-
             <div className="flex items-center justify-between gap-3">
               <Button variant="ghost" onClick={goPrev} disabled={pending} type="button">
                 {tCommon('back')}
@@ -533,6 +555,14 @@ export function OnboardingWizard({
           </motion.section>
         )}
       </AnimatePresence>
+
+      {/* Erreur de soumission — hors AnimatePresence : selon le compte, le
+          formulaire part du step `profile`, `secure` ou `role`. */}
+      {error ? (
+        <p role="alert" className="text-sm text-[color:var(--color-destructive)]">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
