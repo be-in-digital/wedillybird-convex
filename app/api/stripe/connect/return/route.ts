@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+import { getActiveSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { retrieveConnectedAccountStatus } from '@/lib/payments/drivers/stripe';
 
@@ -13,7 +13,7 @@ export async function GET(req: Request): Promise<Response> {
   const back = (status: 'ok' | 'incomplete' | 'error') =>
     NextResponse.redirect(new URL(`/pro/payments?connect=${status}`, req.url));
 
-  const session = await getSession();
+  const session = await getActiveSession();
   if (!session) return back('error');
 
   try {

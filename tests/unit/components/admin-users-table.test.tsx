@@ -21,6 +21,7 @@ vi.mock('@/components/ui/confirm-dialog', () => ({
 
 vi.mock('@/app/[locale]/(app)/admin/actions', () => ({
   adminSuspendUserAction: vi.fn(),
+  adminUnsuspendUserAction: vi.fn(),
   adminChangeUserRoleAction: vi.fn(),
   adminSetAffiliateOwnerAction: vi.fn(),
 }));

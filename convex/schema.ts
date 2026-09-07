@@ -20,6 +20,15 @@ export default defineSchema({
       v.literal('ar'),
     ),
     role: v.union(v.literal('couple'), v.literal('pro'), v.literal('guest'), v.literal('admin')),
+    /**
+     * Suspension administrative. Champ **distinct du rôle** : suspendre en
+     * écrasant `role` faisait perdre le rôle d'origine (irrécupérable hors
+     * journal d'audit) et rendait la sanction réversible par la personne
+     * suspendue — un compte repassé `guest` était renvoyé vers l'onboarding,
+     * où choisir « couple » ou « agence » lui rendait ses droits.
+     */
+    suspendedAt: v.optional(v.number()),
+    suspendedBy: v.optional(v.id('users')),
     // For couples: 'essential' | 'premium' (per-event, set on payment).
     // For pros: 'starter' | 'business' | 'agency' (subscription).
     // Note: 'free' was removed in the pricing alignment v2 (avril 2026).

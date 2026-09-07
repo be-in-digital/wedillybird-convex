@@ -100,7 +100,10 @@
       "partnersOnly": "Partners only",
       "attachPartner": "Attach a code",
       "detachPartner": "Detach",
-      "confirmDetachPartner": "Detach this partner code from this account?"
+      "confirmDetachPartner": "Detach this partner code from this account?",
+      "unsuspend": "Reactivate",
+      "confirmUnsuspend": "Reactivate {name}?",
+      "suspended": "Suspended"
     },
     "events": {
       "searchPlaceholder": "Search an event…",
@@ -956,7 +959,8 @@
       "tooManyAttempts": "Too many attempts, try again in a few minutes",
       "rateLimited": "Too many requests. Please wait a few minutes.",
       "expired": "Code expired, request a new one.",
-      "unknown": "Something went wrong. Try again."
+      "unknown": "Something went wrong. Try again.",
+      "accountSuspended": "This account has been suspended. Contact us at contact@wedillybird.com."
     },
     "tagline": "Prepare your big day",
     "stepOneEyebrow": "STEP 01 — IDENTITY",

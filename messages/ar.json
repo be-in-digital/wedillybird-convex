@@ -100,7 +100,10 @@
       "partnersOnly": "الشركاء فقط",
       "attachPartner": "ربط رمز",
       "detachPartner": "فكّ الربط",
-      "confirmDetachPartner": "هل تريد فكّ ربط رمز الشريك عن هذا الحساب؟"
+      "confirmDetachPartner": "هل تريد فكّ ربط رمز الشريك عن هذا الحساب؟",
+      "unsuspend": "إعادة التفعيل",
+      "confirmUnsuspend": "إعادة تفعيل {name}؟",
+      "suspended": "موقوف"
     },
     "events": {
       "searchPlaceholder": "ابحث عن فعالية…",
@@ -955,7 +958,8 @@
       "tooManyAttempts": "محاولات كثيرة جدًا، حاول بعد بضع دقائق",
       "rateLimited": "طلبات كثيرة جدًا. انتظر بضع دقائق.",
       "expired": "انتهت صلاحية الرمز، اطلب رمزًا جديدًا.",
-      "unknown": "حدث خطأ ما. حاول مجددًا."
+      "unknown": "حدث خطأ ما. حاول مجددًا.",
+      "accountSuspended": "تم تعليق هذا الحساب. تواصل معنا على contact@wedillybird.com."
     },
     "tagline": "جهّز يومك الكبير",
     "stepOneEyebrow": "الخطوة 01 — الهوية",

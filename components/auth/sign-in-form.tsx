@@ -15,6 +15,10 @@ function mapError(code: string, t: (k: string) => string): string {
       return t('errors.invalidPhone');
     case 'RATE_LIMITED':
       return t('errors.rateLimited');
+    // Suspension administrative : message explicite plutôt qu'« une erreur est
+    // survenue » — sans quoi la personne réessaie indéfiniment.
+    case 'ACCOUNT_SUSPENDED':
+      return t('errors.accountSuspended');
     default:
       return t('errors.unknown');
   }

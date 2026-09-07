@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getSession } from '@/lib/auth/session';
+import { getActiveSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { getUpsellPrice } from '@/lib/payments/plans';
 import { detectCountryFromHeaders, routePayment } from '@/lib/payments/country';
@@ -25,7 +25,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request): Promise<Response> {
-  const session = await getSession();
+  const session = await getActiveSession();
   if (!session) {
     return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   }

@@ -46,6 +46,18 @@ function msg(e: unknown): string {
   return e instanceof Error ? e.message : 'UNKNOWN';
 }
 
+export async function adminUnsuspendUserAction(targetUserId: string): Promise<ActionResult> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.adminUnsuspendUser, { adminId, targetUserId });
+    revalidatePath('/admin/users');
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : 'UNKNOWN' };
+  }
+}
+
 export async function adminSuspendUserAction(targetUserId: string): Promise<ActionResult> {
   try {
     const adminId = await requireAdmin();

@@ -254,6 +254,7 @@ const rawConvexApi = {
   adminListNewsletterSubscribers: api.admin.listNewsletterSubscribers,
   adminListAuditLog: api.admin.listAuditLog,
   adminSuspendUser: api.admin.suspendUser,
+  adminUnsuspendUser: api.admin.unsuspendUser,
   adminChangeUserRole: api.admin.changeUserRole,
   adminUpdateEventStatus: api.admin.updateEventStatus,
   adminGrantEventPlan: api.admin.grantEventPlan,
