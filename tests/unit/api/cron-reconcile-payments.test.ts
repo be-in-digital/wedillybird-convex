@@ -119,9 +119,9 @@ describe('GET /api/cron/reconcile-payments', () => {
       // Mêmes bases d'affiliation que le webhook : encaissement RÉEL relu chez
       // Stripe, assiette hors taxes et code promo tapé au checkout, pour que ce
       // cron attribue et calcule exactement comme le webhook s'il gagne la
-      // course. En franchise en base, l'assiette égale l'encaissé.
+      // course. 29 € TTC en EUR → 24,17 € HT une fois la TVA à 20 % retranchée.
       netMinor: 2900,
-      commissionBaseMinor: 2900,
+      commissionBaseMinor: 2417,
       promotionCode: undefined,
     });
     // Analytics revenu émis pour le paiement récupéré, comme le webhook.

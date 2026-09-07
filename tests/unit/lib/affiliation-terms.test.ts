@@ -5,9 +5,11 @@ import {
   DEFAULT_RATE_BPS,
   MAX_COMBINED_BPS,
   MIN_VEST_FLOOR_MS,
+  rewardMinor,
 } from '../../../convex/lib/affiliate';
 import { PARTNER_CODE_VALIDITY_DAYS } from '../../../lib/payments/affiliate-coupon';
-import { INCLUSIVE_VAT_RATES } from '../../../lib/payments/vat';
+import { INCLUSIVE_VAT_RATES, taxExclusiveMinor } from '../../../lib/payments/vat';
+import { PLANS } from '../../../lib/payments/plans';
 import { routing } from '../../../i18n/routing';
 
 /**
@@ -28,6 +30,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 function loadFr(): Record<string, string> {
   const raw = fs.readFileSync(path.join(MESSAGES_DIR, 'fr.json'), 'utf-8');
   return JSON.parse(raw).Legal.affiliation as Record<string, string>;
+}
+
+/** Montant en euros tel que le texte des conditions l'écrit (« 59 », « 9,83 »). */
+function eur(minor: number): string {
+  const formatted = (minor / 100).toFixed(2).replace('.', ',');
+  return formatted.endsWith(',00') ? formatted.slice(0, -3) : formatted;
 }
 
 /** Fenêtre d'attribution réellement posée par le cookie `wdb_ref` (proxy.ts). */
@@ -53,14 +61,24 @@ describe('CGU affiliation — cohérence avec le code', () => {
     expect(fr.article5Body).toContain('hors taxes');
   });
 
-  it('dit la franchise en base tant qu’aucune TVA n’est réellement facturée', () => {
+  it('annonce l’assujettissement à la TVA tant que le code en retranche', () => {
     // Le texte et les taux doivent basculer ENSEMBLE : annoncer une déduction
     // de TVA sans en collecter, ou en collecter sans le dire, fausse dans les
     // deux sens ce qui est versé au partenaire.
-    const collectsVat = Object.values(INCLUSIVE_VAT_RATES).some((rate) => rate > 0);
-    expect(collectsVat).toBe(false);
-    expect(fr.article5Body).toContain('293 B');
-    expect(fr.article5Body).toContain('égal au montant encaissé');
+    expect(INCLUSIVE_VAT_RATES.EUR).toBe(0.2);
+    expect(fr.article5Body).toContain('assujettie à la TVA');
+    expect(fr.article5Body).not.toContain('293 B');
+  });
+
+  it('son exemple chiffré correspond exactement au calcul du serveur', () => {
+    // Un exemple faux dans un contrat est pire qu'aucun exemple : c'est sur
+    // lui que le partenaire vérifiera son premier versement.
+    const collected = PLANS.premium.prices.EUR;
+    const base = taxExclusiveMinor(collected, 'EUR');
+    const reward = rewardMinor(base, DEFAULT_RATE_BPS);
+    expect(fr.article5Body).toContain(`${eur(collected)} € TTC`);
+    expect(fr.article5Body).toContain(`${eur(base)} € hors taxes`);
+    expect(fr.article5Body).toContain(`commission de ${eur(reward)} €`);
   });
 
   it('annonce le plafond de cumul remise + commission appliqué au serveur', () => {

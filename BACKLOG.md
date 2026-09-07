@@ -62,7 +62,7 @@ Reproduire `.env.local` sur Vercel → Project Settings → Environment Variable
 
 ### PDF facture (post-Sprint 6) ✅ livré
 - `@react-pdf/renderer` installé.
-- Composant `lib/payments/invoice.tsx` (`<InvoicePDF payment={...} />`) — en-tête Wedillybird, bloc émetteur/client, ligne plan, mention de TVA, footer mentions légales + provider. Le taux vient de `lib/payments/vat.ts` : **à zéro pour toutes les devises depuis 2026-09-07** (franchise en base), donc la facture porte la mention 293 B et n'isole plus de ligne de TVA. La ligne HT + TVA réapparaît d'elle-même si un taux y est réintroduit.
+- Composant `lib/payments/invoice.tsx` (`<InvoicePDF payment={...} />`) — en-tête Wedillybird, bloc émetteur/client, ligne plan, mention de TVA, footer mentions légales + provider. Le taux vient de `lib/payments/vat.ts` : **20 % sur l'EUR, 0 hors zone euro**. L'identité de l'émetteur (dénomination, SIREN, TVA intracom., siège) vient de `lib/legal/entity.ts` et non des fichiers de messages — un SIREN ne se traduit pas.
 - Route `app/api/payments/[paymentId]/invoice.pdf/route.tsx` (GET) — auth session, query Convex `paymentsInvoice:getForInvoice` (ownership = buyer OR event owner), 200 `application/pdf` attachment idempotent.
 - Strings i18n dans `messages/fr.json` section `Invoice`.
 - Tests : `tests/unit/lib/invoice-pdf.test.tsx` (composant + buildInvoiceNumber) + `tests/unit/app/invoice-pdf-route.test.tsx` (401/403/404/200).
@@ -101,18 +101,32 @@ qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
   **Paramètres commerciaux à valider par le fondateur** (choisis par défaut,
   modifiables) : versement mensuel sur facture sous 30 j, seuil minimum 50 €,
   préavis de 30 j pour toute modification des conditions.
-  **Régime TVA confirmé (2026-09-07) : franchise en base, art. 293 B du CGI.**
-  Aucune TVA n'est collectée : `INCLUSIVE_VAT_RATES` est à zéro pour toutes les
-  devises, la facture porte la mention 293 B au lieu d'une ligne de TVA, et
-  l'assiette de commission égale le montant encaissé. Le mécanisme HT reste en
-  place : le jour d'un assujettissement (sortie de franchise, changement de
-  forme juridique), reposer `EUR: 0.2` dans `lib/payments/vat.ts` suffit — la
-  facture et la commission suivent toutes deux.
-  **Bloqueur restant** : `Invoice.issuerSiret` vaut toujours « SIRET — à
-  compléter » et s'imprime tel quel sur chaque facture. SIREN connu et validé
-  (800650830) mais le NIC manque, donc le SIRET n'est pas déductible. Aucune
-  page de mentions légales n'existe (directeur de publication, hébergeur,
-  adresse du siège à fournir).
+  **Régime TVA (2026-09-07, décision fondateur) : ASSUJETTIE.** L'exploitation
+  passe sur la société Tuum Agency (SIREN 930 817 697), qui facture la TVA.
+  `INCLUSIVE_VAT_RATES.EUR = 0.2` : les prix EUR affichés sont TTC, la facture
+  isole HT + TVA, et l'assiette de commission partenaire descend au HT.
+  Les devises hors zone euro (USD, XOF, MAD, TND) restent à 0 — la devise suit
+  le pays de facturation, donc un client hors UE n'est pas taxable en France ;
+  la facture porte la mention correspondante, plus aucune référence à 293 B.
+  **Conséquence chiffrée** : sur un Premium à 59 € TTC, 9,83 € partent en TVA,
+  la commission partenaire tombe de 11,80 € à 9,83 €, et le net encaissé passe
+  de 59 € à 49,17 €. Les prix affichés n'ont **pas** été relevés — à trancher
+  si la marge doit être préservée (côté Stripe, hors de ce dépôt).
+  **Limite connue** : l'EUR ne distingue pas la France du reste de la zone
+  euro. Sous le seuil OSS de 10 000 €/an de ventes B2C intracommunautaires, la
+  TVA française s'applique — au-delà, il faudra un taux par pays de
+  facturation et non par devise.
+  **Bloqueur restant : mentions d'identité incomplètes.** `lib/legal/entity.ts`
+  porte la dénomination, le SIREN (clé de Luhn vérifiée) et la TVA
+  intracommunautaire FR31930817697 (clé recalculée depuis le SIREN par un
+  test). Manquent encore, et `pendingLegalFields()` les énumère : **SIRET**
+  (le NIC n'est pas déductible du SIREN), **forme juridique**, **capital
+  social**, **adresse du siège**, **ville du RCS**, **directeur de
+  publication**. La fiche Infogreffe n'est pas lisible depuis l'environnement
+  d'exécution (egress bloqué) — un avis de situation SIRENE suffirait. Tant que
+  la liste n'est pas vide, la facture omet ces lignes (elle n'imprime **pas**
+  de gabarit) et aucune page `/legal/mentions` n'est publiée : la construire
+  avec une adresse manquante serait une non-conformité visible.
 
   **Assiette (2026-09-07) : HORS TAXES.** La commission portait sur le
   montant encaissé TTC (`amount_total`), donc sur de la TVA reversée à l'État.
@@ -123,8 +137,12 @@ qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
   d'où une déduction par taux plutôt qu'une lecture d'`amount_tax`. L'assiette
   est STOCKÉE (`affiliateReferrals.commissionBaseMinor`) pour rester auditable
   si le taux change, et affichée dans le ledger admin.
-  Les CGU n'ont **pas** été relues par un juriste, et l'entité légale reste
-  « à compléter » (cf. `Invoice.issuerSiret`).
+  Depuis l'assujettissement, l'assiette diffère RÉELLEMENT de l'encaissé :
+  l'article 5 des CGU porte un exemple chiffré (59 € TTC → 49,17 € HT →
+  9,83 €) que `tests/unit/lib/affiliation-terms.test.ts` recalcule depuis le
+  code, pour qu'un exemple faux dans un contrat ne survive pas à un changement
+  de prix ou de taux.
+  Les CGU n'ont **pas** été relues par un juriste.
 - **Coupon Stripe auto** : `adminCreateAffiliateAction` crée le coupon + le code
   promo Stripe sous la MÊME chaîne que `affiliates.code` dès que
   `buyerDiscountBps > 0`, restreint aux produits couple (`applies_to.products`,

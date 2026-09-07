@@ -4,17 +4,23 @@ import { getServerTranslator, toIntlTag } from '../i18n/server-translator';
 import type { Currency, PlanTier } from './plans';
 import { formatAmount } from './plans';
 import { vatBreakdownFor } from './vat';
+import { formatSiren, formatSiret, LEGAL_ENTITY } from '../legal/entity';
+import type { LegalEntity } from '../legal/entity';
 
 /**
  * Génération d'une facture PDF post-paiement Stripe pour les particuliers
  * (Essentiel / Premium). Téléchargeable depuis le compte ou depuis l'email
  * post-paiement (l'envoi par mail est géré séparément côté Convex).
  *
- * Notes TVA : aucune TVA n'est facturée, quelle que soit la devise —
- * Wedillybird relève de la franchise en base (art. 293 B du CGI). La facture
- * porte donc la mention correspondante au lieu d'une ligne de TVA. Le jour d'un
- * assujettissement, il suffit de reposer le taux dans `lib/payments/vat.ts` :
- * la décomposition HT + TVA revient ici automatiquement.
+ * Notes TVA : le taux vient de `lib/payments/vat.ts`, source unique partagée
+ * avec l'assiette de commission du programme partenaire. Les prix EUR sont TTC
+ * (20 % isolés en pied de facture) ; pour les devises hors zone euro, la
+ * prestation n'est pas taxable en France et la facture porte la mention
+ * correspondante au lieu d'une ligne de TVA.
+ *
+ * L'identité de l'émetteur (dénomination, SIREN, TVA intracommunautaire,
+ * siège) vient de `lib/legal/entity.ts` et non des fichiers de messages : un
+ * SIREN ne se traduit pas.
  */
 
 export interface InvoicePayment {
@@ -37,6 +43,37 @@ export interface InvoicePayment {
   eventTitle?: string;
   /** Locale de rendu du PDF. Par défaut `fr`. */
   locale?: Locale | string;
+}
+
+type InvoiceTranslator = ReturnType<typeof getServerTranslator>;
+
+/**
+ * Mentions d'identification de l'émetteur, dans l'ordre où elles s'impriment.
+ *
+ * Les champs encore inconnus sont **omis** plutôt que remplis d'un gabarit :
+ * une facture à laquelle il manque une ligne se corrige, une facture qui
+ * affiche « à compléter » est déjà partie chez un client. `pendingLegalFields()`
+ * dit ce qui manque encore, et doit être vide avant la première vente.
+ *
+ * L'entité est un paramètre pour que chaque branche (SIRET connu ou non, siège
+ * renseigné ou non) soit vérifiable sans attendre l'immatriculation complète.
+ */
+export function buildIssuerLines(
+  t: InvoiceTranslator,
+  entity: LegalEntity = LEGAL_ENTITY,
+): string[] {
+  return [
+    `${entity.tradeName} — ${entity.legalName}`,
+    ...(entity.registeredAddress ?? []),
+    entity.contactEmail,
+    // Le SIRET identifie l'établissement, le SIREN l'entreprise : on imprime
+    // le plus précis des deux dont on dispose.
+    entity.siret
+      ? t('Invoice.issuerSiret', { value: formatSiret(entity.siret) })
+      : t('Invoice.issuerSiren', { value: formatSiren(entity.siren) }),
+    t('Invoice.issuerVatNumber', { value: entity.vatNumber }),
+    entity.rcsCity ? `RCS ${entity.rcsCity} ${formatSiren(entity.siren)}` : null,
+  ].filter((line): line is string => Boolean(line));
 }
 
 const PROVIDER_LABEL: Record<'stripe' | 'mock', string> = {
@@ -221,6 +258,7 @@ export function InvoicePDF({ payment }: InvoicePDFProps) {
     payment.customer.email,
     payment.customer.phone,
   ].filter((line): line is string => Boolean(line));
+  const issuerLines = buildIssuerLines(t);
 
   return (
     <Document
@@ -251,15 +289,7 @@ export function InvoicePDF({ payment }: InvoicePDFProps) {
         <View style={styles.twoColumns}>
           <View style={styles.column}>
             <Text style={styles.blockTitle}>{t('Invoice.issuerBlockTitle')}</Text>
-            <Text style={styles.blockBody}>
-              {t('Invoice.issuerName')}
-              {'\n'}
-              {t('Invoice.issuerEmail')}
-              {'\n'}
-              {t('Invoice.issuerSiret')}
-              {'\n'}
-              {t('Invoice.issuerVat')}
-            </Text>
+            <Text style={styles.blockBody}>{issuerLines.join('\n')}</Text>
           </View>
           <View style={styles.column}>
             <Text style={styles.blockTitle}>{t('Invoice.customerBlockTitle')}</Text>
