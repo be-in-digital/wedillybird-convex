@@ -1252,7 +1252,10 @@
         "disabled": "La recherche par visage n'est pas activée pour ce mariage."
       },
       "cancel": "Annuler"
-    }
+    },
+    "orgExpiredTitle": "Galerie fermée",
+    "orgExpiredHint": "La couverture de votre agence n'est plus active. Reprenez votre abonnement pour rouvrir les galeries de vos mariages.",
+    "orgExpiredCta": "Voir la facturation"
   },
   "Checkin": {
     "title": "Check-in des invités",

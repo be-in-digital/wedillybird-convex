@@ -1252,7 +1252,10 @@
         "disabled": "Die Gesichtssuche ist für diese Hochzeit nicht aktiviert."
       },
       "cancel": "Abbrechen"
-    }
+    },
+    "orgExpiredTitle": "Galerie geschlossen",
+    "orgExpiredHint": "Die Abdeckung Ihrer Agentur ist nicht mehr aktiv. Nehmen Sie Ihr Abo wieder auf, um die Galerien Ihrer Hochzeiten zu öffnen.",
+    "orgExpiredCta": "Zur Abrechnung"
   },
   "Checkin": {
     "title": "Gäste-Check-in",

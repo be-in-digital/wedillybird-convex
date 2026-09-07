@@ -1252,7 +1252,10 @@
         "disabled": "A pesquisa por rosto não está ativada para este casamento."
       },
       "cancel": "Cancelar"
-    }
+    },
+    "orgExpiredTitle": "Galeria fechada",
+    "orgExpiredHint": "A cobertura da sua agência já não está ativa. Retome a sua subscrição para reabrir as galerias dos seus casamentos.",
+    "orgExpiredCta": "Ver a faturação"
   },
   "Checkin": {
     "title": "Check-in dos convidados",

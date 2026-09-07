@@ -1248,7 +1248,10 @@
         "disabled": "Face search isn't enabled for this wedding."
       },
       "cancel": "Cancel"
-    }
+    },
+    "orgExpiredTitle": "Gallery closed",
+    "orgExpiredHint": "Your agency coverage is no longer active. Resume your subscription to reopen your weddings’ galleries.",
+    "orgExpiredCta": "Go to billing"
   },
   "Checkin": {
     "title": "Guest check-in",

@@ -8,6 +8,7 @@ import { AppShell } from '@/components/app/app-shell';
 import { OwnerGallery } from '@/components/gallery/owner-gallery';
 import { buttonVariants } from '@/components/ui/button';
 import { canDownloadGalleryZip } from '@/lib/gallery/zip-access';
+import { galleryAccessFor } from '@/lib/payments/entitlements';
 import { cn } from '@/lib/cn';
 
 export default async function GalleryPage({
@@ -42,12 +43,13 @@ export default async function GalleryPage({
   // pas server vs client — on désactive juste pour cette ligne.
   // eslint-disable-next-line react-hooks/purity -- Server Component, no re-render concern
   const nowMs = Date.now();
-  const galleryStatus: 'open' | 'locked' | 'expired' =
-    event.galleryExpiresAt === undefined
-      ? 'locked'
-      : nowMs > event.galleryExpiresAt
-        ? 'expired'
-        : 'open';
+  // Mariage d'agence : la galerie suit la couverture de l'organisation, pas une
+  // date figée sur l'event — `galleryExpiresAt` n'y est jamais écrit.
+  const org = event.organizationId
+    ? await convex.query(convexApi.myOrganization, { userId: session!.userId })
+    : null;
+  const galleryStatus = galleryAccessFor(event, org, nowMs);
+  const isOrgEvent = Boolean(event.organizationId);
 
   // Ne charge les photos que si la galerie est ouverte (la query côté
   // Convex est gardée par ownership, pas par expiry — on évite juste un
@@ -98,10 +100,12 @@ export default async function GalleryPage({
         ) : galleryStatus === 'expired' ? (
           <GalleryGate
             Icon={Clock}
-            title={t('expiredTitle')}
-            hint={t('expiredHint')}
-            cta={t('expiredCta')}
-            href={`/events/${eventId}#upgrade` as never}
+            // Une agence n'a pas d'upsell post-mariage à activer : elle a un
+            // abonnement à reprendre, et la facturation est ailleurs.
+            title={isOrgEvent ? t('orgExpiredTitle') : t('expiredTitle')}
+            hint={isOrgEvent ? t('orgExpiredHint') : t('expiredHint')}
+            cta={isOrgEvent ? t('orgExpiredCta') : t('expiredCta')}
+            href={(isOrgEvent ? '/pro/billing' : `/events/${eventId}#upgrade`) as never}
           />
         ) : (
           <OwnerGallery

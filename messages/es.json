@@ -1252,7 +1252,10 @@
         "disabled": "La búsqueda facial no está activada para esta boda."
       },
       "cancel": "Cancelar"
-    }
+    },
+    "orgExpiredTitle": "Galería cerrada",
+    "orgExpiredHint": "La cobertura de tu agencia ya no está activa. Reanuda tu suscripción para reabrir las galerías de tus bodas.",
+    "orgExpiredCta": "Ver la facturación"
   },
   "Checkin": {
     "title": "Check-in de invitados",
