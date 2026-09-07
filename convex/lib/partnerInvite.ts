@@ -30,8 +30,43 @@
 /** Tier offert par défaut — cf. plafond commercial ci-dessus. */
 export const DEFAULT_PARTNER_COMP_TIER = 'starter' as const;
 
-/** Durée du compte offert, en mois calendaires. */
-export const DEFAULT_PARTNER_COMP_MONTHS = 6;
+/**
+ * Type de compte ouvert par un lien d'invitation.
+ *
+ * Les deux existent parce que les deux partenariats existent : une agence qui
+ * gère des mariages, et une personne dont c'est le propre mariage — une
+ * créatrice, une amie de la marque. Ce qu'on leur offre n'a pas la même forme,
+ * parce que leurs modèles économiques n'ont pas la même forme.
+ */
+export type PartnerInviteKind = 'pro' | 'couple';
+
+/** Défaut historique : les liens créés avant ce champ n'ouvraient que du pro. */
+export function inviteKind(invite: { kind?: PartnerInviteKind | null }): PartnerInviteKind {
+  return invite.kind ?? 'pro';
+}
+
+/**
+ * Forfait particulier offert par défaut.
+ *
+ * Premium, et non Essentiel : le cadeau doit valoir quelque chose. C'est aussi
+ * le seul qui inclut la galerie partagée, donc le seul qui montre le produit
+ * en entier à quelqu'un qu'on veut voir en parler.
+ */
+export const DEFAULT_PARTNER_COMP_EVENT_TIER = 'premium' as const;
+
+/**
+ * Durée du compte agence offert, en mois calendaires.
+ *
+ * Douze mois, et non six : une agence se juge sur une **saison de mariages
+ * entière**. Six mois lui font traverser la moitié d'un cycle — elle
+ * découvrirait l'échéance en pleine haute saison, au moment où elle a le moins
+ * de temps pour arbitrer un abonnement.
+ *
+ * Cette valeur ne s'applique qu'aux liens **créés après** sa modification :
+ * `grantMonths` est figé sur chaque invitation à sa création, pour que ce qui
+ * a été promis reste ce qui est livré.
+ */
+export const DEFAULT_PARTNER_COMP_MONTHS = 12;
 
 /**
  * Validité du LIEN, distincte de la durée du compte. Un lien qui offre six

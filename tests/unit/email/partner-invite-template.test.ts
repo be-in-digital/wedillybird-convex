@@ -53,3 +53,38 @@ describe('renderPartnerInvite', () => {
     expect(out.html).not.toMatch(/Bonjour\s*,?\s*undefined/);
   });
 });
+
+describe('variante « compte personnel »', () => {
+  const COUPLE = { ...BASE, kind: 'couple' as const };
+
+  it("ne promet pas six mois à quelqu'un qui reçoit un forfait d'événement", () => {
+    // Un particulier n'a pas d'abonnement : parler de « 6 mois » serait faux,
+    // et la déception arriverait juste après le clic.
+    const out = renderPartnerInvite(COUPLE);
+    expect(out.subject).not.toContain('6 mois');
+    expect(out.text).not.toMatch(/6 premiers mois/);
+    expect(out.subject).toMatch(/Premium/);
+  });
+
+  it('annonce le mariage offert en Premium', () => {
+    const out = renderPartnerInvite(COUPLE);
+    expect(out.text).toMatch(/mariage passe en Premium/);
+    expect(out.html).toMatch(/galerie partagée/);
+  });
+
+  it("dit que le forfait s'applique au mariage, pas à une période", () => {
+    const out = renderPartnerInvite(COUPLE);
+    expect(out.text).toMatch(/s'applique au mariage que vous créerez/);
+  });
+
+  it('garde la promesse « sans carte bancaire » des deux côtés', () => {
+    expect(renderPartnerInvite(COUPLE).text).toMatch(/carte bancaire/i);
+    expect(renderPartnerInvite(BASE).text).toMatch(/carte bancaire/i);
+  });
+
+  it('le lien agence reste inchangé', () => {
+    // Non-régression : la variante ne doit pas déteindre sur le cas par défaut.
+    const out = renderPartnerInvite(BASE);
+    expect(out.subject).toContain('6 mois');
+  });
+});

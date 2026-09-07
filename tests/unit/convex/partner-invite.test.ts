@@ -44,10 +44,20 @@ describe('addMonthsUtc — mois calendaires, pas 30 jours', () => {
 });
 
 describe('échéances', () => {
-  it('le cadeau dure six mois par défaut', () => {
-    expect(DEFAULT_PARTNER_COMP_MONTHS).toBe(6);
+  it('le cadeau agence dure un an par défaut', () => {
+    // Une agence se juge sur une saison de mariages entière : six mois la
+    // laissaient arbitrer un abonnement en pleine haute saison.
+    expect(DEFAULT_PARTNER_COMP_MONTHS).toBe(12);
     const now = Date.UTC(2026, 8, 7);
-    expect(compExpiresAt(now)).toBe(addMonthsUtc(now, 6));
+    expect(compExpiresAt(now)).toBe(addMonthsUtc(now, 12));
+  });
+
+  it('le lien fige la durée promise à sa création', () => {
+    // Changer la constante ne doit pas réécrire ce qui a déjà été envoyé :
+    // `grantMonths` est stocké par invitation, et c'est lui qui fait foi.
+    const now = Date.UTC(2026, 8, 7);
+    expect(compExpiresAt(now, 6)).toBe(addMonthsUtc(now, 6));
+    expect(compExpiresAt(now, 12)).toBe(addMonthsUtc(now, 12));
   });
 
   it('le LIEN périme bien avant le compte qu’il ouvre', () => {

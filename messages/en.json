@@ -4418,7 +4418,12 @@
       "linkExpiry": "This link is valid until {date}. The free months start the day you open your account.",
       "noCard": "No payment card is required, neither now nor when the free months end.",
       "preheader": "Open your agency workspace — {months} months free, no card required.",
-      "subject": "Your Wedillybird account, {months} months free"
+      "subject": "Your Wedillybird account, {months} months free",
+      "subjectCouple": "Your wedding on Wedillybird, Premium on us",
+      "preheaderCouple": "Open your account — Premium wedding on us, no card required.",
+      "introCouple": "We would like to have you as a partner. Here is a personal link to open your Wedillybird account: your wedding is upgraded to Premium, free — invitations, RSVPs and shared gallery included.",
+      "ctaLabelCouple": "Open my account (Premium free)",
+      "linkExpiryCouple": "This link is valid until {date}. The plan itself applies to the wedding you create."
     }
   },
   "Metadata": {
@@ -5786,6 +5791,10 @@
     "metaTitle": "Your partner invitation — Wedillybird",
     "signInCta": "Create my account and accept",
     "signInHint": "You'll come straight back here. No card details will be asked for.",
-    "deadBackHome": "Back to home"
+    "deadBackHome": "Back to home",
+    "titleCouple": "Your wedding, Premium on us",
+    "subtitleCouple": "Open your account: your wedding is upgraded to Premium, free — invitations, RSVPs and shared gallery included.",
+    "submitCouple": "Open my account (Premium free)",
+    "codeHintCouple": "Your partner code {code} is active: share it with your audience to earn your commission."
   }
 }
