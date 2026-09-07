@@ -56,4 +56,6 @@ Toute proposition de modification UI doit respecter cette direction ou rouvrir l
 
 Sprints 1-11 livrés (auth WhatsApp, invités, RSVP, check-in offline, galerie, paiements one-shot, dashboard pro, AWS S3+CloudFront+SES+Rekognition+Sharp variants, Stripe Subscriptions, branding org, wildcard subdomain, WhatsApp invite). Voir PRs #12-#16 sur GitHub.
 
-Bloqueurs prod externes (`BACKLOG.md`) : SES sandbox exit, Stripe Customer Portal config, IAM scope-down, DNS wildcard Vercel, Meta template `team_invitation`, **alignement pricing sur la grille canonique** (à programmer comme nouveau sprint).
+Bloqueurs prod externes (`BACKLOG.md`) : IAM scope-down, DNS wildcard Vercel, Meta template `team_invitation`, **alignement pricing sur la grille canonique** (à programmer comme nouveau sprint).
+
+**Levés** (ne plus les traiter comme des blocages) : sortie de sandbox SES ✅ 2026-06-06 — accès production, on peut donc écrire à n'importe quelle adresse — et configuration du Stripe Customer Portal ✅, les deux vérifiés le 2026-06-12.
