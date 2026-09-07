@@ -43,11 +43,31 @@ describe('AdminUsersTable — libellé de rôle', () => {
       />,
     );
 
-    for (const role of ['couple', 'pro', 'guest', 'admin']) {
+    // L'admin n'est plus dans la vue par défaut : son libellé est couvert par
+    // `matchesRoleFilter` et par le test dédié de la règle.
+    for (const role of ['couple', 'pro', 'guest']) {
       expect(screen.getByText(`Admin.roles.${role}`)).toBeInTheDocument();
     }
     // Aucune valeur brute ne doit rester visible dans un badge.
     expect(screen.queryByText('guest', { exact: true })).toBeNull();
-    expect(screen.queryByText('admin', { exact: true })).toBeNull();
+  });
+});
+
+describe('comptes admin hors de la vue par défaut', () => {
+  it("n'affiche pas les comptes d'administration au chargement", () => {
+    // Ce tableau sert à regarder des clients : s'y voir soi-même n'apprend
+    // rien. La porte de retour (filtre « Admin ») est couverte par le test de
+    // `matchesRoleFilter` — piloter le Select Radix en jsdom n'apporterait que
+    // de la fragilité.
+    render(
+      <AdminUsersTable
+        users={[
+          { ...base, _id: 'u1', fullName: 'Alice', role: 'couple' },
+          { ...base, _id: 'u4', fullName: 'Root', role: 'admin' },
+        ]}
+      />,
+    );
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.queryByText('Root')).toBeNull();
   });
 });

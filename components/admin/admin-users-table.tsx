@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useServerAction } from '@/components/admin/use-admin-action';
+import { matchesRoleFilter, type RoleFilterValue } from '@/lib/admin/user-filters';
 import {
   adminSuspendUserAction,
   adminUnsuspendUserAction,
@@ -90,7 +91,7 @@ export function AdminUsersTable({
       u.email?.toLowerCase().includes(search.toLowerCase()) ||
       u.phone?.includes(search) ||
       u.affiliate?.code.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === 'all' || u.role === roleFilter;
+    const matchRole = matchesRoleFilter(u.role, roleFilter as RoleFilterValue);
     const matchPartner = !partnersOnly || u.affiliate?.kind === 'partner';
     return matchSearch && matchRole && matchPartner;
   });

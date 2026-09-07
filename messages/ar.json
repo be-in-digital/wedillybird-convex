@@ -85,7 +85,7 @@
     },
     "users": {
       "searchPlaceholder": "ابحث عن مستخدم…",
-      "roleFilterAll": "كل الأدوار",
+      "roleFilterAll": "جميع العملاء",
       "count": "{count, plural, zero {# نتيجة} one {# نتيجة} two {# نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}",
       "colName": "الاسم",
       "colContact": "التواصل",
