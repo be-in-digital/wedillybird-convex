@@ -6,7 +6,9 @@ import { signOutAction } from '@/app/[locale]/(auth)/actions';
 import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { WedillybirdLogo } from '@/components/brand/wedillybird-logo';
 import { getSession } from '@/lib/auth/session';
+import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { PartnerSpaceLink } from '@/components/partner/partner-space-link';
 
 /**
  * AppShell V4 — header sticky réutilisable pour toutes les pages app
@@ -31,8 +33,20 @@ export interface AppShellProps {
 }
 
 export async function AppShell({ children, nav, userName }: AppShellProps) {
-  const tCommon = await getTranslations('Common');
   const session = await getSession();
+  // Lecture volontairement minuscule (un index, aucun ledger) — elle est faite
+  // sur chaque page rendue par ce shell, d'où le parallèle avec les
+  // traductions plutôt qu'un aller-retour de plus en série. Un backend
+  // indisponible ne doit pas faire tomber le shell : sans réponse, on
+  // n'affiche simplement pas le lien.
+  const [tCommon, isPartner] = await Promise.all([
+    getTranslations('Common'),
+    session
+      ? getConvexServerClient()
+          .query(convexApi.isPartner, { userId: session.userId })
+          .catch(() => false)
+      : Promise.resolve(false),
+  ]);
 
   return (
     <div className="paper-grain flex min-h-screen flex-col bg-[color:var(--color-ivory-50)]">
@@ -50,6 +64,10 @@ export async function AppShell({ children, nav, userName }: AppShellProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Rendu SERVEUR : le lien fait partie de la page dès le premier
+                octet, sans dépendre d'une connexion temps réel. Sans lui,
+                `/partenaire` reste inatteignable autrement qu'en tapant l'URL. */}
+            {isPartner ? <PartnerSpaceLink /> : null}
             {session ? <NotificationBell userId={session.userId} /> : null}
             {userName ? (
               <span className="hidden font-mono text-[10px] tracking-[0.24em] text-[color:var(--color-ink-500)] uppercase sm:inline-block">

@@ -12,6 +12,8 @@ import {
   consumeCreditReservation,
   findActiveAffiliateByCode,
   releaseCreditReservation,
+  restoreCreditForRefundedSession,
+  reverseReferralBySession,
 } from './affiliate';
 
 function ownerLocaleToIntlTag(locale: string | undefined): string {
@@ -225,22 +227,49 @@ export const markSucceeded = mutation({
     // code au lieu de cliquer le lien) mais un code promo appliqué qui
     // correspond à un affilié actif → on rattache le paiement AVANT de créditer
     // le ledger. Sans ça, tout achat via code tapé perdait sa commission.
+    //
+    // Arbitrage entre les deux surfaces : c'est le CODE TAPÉ qui l'emporte,
+    // parce que c'est lui qui a financé la remise. Le cookie primait, et la
+    // divergence est atteignable : quand l'affilié du cookie n'offre aucune
+    // remise (cas de tout code de parrainage particulier), le checkout laisse
+    // `allow_promotion_codes` ouvert et l'acheteur peut taper le code d'une
+    // partenaire. Celle-ci offrait alors la remise pendant qu'un tiers
+    // encaissait la commission — calculée, en prime, sur le net déjà amputé.
     let attributedAffiliateId = payment.affiliateId;
-    if (!attributedAffiliateId && promotionCode) {
+    if (promotionCode) {
       try {
-        const aff = await findActiveAffiliateByCode(ctx, promotionCode);
-        if (aff) {
+        // La ligne de ledger fait foi dès qu'elle existe : `applyReferral` est
+        // dédoublonné sur la session, donc déplacer `payment.affiliateId` sur
+        // un rejeu laisserait le paiement et le ledger crédités à deux
+        // affiliés différents, définitivement.
+        const alreadyLedgered = await ctx.db
+          .query('affiliateReferrals')
+          .withIndex('by_source_session', (q) => q.eq('sourceSessionId', payment.providerSessionId))
+          .first();
+        const aff = alreadyLedgered ? null : await findActiveAffiliateByCode(ctx, promotionCode);
+        // Le code doit être EXACTEMENT celui de l'affilié, et rattaché à un
+        // vrai code promo Stripe. `findActiveAffiliateByCode` normalise en
+        // supprimant les caractères non alphanumériques : sans cette
+        // vérification, un code de campagne créé au back-office (« SARAH-12 »)
+        // se rabattrait sur l'affiliée SARAH12, qui encaisserait une
+        // commission sur une vente qu'elle n'a pas amenée et dont elle n'a pas
+        // financé la remise.
+        const isPartnerOwnCode =
+          aff !== null &&
+          Boolean(aff.stripePromotionCodeId) &&
+          aff.code === promotionCode.trim().toUpperCase();
+        if (isPartnerOwnCode && aff._id !== attributedAffiliateId) {
           attributedAffiliateId = aff._id;
           await ctx.db.patch(payment._id, { affiliateId: aff._id, updatedAt: now });
         }
-      } catch {
-        // best-effort — l'attribution ne bloque jamais la confirmation.
+      } catch (err) {
+        console.error('[payments] attribution par code promo impossible', err);
       }
     }
 
     if (attributedAffiliateId) {
       try {
-        await applyReferral(ctx, {
+        const referral = await applyReferral(ctx, {
           affiliateId: attributedAffiliateId,
           sourceSessionId: payment.providerSessionId,
           grossMinor: payment.amountMinor,
@@ -251,22 +280,35 @@ export const markSucceeded = mutation({
           purchasedAt: now,
           eventDate: event?.eventDate,
           eventId: payment.eventId,
+          paymentId: payment._id,
           buyerUserId: payment.userId,
           buyerEmail: owner?.email ?? null,
         });
-      } catch {
-        // best-effort — la confirmation du paiement prime.
+        // Les issues non nominales ne sont pas des erreurs, mais elles disent
+        // qu'AUCUNE commission n'a été créditée — sans trace, une attribution
+        // perdue était indétectable.
+        if (referral.outcome === 'inactive' || referral.outcome === 'self_referral') {
+          console.warn(
+            `[payments] commission non créditée (${referral.outcome}) session=${payment.providerSessionId}`,
+          );
+        }
+      } catch (err) {
+        // best-effort — la confirmation du paiement prime, mais elle se trace.
+        console.error('[payments] applyReferral a échoué', err);
       }
     }
     try {
       await ensureReferralAffiliate(ctx, payment.userId);
-    } catch {
-      // best-effort
+    } catch (err) {
+      console.error('[payments] code de parrainage non créé pour l’acheteur', err);
     }
     try {
       await consumeCreditReservation(ctx, payment.creditReservationId, payment.providerSessionId);
-    } catch {
-      // best-effort
+    } catch (err) {
+      // Le crédit reste réservé : le GC le relâcherait dans 24 h alors que le
+      // coupon a déjà été appliqué (crédit dépensé deux fois). Cette trace est
+      // le seul moyen de repérer le cas.
+      console.error('[payments] crédit de parrainage non consommé', err);
     }
 
     if (alreadyApplied) {
@@ -325,6 +367,87 @@ function formatAmount(amountMinor: number, currency: string): string {
   if (currency === 'XOF') return `${amount.toLocaleString('fr-FR')} FCFA`;
   return `${amount.toLocaleString('fr-FR')} ${currency}`;
 }
+
+/**
+ * Remboursement ou litige confirmé par le provider.
+ *
+ * Le back-office savait déjà rembourser (`admin.markPaymentRefunded`), mais
+ * c'était le SEUL chemin : un remboursement fait directement au Dashboard
+ * Stripe, ou un chargeback, ne reprenait aucune commission — elle continuait
+ * de s'acquérir puis se faisait verser sur une vente rendue.
+ *
+ * `refundedAmountMinor` est le CUMUL du provider, jamais un incrément : on
+ * écrit donc le maximum entre ce cumul et ce qui est déjà stocké. C'est ce qui
+ * rend la mutation idempotente ET compatible avec le chemin admin, qui écrit
+ * le même champ juste après avoir appelé Stripe — les deux se croisent à
+ * chaque remboursement déclenché du back-office.
+ */
+export const markRefundedByWebhook = mutation({
+  args: {
+    webhookSecret: v.string(),
+    provider: PROVIDER,
+    providerSessionId: v.string(),
+    providerEventId: v.string(),
+    /** CUMUL remboursé d'après le provider. */
+    refundedAmountMinor: v.number(),
+    /** Montant réellement débité — l'assiette qui dit si le remboursement est total. */
+    chargedAmountMinor: v.optional(v.number()),
+    /** Litige : on suspend la commission sans marquer le paiement remboursé. */
+    disputed: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    assertWebhookSecret(args.webhookSecret);
+    const payment = await ctx.db
+      .query('payments')
+      .withIndex('by_session', (q) =>
+        q.eq('provider', args.provider).eq('providerSessionId', args.providerSessionId),
+      )
+      .first();
+    if (!payment) throw new Error('PAYMENT_NOT_FOUND');
+
+    const now = Date.now();
+
+    // Un litige n'est PAS un remboursement : l'argent est retenu le temps de
+    // l'instruction, et le marchand peut gagner. Marquer le paiement
+    // `refunded` serait sans retour — `adminRefundPaymentAction` le refuserait
+    // ensuite (`NOT_REFUNDABLE`) et les analytics l'excluraient à vie. On se
+    // limite donc à suspendre la commission, qui se réactive à la main.
+    if (!args.disputed) {
+      const stored = payment.refundedAmountMinor ?? 0;
+      // L'assiette du « total » est le montant DÉBITÉ, pas le prix catalogue
+      // stocké : sans ça, le remboursement intégral d'un achat remisé passait
+      // pour partiel, et l'écran admin proposait de rembourser un reliquat
+      // fantôme que Stripe refuse.
+      const charged = args.chargedAmountMinor ?? payment.amountMinor;
+      const isFull = charged > 0 && args.refundedAmountMinor >= charged;
+      const totalRefunded = isFull
+        ? payment.amountMinor
+        : Math.min(Math.max(stored, args.refundedAmountMinor), payment.amountMinor);
+      await ctx.db.patch(payment._id, {
+        status: isFull ? ('refunded' as const) : ('partially_refunded' as const),
+        refundedAmountMinor: totalRefunded,
+        refundedAt: now,
+        updatedAt: now,
+      });
+    }
+
+    // (a) la commission générée par cette vente est annulée, (b) le crédit que
+    // l'acheteur avait dépensé sur cet achat lui est restitué. Best-effort
+    // tracé : la prise en compte prime, mais une reprise ratée doit se voir.
+    try {
+      await reverseReferralBySession(ctx, payment.providerSessionId);
+    } catch (err) {
+      console.error('[payments] reversal de commission impossible', err);
+    }
+    try {
+      await restoreCreditForRefundedSession(ctx, payment.providerSessionId);
+    } catch (err) {
+      console.error('[payments] restitution de crédit impossible', err);
+    }
+    const fresh = await ctx.db.get(payment._id);
+    return { ok: true as const, status: fresh?.status ?? payment.status };
+  },
+});
 
 export const markFailed = mutation({
   args: {

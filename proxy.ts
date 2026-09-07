@@ -1,7 +1,7 @@
 import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
-import { extractOrgSlug } from './lib/subdomain/extract-org-slug';
+import { extractOrgSlug, sharedCookieDomain } from './lib/subdomain/extract-org-slug';
 import { currencyForCountry, detectCountryFromHeaders } from './lib/payments/country';
 
 /**
@@ -91,11 +91,25 @@ export default function proxy(request: NextRequest) {
   // parrain qui amène le visiteur garde l'attribution — pas de vol en fin de
   // parcours par un second lien).
   if (ref && response && !request.cookies.get('wdb_ref')) {
+    // `domain` sur l'apex : le lien d'une agence pointe son sous-domaine
+    // (`sarah.wedillybird.com/...?ref=SARAH12`) alors que le checkout vit sur
+    // l'apex. Sans domaine partagé, le cookie host-only n'était jamais renvoyé
+    // à `/api/checkout` — attribution ET remise perdues sans aucun signal.
+    const domain = sharedCookieDomain(request.headers.get('host'));
+    if (domain) {
+      // Un `wdb_ref` host-only posé avant l'introduction du domaine partagé
+      // cohabiterait avec le nouveau : le navigateur enverrait les DEUX, et
+      // `cookies().get()` en prendrait un au hasard — l'attribution
+      // basculerait toute seule à l'expiration du plus ancien. On efface donc
+      // l'ancien sur cet hôte avant de poser le partagé.
+      response.cookies.set('wdb_ref', '', { maxAge: 0, path: '/' });
+    }
     response.cookies.set('wdb_ref', ref, {
       maxAge: 30 * 24 * 60 * 60,
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
+      ...(domain ? { domain } : {}),
     });
   }
 

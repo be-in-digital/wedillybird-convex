@@ -332,6 +332,36 @@ export async function POST(
 
       return NextResponse.json({ ok: true, alreadyApplied: result.alreadyApplied });
     }
+    if (event.status === 'refunded') {
+      // L'argent repart : la commission d'affiliation est annulée et le crédit
+      // dépensé sur cet achat est restitué. Sans ce chemin, seul un clic
+      // « rembourser » au back-office le faisait — un remboursement passé par
+      // le Dashboard Stripe, ou un litige, laissait la commission se verser.
+      try {
+        const refunded = await convex.mutation(convexApi.markPaymentRefundedByWebhook, {
+          webhookSecret,
+          provider,
+          providerSessionId: event.providerSessionId,
+          providerEventId: event.providerEventId,
+          refundedAmountMinor: event.refundedAmountMinor ?? event.amountMinor,
+          ...(event.chargedAmountMinor !== undefined
+            ? { chargedAmountMinor: event.chargedAmountMinor }
+            : {}),
+          ...(event.disputed ? { disputed: true } : {}),
+        });
+        return NextResponse.json({ ok: true, status: refunded.status });
+      } catch (err) {
+        // Une charge sans ligne dans `payments` n'est pas une erreur : les
+        // achats PAYG pro vivent dans `paygPurchases` et passent pourtant par
+        // une Checkout Session, donc par ce chemin. Répondre 404 ferait
+        // retenter Stripe pendant trois jours et lèverait une alerte ops à
+        // chaque tentative.
+        if (err instanceof Error && err.message.includes('PAYMENT_NOT_FOUND')) {
+          return NextResponse.json({ ok: true, ignored: true });
+        }
+        throw err;
+      }
+    }
     const result = await convex.mutation(convexApi.markPaymentFailed, {
       webhookSecret,
       provider,

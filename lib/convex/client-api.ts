@@ -44,4 +44,6 @@ export const clientApi = {
     { notificationId: string; userId: string },
     { ok: true }
   >('notifications:markRead'),
+  /** Booléen minuscule : la navigation n'affiche l'espace partenaire qu'à un partenaire. */
+  isPartner: makeFunctionReference<'query', { userId: string }, boolean>('affiliate:isPartner'),
 };

@@ -5730,6 +5730,7 @@
   "Partner": {
     "eyebrow": "Programme partenaire",
     "title": "Votre espace partenaire",
+    "navLink": "Espace partenaire",
     "subtitle": "Partagez votre lien, suivez les ventes qu’il génère et ce qui vous est dû.",
     "linkTitle": "Votre lien à partager",
     "copy": "Copier",
@@ -5791,6 +5792,7 @@
       "org_already_subscribed": "Votre agence a déjà un abonnement en cours. Contactez-nous, nous nous en occupons.",
       "invalid_name": "Indiquez le nom de votre agence.",
       "user_not_found": "Compte introuvable. Reconnectez-vous.",
+      "user_already_has_affiliate": "Ce compte est déjà rattaché à un autre code partenaire. Contactez-nous.",
       "unknown": "Impossible d'ouvrir votre espace pour le moment."
     },
     "metaTitle": "Votre invitation partenaire — Wedillybird",

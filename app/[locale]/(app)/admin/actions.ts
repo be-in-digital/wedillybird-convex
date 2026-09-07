@@ -19,6 +19,7 @@ import {
   removeSubscriptionDiscount,
   resolveConsumerPlanProductIds,
   findPromotionCodeByCode,
+  retrieveCoupon,
   type SubscriptionInvoice,
   type AdminCoupon,
   type AdminPromotionCode,
@@ -176,6 +177,10 @@ export async function adminRefundPaymentAction(
       adminId,
       paymentId,
       refundAmountMinor: appliedAmount,
+      // Cumul calculé sur l'état lu AVANT l'appel Stripe : entre-temps le
+      // webhook `charge.refunded` a pu écrire le même champ, et additionner
+      // l'incrément par-dessus doublerait le total.
+      totalRefundedMinor: info.refundedAmountMinor + appliedAmount,
       stripeRefundId,
     });
 
@@ -661,8 +666,38 @@ async function createPartnerCouponForAffiliate(
 
   // Anti-doublon : deux codes promo de même chaîne rendraient l'attribution
   // ambiguë (on ne saurait plus quel affilié créditer).
+  //
+  // Sauf s'il s'agit du NÔTRE, laissé derrière par un échec entre Stripe et
+  // Convex (le coupon et le code existaient, l'enregistrement des ids avait
+  // échoué). Ce cas-là condamnait le partenaire : « Créer le code » retombait
+  // indéfiniment sur ce garde, et seule une suppression manuelle au Dashboard
+  // Stripe en sortait. On l'adopte plutôt, la metadata faisant foi.
   const clash = await findPromotionCodeByCode(affiliate.code);
-  if (clash) throw new Error('STRIPE_CODE_ALREADY_EXISTS');
+  if (clash) {
+    const existingCoupon = clash.couponId ? await retrieveCoupon(clash.couponId) : null;
+    const ours =
+      existingCoupon?.metadata.wedillybird === 'partner_code' &&
+      existingCoupon.metadata.wedillybird_affiliate_code === affiliate.code;
+    if (!ours) throw new Error('STRIPE_CODE_ALREADY_EXISTS');
+    // Adopter n'a de sens que si le code est ENCORE utilisable et au bon taux.
+    // Sinon on enregistrerait un `stripePromotionCodeId` qui rendrait
+    // `partnerDashboard.shareable` vrai pour un code que le checkout refuse —
+    // et plus rien ne permettrait de le corriger, « Créer le code » retombant
+    // dès lors sur `CODE_ALREADY_CREATED`. On préfère renvoyer l'admin au
+    // Dashboard Stripe, qui est le seul endroit où l'état se répare.
+    const stale =
+      !clash.active ||
+      (clash.expiresAt != null && clash.expiresAt <= Date.now()) ||
+      existingCoupon.percentOff !== plan.percentOff;
+    if (stale) throw new Error('STRIPE_CODE_STALE');
+    await getConvexServerClient().mutation(convexApi.setAffiliateStripeCoupon, {
+      adminId,
+      affiliateId,
+      stripeCouponId: existingCoupon.id,
+      stripePromotionCodeId: clash.id,
+    });
+    return { shareCode: clash.code };
+  }
 
   const appliesToProducts = await resolveConsumerPlanProductIds();
   if (appliesToProducts.length === 0) throw new Error('NO_CONSUMER_PRODUCTS_RESOLVED');
@@ -673,16 +708,30 @@ async function createPartnerCouponForAffiliate(
     duration: 'once',
     redeemBy: plan.redeemBy,
     appliesToProducts,
+    metadata: plan.metadata,
   });
   // Pas de `restrictToFirstTime` ici, contrairement à
   // `scripts/create-affiliate-code.ts` : un code partenaire doit marcher pour
   // TOUTE l'audience de la créatrice. Chaque réutilisation est une vente réelle
   // qui génère sa commission — c'est le programme qui fonctionne, pas un abus.
-  const promo = await createPromotionCode({
-    couponId: coupon.id,
-    code: affiliate.code,
-    expiresAt: plan.redeemBy,
-  });
+  let promo: Awaited<ReturnType<typeof createPromotionCode>>;
+  try {
+    promo = await createPromotionCode({
+      couponId: coupon.id,
+      code: affiliate.code,
+      expiresAt: plan.redeemBy,
+    });
+  } catch (e: unknown) {
+    // Un coupon sans code promo n'est atteignable par personne, et il ferait
+    // rater l'anti-doublon du prochain « Créer le code » : on le retire pour
+    // que le rattrapage reparte d'un état propre plutôt que d'empiler.
+    try {
+      await deleteCoupon(coupon.id);
+    } catch {
+      // Stripe indisponible — le coupon orphelin se nettoie au Dashboard.
+    }
+    throw e;
+  }
 
   await getConvexServerClient().mutation(convexApi.setAffiliateStripeCoupon, {
     adminId,

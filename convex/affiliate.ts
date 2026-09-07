@@ -42,6 +42,11 @@ async function assertAdmin(
   return user;
 }
 
+/** Récompense imposée par la nature de l'affilié. */
+function expectedRewardType(kind: 'referral' | 'partner'): 'credit' | 'cash' {
+  return kind === 'partner' ? 'cash' : 'credit';
+}
+
 /* ============================ Création (admin) ============================ */
 
 /**
@@ -66,6 +71,15 @@ export const createAffiliate = mutation({
 
     const code = normalizeAffiliateCode(args.code);
     if (!isValidAffiliateCode(code)) throw new Error('INVALID_CODE');
+    // La nature de l'affilié détermine sa récompense, et rien ne rattrapait un
+    // couple incohérent : un `partner/credit` produit des commissions que
+    // `markReferralPaid` refuse de verser (ce n'est pas du cash) et que rien ne
+    // permet de dépenser (l'espace partenaire n'a pas de panier). Un
+    // `referral/cash` est l'inverse : versable, mais invisible pour son
+    // propriétaire, `partnerDashboard` ne montrant que les `partner`.
+    if (expectedRewardType(args.kind) !== args.rewardType) {
+      throw new Error('REWARD_TYPE_MISMATCH');
+    }
     if (!isRewardConfigSafe({ rateBps: args.rateBps, buyerDiscountBps: args.buyerDiscountBps })) {
       throw new Error('UNSAFE_REWARD_CONFIG');
     }
@@ -279,6 +293,8 @@ export async function applyReferral(
     purchasedAt: number;
     eventDate?: number;
     eventId?: Id<'events'>;
+    /** Paiement source — rend la ligne de ledger rapprochable sans passer par la session. */
+    paymentId?: Id<'payments'>;
     buyerUserId?: Id<'users'>;
     buyerEmail?: string | null;
   },
@@ -320,7 +336,7 @@ export async function applyReferral(
     affiliateId: aff._id,
     code: aff.code,
     sourceSessionId: args.sourceSessionId,
-    paymentId: undefined,
+    paymentId: args.paymentId,
     eventId: args.eventId,
     buyerUserId: args.buyerUserId,
     grossMinor: args.grossMinor,
@@ -828,6 +844,12 @@ export const markReferralPaid = mutation({
     await assertAdmin(ctx, adminId);
     const ref = await ctx.db.get(referralId);
     if (!ref) throw new Error('REFERRAL_NOT_FOUND');
+    // Un crédit ne se VERSE pas : il se dépense à un achat, ce qui le fait
+    // passer `credited` avec la session qui l'a consommé (donc restituable en
+    // cas de remboursement). Le marquer « versé » ici le faisait sortir de
+    // `collectVestedCredit` sans contrepartie ni trace de consommation : le
+    // crédit du parrain s'évaporait, définitivement.
+    if (ref.rewardType !== 'cash') throw new Error('REFERRAL_NOT_PAYABLE');
     if (ref.status !== 'vested') return { outcome: 'noop' as const, status: ref.status };
 
     const now = Date.now();
@@ -855,6 +877,23 @@ export const markReferralPaid = mutation({
 });
 
 /* ======================= Espace partenaire (lecture) ======================= */
+
+/**
+ * L'utilisateur a-t-il un espace partenaire ? Lecture volontairement minuscule
+ * (un seul index, aucun ledger) : elle est appelée par la navigation de CHAQUE
+ * page de l'app, là où `partnerDashboard` collecterait jusqu'à 500 lignes de
+ * commissions par affilié pour n'en tirer qu'un booléen.
+ */
+export const isPartner = query({
+  args: { userId: v.id('users') },
+  handler: async (ctx, { userId }) => {
+    const owned = await ctx.db
+      .query('affiliates')
+      .withIndex('by_owner', (q) => q.eq('ownerUserId', userId))
+      .collect();
+    return owned.some((a) => a.kind === 'partner');
+  },
+});
 
 /**
  * Tableau de bord d'un partenaire : SES codes et SES commissions, rien d'autre.
