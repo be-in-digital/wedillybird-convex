@@ -6,7 +6,9 @@ import {
   DEFAULT_PARTNER_COMP_TIER,
   PARTNER_INVITE_VALIDITY_DAYS,
   compExpiresAt,
+  DEFAULT_PARTNER_COMP_EVENT_TIER,
   inviteExpiresAt,
+  inviteKind,
   inviteState,
 } from './lib/partnerInvite';
 import { pickUniqueSlug, slugifyOrgName } from './lib/uniqueSlug';
@@ -65,8 +67,11 @@ export const create = mutation({
     affiliateId: v.id('affiliates'),
     inviteeEmail: v.optional(v.string()),
     inviteeName: v.optional(v.string()),
+    /** `pro` (défaut) ouvre une agence ; `couple` un compte particulier. */
+    kind: v.optional(v.union(v.literal('pro'), v.literal('couple'))),
     grantTier: v.optional(GRANT_TIER),
     grantMonths: v.optional(v.number()),
+    grantEventTier: v.optional(v.union(v.literal('essential'), v.literal('premium'))),
     validityDays: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -106,7 +111,9 @@ export const create = mutation({
       affiliateId: args.affiliateId,
       inviteeEmail: args.inviteeEmail?.trim().toLowerCase(),
       inviteeName: args.inviteeName?.trim(),
+      kind: args.kind ?? 'pro',
       grantTier: args.grantTier ?? DEFAULT_PARTNER_COMP_TIER,
+      grantEventTier: args.grantEventTier ?? DEFAULT_PARTNER_COMP_EVENT_TIER,
       grantMonths,
       expiresAt: inviteExpiresAt(now, validityDays),
       createdBy: args.adminId,
@@ -120,6 +127,7 @@ export const create = mutation({
       targetId: id,
       details: JSON.stringify({
         affiliateCode: affiliate.code,
+        kind: args.kind ?? 'pro',
         grantTier: args.grantTier ?? DEFAULT_PARTNER_COMP_TIER,
         grantMonths,
         validityDays,
@@ -180,6 +188,7 @@ export const listForAdmin = query({
       // consommé ou révoqué n'a plus de raison de circuler.
       token: inviteState(inv, now) === 'usable' ? inv.token : null,
       state: inviteState(inv, now),
+      kind: inviteKind(inv),
       inviteeEmail: inv.inviteeEmail ?? null,
       inviteeName: inv.inviteeName ?? null,
       grantTier: inv.grantTier,
@@ -226,6 +235,7 @@ export const prepareSend = internalQuery({
 
     return {
       recipient,
+      kind: inviteKind(invite),
       token: invite.token,
       inviteeName: invite.inviteeName ?? affiliate.displayName ?? null,
       grantMonths: invite.grantMonths,
@@ -270,9 +280,14 @@ export const getByToken = query({
     const affiliate = await ctx.db.get(invite.affiliateId);
     return {
       state: inviteState(invite, Date.now()),
+      // La page doit savoir ce qu'elle ouvre : un espace agence ou un compte
+      // personnel. Les deux offres n'ont ni la même forme ni le même
+      // formulaire.
+      kind: inviteKind(invite),
       inviteeEmail: invite.inviteeEmail ?? null,
       inviteeName: invite.inviteeName ?? null,
       grantTier: invite.grantTier,
+      grantEventTier: invite.grantEventTier ?? DEFAULT_PARTNER_COMP_EVENT_TIER,
       grantMonths: invite.grantMonths,
       expiresAt: invite.expiresAt,
       partnerName: affiliate?.displayName ?? null,
@@ -290,7 +305,8 @@ export const redeem = mutation({
   args: {
     token: v.string(),
     userId: v.id('users'),
-    organizationName: v.string(),
+    /** Requis pour un lien `pro` uniquement : un compte personnel n'a pas d'agence. */
+    organizationName: v.optional(v.string()),
   },
   handler: async (ctx, { token, userId, organizationName }) => {
     const invite = await ctx.db
@@ -306,7 +322,45 @@ export const redeem = mutation({
     const user = await ctx.db.get(userId);
     if (!user) throw new Error('USER_NOT_FOUND');
 
-    const name = organizationName.trim();
+    // ---------------------------------------------------------------------
+    // Lien « compte personnel » : pas d'agence, pas d'abonnement.
+    //
+    // Les forfaits particuliers s'achètent une fois, pour un mariage : il n'y
+    // a donc rien à faire courir pendant six mois. Le cadeau est posé comme
+    // une créance sur le compte, que le premier mariage créé consommera —
+    // c'est le seul moment où il existe un événement à créditer.
+    // ---------------------------------------------------------------------
+    if (inviteKind(invite) === 'couple') {
+      // Le rôle n'est PAS touché : promouvoir en `pro` ouvrirait un back-office
+      // d'agence à quelqu'un qui vient organiser son propre mariage. Et
+      // rétrograder un admin ou un pro existant serait pire encore.
+      await ctx.db.patch(userId, {
+        compedEventPlan: {
+          tier: invite.grantEventTier ?? DEFAULT_PARTNER_COMP_EVENT_TIER,
+          grantedBy: invite.createdBy,
+          grantedAt: now,
+          affiliateId: invite.affiliateId,
+          reason: 'partner_invite',
+        },
+      });
+
+      const coupleAffiliate = await ctx.db.get(invite.affiliateId);
+      if (coupleAffiliate && !coupleAffiliate.ownerUserId) {
+        await ctx.db.patch(invite.affiliateId, { ownerUserId: userId, updatedAt: now });
+      }
+
+      await ctx.db.patch(invite._id, { consumedAt: now, consumedByUserId: userId });
+
+      return {
+        kind: 'couple' as const,
+        organizationId: null,
+        compExpiresAt: null,
+        tier: invite.grantEventTier ?? DEFAULT_PARTNER_COMP_EVENT_TIER,
+        partnerCode: coupleAffiliate?.stripePromotionCodeId ? coupleAffiliate.code : null,
+      };
+    }
+
+    const name = (organizationName ?? '').trim();
     if (name.length < 1 || name.length > 120) throw new Error('INVALID_NAME');
 
     // Une organisation existante est adoptée plutôt que dupliquée — sauf si
@@ -383,6 +437,7 @@ export const redeem = mutation({
     });
 
     return {
+      kind: 'pro' as const,
       organizationId,
       compExpiresAt: comp.expiresAt,
       tier: invite.grantTier,

@@ -726,7 +726,7 @@ export async function adminSetAffiliateOwnerAction(
 
 export async function adminCreatePartnerInviteAction(
   affiliateId: string,
-  input?: { inviteeEmail?: string; inviteeName?: string },
+  input?: { inviteeEmail?: string; inviteeName?: string; kind?: 'pro' | 'couple' },
 ): Promise<ActionResult & { token?: string }> {
   try {
     const adminId = await requireAdmin();
@@ -736,6 +736,7 @@ export async function adminCreatePartnerInviteAction(
       affiliateId,
       ...(input?.inviteeEmail ? { inviteeEmail: input.inviteeEmail } : {}),
       ...(input?.inviteeName ? { inviteeName: input.inviteeName } : {}),
+      ...(input?.kind ? { kind: input.kind } : {}),
     });
     revalidatePath('/admin/affiliates');
     return { ok: true, token: res.token };

@@ -29,6 +29,24 @@ export default defineSchema({
      */
     suspendedAt: v.optional(v.number()),
     suspendedBy: v.optional(v.id('users')),
+    /**
+     * Forfait particulier offert, **en attente d'un événement**.
+     *
+     * Un partenaire « compte personnel » n'a pas d'abonnement à offrir : les
+     * forfaits particuliers s'achètent une fois, pour un mariage. Le cadeau est
+     * donc une créance posée sur le compte à l'acceptation du lien, et
+     * consommée par le premier mariage créé — c'est à ce moment seulement
+     * qu'il y a un événement à créditer.
+     */
+    compedEventPlan: v.optional(
+      v.object({
+        tier: v.union(v.literal('essential'), v.literal('premium')),
+        grantedBy: v.id('users'),
+        grantedAt: v.number(),
+        affiliateId: v.optional(v.id('affiliates')),
+        reason: v.optional(v.string()),
+      }),
+    ),
     // For couples: 'essential' | 'premium' (per-event, set on payment).
     // For pros: 'starter' | 'business' | 'agency' (subscription).
     // Note: 'free' was removed in the pricing alignment v2 (avril 2026).
@@ -1641,8 +1659,19 @@ export default defineSchema({
     /** Destinataire attendu, pour mémoire et pour pré-remplir l'inscription. */
     inviteeEmail: v.optional(v.string()),
     inviteeName: v.optional(v.string()),
+    /**
+     * Type de compte que le lien ouvre. Absent = `pro` (les liens créés avant
+     * l'ajout de ce champ n'ouvraient que des comptes agence).
+     *
+     * `pro` : organisation + abonnement agence offert N mois.
+     * `couple` : compte particulier, forfait offert sur SON mariage — un
+     * particulier n'a pas d'abonnement, il a un événement.
+     */
+    kind: v.optional(v.union(v.literal('pro'), v.literal('couple'))),
     /** Forfait offert. Starter par défaut : de quoi tester, pas d'exploiter. */
     grantTier: v.union(v.literal('starter'), v.literal('business'), v.literal('agency')),
+    /** Forfait particulier offert quand `kind === 'couple'`. */
+    grantEventTier: v.optional(v.union(v.literal('essential'), v.literal('premium'))),
     /** Durée du cadeau, en mois calendaires. */
     grantMonths: v.number(),
     /** Échéance du LIEN — distincte de la durée du compte qu'il ouvre. */

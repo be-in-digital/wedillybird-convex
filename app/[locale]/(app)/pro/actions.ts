@@ -259,7 +259,14 @@ export async function acceptInviteAction(
 }
 
 export type RedeemPartnerInviteResult =
-  | { ok: true; organizationId: string; compExpiresAt: number; partnerCode: string | null }
+  | {
+      ok: true;
+      /** `couple` n'ouvre ni agence ni abonnement — d'où les champs nullables. */
+      kind: 'pro' | 'couple';
+      organizationId: string | null;
+      compExpiresAt: number | null;
+      partnerCode: string | null;
+    }
   | { ok: false; error: string };
 
 /**
@@ -273,7 +280,8 @@ export type RedeemPartnerInviteResult =
  */
 export async function redeemPartnerInviteAction(
   token: string,
-  organizationName: string,
+  /** Nom de l'agence — absent pour un lien « compte personnel ». */
+  organizationName?: string,
 ): Promise<RedeemPartnerInviteResult> {
   const session = await getSession();
   if (!session) return { ok: false, error: 'UNAUTHORIZED' };
@@ -283,11 +291,12 @@ export async function redeemPartnerInviteAction(
     const result = await convex.mutation(convexApi.redeemPartnerInvite, {
       token,
       userId: session.userId,
-      organizationName,
+      ...(organizationName ? { organizationName } : {}),
     });
-    revalidatePath('/pro/dashboard');
+    revalidatePath(result.kind === 'couple' ? '/dashboard' : '/pro/dashboard');
     return {
       ok: true,
+      kind: result.kind,
       organizationId: result.organizationId,
       compExpiresAt: result.compExpiresAt,
       partnerCode: result.partnerCode,

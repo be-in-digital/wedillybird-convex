@@ -8,7 +8,9 @@ export interface PartnerInviteInput {
   inviteUrl: string;
   /** Prénom ou nom du partenaire, si connu — sinon salutation neutre. */
   inviteeName?: string;
-  /** Durée du compte offert, en mois. */
+  /** Type de compte ouvert : agence (abonnement) ou personnel (mariage offert). */
+  kind?: 'pro' | 'couple';
+  /** Durée du compte offert, en mois. Ignorée pour un compte personnel. */
   grantMonths: number;
   /** Code d'affiliation déjà actif sur le compte créé. */
   affiliateCode?: string;
@@ -31,6 +33,7 @@ export interface PartnerInviteInput {
 export function renderPartnerInvite({
   inviteUrl,
   inviteeName,
+  kind = 'pro',
   grantMonths,
   affiliateCode,
   expiresAt,
@@ -42,8 +45,25 @@ export function renderPartnerInvite({
     timeZone: 'UTC',
   }).format(new Date(expiresAt));
 
-  const subject = t('Emails.partnerInvite.subject', { months: grantMonths });
-  const preheader = t('Emails.partnerInvite.preheader', { months: grantMonths });
+  // Un compte personnel n'a pas d'abonnement : promettre « six mois » à
+  // quelqu'un qui reçoit son mariage en Premium serait faux, et la déception
+  // arriverait au pire moment — juste après avoir cliqué.
+  const couple = kind === 'couple';
+  const subject = couple
+    ? t('Emails.partnerInvite.subjectCouple')
+    : t('Emails.partnerInvite.subject', { months: grantMonths });
+  const preheader = couple
+    ? t('Emails.partnerInvite.preheaderCouple')
+    : t('Emails.partnerInvite.preheader', { months: grantMonths });
+  const intro = couple
+    ? t('Emails.partnerInvite.introCouple')
+    : t('Emails.partnerInvite.intro', { months: grantMonths });
+  const ctaLabel = couple
+    ? t('Emails.partnerInvite.ctaLabelCouple')
+    : t('Emails.partnerInvite.ctaLabel', { months: grantMonths });
+  const expiryLine = couple
+    ? t('Emails.partnerInvite.linkExpiryCouple', { date: expiryDate })
+    : t('Emails.partnerInvite.linkExpiry', { date: expiryDate });
 
   const body = [
     paragraph(
@@ -53,13 +73,13 @@ export function renderPartnerInvite({
           t('Emails.common.greeting', { name: inviteeName })
         : t('Emails.common.greetingSimple'),
     ),
-    paragraph(t('Emails.partnerInvite.intro', { months: grantMonths })),
+    paragraph(intro),
     paragraph(t('Emails.partnerInvite.noCard')),
-    button(t('Emails.partnerInvite.ctaLabel', { months: grantMonths }), inviteUrl),
+    button(ctaLabel, inviteUrl),
     paragraph(t('Emails.common.fallbackLink')),
     `<p style="margin:0 0 16px 0;word-break:break-all;font-size:13px;color:#666;">${escapeHtml(inviteUrl)}</p>`,
     // Le lien expire, pas l'offre : dit séparément pour éviter la confusion.
-    paragraph(t('Emails.partnerInvite.linkExpiry', { date: expiryDate })),
+    paragraph(expiryLine),
     affiliateCode ? paragraph(t('Emails.partnerInvite.codeNotice', { code: affiliateCode })) : '',
   ].join('');
 
@@ -72,12 +92,12 @@ export function renderPartnerInvite({
   const text = [
     subject,
     '',
-    t('Emails.partnerInvite.intro', { months: grantMonths }),
+    intro,
     t('Emails.partnerInvite.noCard'),
     '',
     inviteUrl,
     '',
-    t('Emails.partnerInvite.linkExpiry', { date: expiryDate }),
+    expiryLine,
     affiliateCode ? t('Emails.partnerInvite.codeNotice', { code: affiliateCode }) : '',
     '',
     t('Emails.common.signature'),

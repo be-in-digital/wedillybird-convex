@@ -4422,7 +4422,12 @@
       "linkExpiry": "Este enlace es válido hasta el {date}. Los meses gratuitos empiezan el día en que abres tu cuenta.",
       "noCard": "No se pide ninguna tarjeta bancaria, ni ahora ni al terminar los meses gratuitos.",
       "preheader": "Abre tu espacio de agencia — {months} meses gratis, sin tarjeta.",
-      "subject": "Tu cuenta Wedillybird, {months} meses gratis"
+      "subject": "Tu cuenta Wedillybird, {months} meses gratis",
+      "subjectCouple": "Tu boda en Wedillybird, Premium invitado",
+      "preheaderCouple": "Abre tu cuenta — boda en Premium gratis, sin tarjeta.",
+      "introCouple": "Nos gustaría contar contigo como partner. Aquí tienes un enlace personal para abrir tu cuenta Wedillybird: tu boda pasa a Premium, gratis — invitaciones, RSVP y galería compartida incluidos.",
+      "ctaLabelCouple": "Abrir mi cuenta (Premium gratis)",
+      "linkExpiryCouple": "Este enlace es válido hasta el {date}. El plan se aplica a la boda que crees."
     }
   },
   "Metadata": {
@@ -5790,6 +5795,10 @@
     "metaTitle": "Tu invitación de socio — Wedillybird",
     "signInCta": "Crear mi cuenta y aceptar",
     "signInHint": "Volverás aquí justo después. No se te pedirá ninguna tarjeta bancaria.",
-    "deadBackHome": "Volver al inicio"
+    "deadBackHome": "Volver al inicio",
+    "titleCouple": "Tu boda, Premium invitado",
+    "subtitleCouple": "Abre tu cuenta: tu boda pasa a Premium, gratis — invitaciones, RSVP y galería compartida incluidos.",
+    "submitCouple": "Abrir mi cuenta (Premium gratis)",
+    "codeHintCouple": "Tu código de partner {code} está activo: compártelo con tu comunidad para cobrar tu comisión."
   }
 }
