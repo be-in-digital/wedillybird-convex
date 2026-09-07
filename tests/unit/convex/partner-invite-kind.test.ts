@@ -5,6 +5,8 @@ import {
   DEFAULT_PARTNER_COMP_TIER,
   inviteKind,
 } from '../../../convex/lib/partnerInvite';
+import { DEFAULT_COMPED_EVENT_PLAN } from '../../../convex/lib/eventPlan';
+import { tierHasFeature } from '../../../lib/payments/entitlements';
 
 describe("type d'invitation partenaire", () => {
   it('les liens créés avant ce champ restent des liens agence', () => {
@@ -24,8 +26,16 @@ describe('ce que chaque type offre', () => {
   it("l'agence reçoit un abonnement, le particulier un forfait d'événement", () => {
     // Deux modèles économiques, deux cadeaux : un abonnement court dans le
     // temps, un forfait particulier s'achète une fois pour un mariage.
-    expect(DEFAULT_PARTNER_COMP_TIER).toBe('starter');
+    expect(DEFAULT_PARTNER_COMP_TIER).toBe('agency');
     expect(DEFAULT_PARTNER_COMP_EVENT_TIER).toBe('premium');
+  });
+
+  it('des deux côtés, le cadeau est le palier COMPLET', () => {
+    // Starter verrouillait six entrées du back-office et l'Essentiel n'ouvre
+    // pas la galerie partagée : dans les deux cas, le partenaire à qui l'on
+    // veut faire recommander le produit n'en aurait vu que la moitié.
+    expect(tierHasFeature(DEFAULT_PARTNER_COMP_TIER, 'integrations')).toBe(true);
+    expect(DEFAULT_PARTNER_COMP_EVENT_TIER).toBe(DEFAULT_COMPED_EVENT_PLAN);
   });
 });
 

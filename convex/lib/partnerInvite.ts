@@ -32,9 +32,12 @@
  * sidebar (CRM clients, budget éditable, devis/factures, contrats, analytics
  * multi-events, intégrations) : une partenaire qu'on courtise pour qu'elle
  * recommande le produit n'en voyait que la moitié, cadenassée. On offre donc le
- * palier complet, comme le Premium offert à un couple. Le garde-fou reste la
- * DURÉE : le cadeau expire seul, et `isCompActive` referme tout à l'échéance.
+ * palier complet, exactement comme le Premium offert à un lien `couple`. Le
+ * garde-fou n'est plus le tier mais la DURÉE : le cadeau expire seul, et
+ * `isCompActive` referme tout à l'échéance.
  */
+
+import { DEFAULT_COMPED_EVENT_PLAN } from './eventPlan';
 
 /** Tier offert par défaut — le palier complet, cf. justification ci-dessus. */
 export const DEFAULT_PARTNER_COMP_TIER = 'agency' as const;
@@ -60,8 +63,13 @@ export function inviteKind(invite: { kind?: PartnerInviteKind | null }): Partner
  * Premium, et non Essentiel : le cadeau doit valoir quelque chose. C'est aussi
  * le seul qui inclut la galerie partagée, donc le seul qui montre le produit
  * en entier à quelqu'un qu'on veut voir en parler.
+ *
+ * Alias de `DEFAULT_COMPED_EVENT_PLAN` : le lien partenaire et l'octroi
+ * commercial (`admin:grantEventPlan`) offrent le MÊME forfait, et deux
+ * littéraux pour une seule règle produit dérivent en silence — l'un des deux
+ * offrirait un jour l'Essentiel sans que personne le décide.
  */
-export const DEFAULT_PARTNER_COMP_EVENT_TIER = 'premium' as const;
+export const DEFAULT_PARTNER_COMP_EVENT_TIER = DEFAULT_COMPED_EVENT_PLAN;
 
 /**
  * Durée du compte agence offert, en mois calendaires.
