@@ -24,6 +24,7 @@ import { sendWhatsAppCloudTemplate } from './lib/whatsappCloud';
 import { resolveChannel } from './lib/channelRouting';
 import { isTwilioConfigured, sendTwilioSms } from './lib/twilioSms';
 import { isValidEmail, normalizeEmail } from './lib/email';
+import { matchesConfiguredAdmin } from './lib/adminPromotion';
 
 export const requestOtp = action({
   args: {
@@ -215,8 +216,15 @@ export const verifyOtp = mutation({
       });
     }
 
-    const adminPhone = process.env.ADMIN_PHONE;
-    if (adminPhone && normalized === adminPhone) {
+    // La valeur d'environnement est normalisée comme le numéro : un
+    // `ADMIN_PHONE=06 12 93 17 79` ne promouvait personne, sans le dire.
+    if (
+      matchesConfiguredAdmin({
+        configured: process.env.ADMIN_PHONE,
+        actual: normalized,
+        normalize: (value) => normalizePhone(value),
+      })
+    ) {
       const user = await ctx.db.get(userId);
       if (user && user.role !== 'admin') {
         await ctx.db.patch(userId, { role: 'admin' });
@@ -382,6 +390,23 @@ export const verifyMagicLink = mutation({
         createdAt: now,
         lastSeenAt: now,
       });
+    }
+
+    // Symétrique d'`ADMIN_PHONE` sur le chemin OTP. Sans cette branche, un
+    // compte qui ne se connecte QUE par e-mail ne pouvait jamais devenir
+    // administrateur : il restait `couple` à vie, quelle que soit la
+    // configuration.
+    if (
+      matchesConfiguredAdmin({
+        configured: process.env.ADMIN_EMAIL,
+        actual: normalized,
+        normalize: (value) => normalizeEmail(value),
+      })
+    ) {
+      const user = await ctx.db.get(userId);
+      if (user && user.role !== 'admin') {
+        await ctx.db.patch(userId, { role: 'admin' });
+      }
     }
 
     const sessionToken = crypto.randomUUID();
