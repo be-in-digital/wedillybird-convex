@@ -100,6 +100,27 @@ const ALLOW_LIST = new Set<string>([
   'admin.ts:grantEventPlan',
   'admin.ts:revokeEventPlan',
 
+  // --- Acceptation d'un lien d'invitation partenaire ---
+  // `redeem` pose `subscriptionTier` + `compedSubscription` sans la moindre
+  // transaction Stripe : c'est sa raison d'être — ouvrir un compte agence
+  // OFFERT à une partenaire, sans carte bancaire ni choix de forfait. Elle est
+  // publique par NÉCESSITÉ : celle qui l'appelle n'est pas encore « pro » et
+  // n'a donc aucun rôle à faire valoir ; c'est la mutation elle-même qui la
+  // promeut. Ni `assertAdmin` ni un secret webhook ne sont applicables.
+  // Ce qui la garde à la place :
+  //   - le jeton vient de `crypto.getRandomValues` sur 24 caractères (~119 bits
+  //     d'entropie) — il n'est pas devinable ;
+  //   - il est à USAGE UNIQUE (`consumedAt`) et périme en 30 jours ;
+  //   - il est révocable, et créer un nouveau lien révoque le précédent, donc
+  //     un seul lien vit à la fois par partenaire ;
+  //   - le cadeau est DATÉ (`compedSubscription.expiresAt`), donc borné dans le
+  //     temps sans dépendre de quoi que ce soit d'extérieur ;
+  //   - une organisation portant déjà un `stripeSubscriptionId` est REFUSÉE :
+  //     un cadeau ne peut jamais sortir un client payant du MRR.
+  // Le pire cas reste borné et connu : qui détient le jeton obtient un compte
+  // Starter offert six mois — exactement ce que le lien promet à qui le reçoit.
+  'partnerInvites.ts:redeem',
+
   // --- Bookkeeping "pending" : créent/attachent une session AVANT tout
   // encaissement confirmé — jamais un marquage succeeded/failed. Gardées par
   // requesterId/ownership. Symétrique de payments.ts:recordIntent. ---

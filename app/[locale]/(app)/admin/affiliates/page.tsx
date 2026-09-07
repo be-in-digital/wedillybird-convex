@@ -23,15 +23,16 @@ export default async function AdminAffiliatesPage({
   if (!session) redirect({ href: '/sign-in', locale });
 
   const convex = getConvexServerClient();
-  const [user, affiliates, referrals] = await Promise.all([
+  const [user, affiliates, referrals, invites] = await Promise.all([
     convex.query(convexApi.currentUser, { userId: session!.userId }),
     convex.query(convexApi.listAffiliates, { adminId: session!.userId }),
     convex.query(convexApi.listReferrals, { adminId: session!.userId }),
+    convex.query(convexApi.listPartnerInvites, { adminId: session!.userId }),
   ]);
 
   return (
     <AdminShell current="affiliates" adminName={user?.fullName ?? undefined}>
-      <AdminAffiliatesBoard affiliates={affiliates} referrals={referrals} />
+      <AdminAffiliatesBoard affiliates={affiliates} referrals={referrals} invites={invites} />
     </AdminShell>
   );
 }

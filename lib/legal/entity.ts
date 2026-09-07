@@ -44,6 +44,12 @@ export interface LegalEntity {
   rcsCity: string | null;
   /** Directeur de la publication (obligatoire, art. 6 III LCEN). */
   publicationDirector: string | null;
+  /**
+   * Médiateur de la consommation. Obligatoire dès lors qu'on vend à des
+   * particuliers en France (art. L612-1 du code de la consommation) : le nom et
+   * l'adresse du site du médiateur doivent figurer sur le site et les CGV.
+   */
+  consumerMediator: { name: string; url: string } | null;
   contactEmail: string;
   billingEmail: string;
 }
@@ -65,6 +71,7 @@ export const LEGAL_ENTITY: LegalEntity = {
   registeredAddress: null,
   rcsCity: null,
   publicationDirector: null,
+  consumerMediator: null,
   contactEmail: 'contact@wedillybird.com',
   billingEmail: 'billing@wedillybird.com',
 };
@@ -76,8 +83,17 @@ export const HOST_PROVIDER = {
 } as const;
 
 /**
- * Champs d'identité encore manquants. Une facture émise sans adresse de siège
- * est non conforme : cette liste doit être **vide** avant la première vente.
+ * Champs d'identité encore manquants.
+ *
+ * Cette liste doit être **vide** avant la première vente : une facture sans
+ * adresse de siège n'est pas conforme (art. L441-9 du code de commerce), et
+ * une page de mentions légales sans directeur de publication ni médiateur ne
+ * l'est pas davantage (art. 6 III LCEN, art. L612-1 du code de la
+ * consommation).
+ *
+ * La page `/legal/mentions` et la facture **omettent** les lignes inconnues
+ * plutôt que d'afficher un gabarit : une mention absente se corrige, une
+ * mention « à compléter » part chez un vrai client.
  */
 export function pendingLegalFields(entity: LegalEntity = LEGAL_ENTITY): string[] {
   const pending: string[] = [];
@@ -87,6 +103,7 @@ export function pendingLegalFields(entity: LegalEntity = LEGAL_ENTITY): string[]
   if (!entity.registeredAddress?.length) pending.push('registeredAddress');
   if (!entity.rcsCity) pending.push('rcsCity');
   if (!entity.publicationDirector) pending.push('publicationDirector');
+  if (!entity.consumerMediator) pending.push('consumerMediator');
   return pending;
 }
 

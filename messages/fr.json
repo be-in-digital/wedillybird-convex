@@ -92,7 +92,12 @@
       "confirmSuspend": "Suspendre {name} ?",
       "suspend": "Suspendre",
       "confirmChangeRole": "Changer le rôle en « {role} » ?",
-      "rolePlaceholder": "Rôle…"
+      "rolePlaceholder": "Rôle…",
+      "colPartner": "Partenaire",
+      "partnersOnly": "Partenaires uniquement",
+      "attachPartner": "Rattacher un code",
+      "detachPartner": "Détacher",
+      "confirmDetachPartner": "Détacher ce code partenaire de ce compte ?"
     },
     "events": {
       "searchPlaceholder": "Rechercher un événement…",
@@ -244,6 +249,7 @@
     "terms": "CGU",
     "privacy": "Confidentialité",
     "cookies": "Cookies",
+    "mentions": "Mentions légales",
     "faq": "FAQ",
     "contact": "Contact"
   },
@@ -330,6 +336,30 @@
       "article10Body": "Le Partenaire ne reçoit aucune information sur l’identité des acheteurs : son espace affiche des montants, des dates et des statuts, jamais un nom, une adresse e-mail ou un mariage identifiable.\nLes données du Partenaire (identité, coordonnées, coordonnées bancaires) sont traitées pour la gestion du programme et le versement des commissions, et conservées le temps requis par nos obligations comptables. Les modalités d’exercice des droits figurent dans la politique de confidentialité.",
       "article11Title": "11. Modification, droit applicable et litiges",
       "article11Body": "Nous pouvons modifier les présentes conditions. Toute modification est notifiée au Partenaire trente jours avant son entrée en vigueur et ne s’applique pas aux ventes déjà attribuées.\nLes présentes conditions sont régies par le droit français. Tout litige relatif à leur exécution relève de la compétence exclusive des tribunaux de Paris, sauf disposition d’ordre public contraire."
+    },
+    "mentions": {
+      "title": "Mentions légales",
+      "lastUpdated": "Dernière mise à jour : 7 septembre 2026",
+      "publisherTitle": "Éditeur du site",
+      "tradeName": "Exploitant le service sous le nom commercial {value}",
+      "capital": "Capital social : {value} €",
+      "siren": "SIREN {value}",
+      "siret": "SIRET {value}",
+      "rcs": "RCS {city} {value}",
+      "vat": "N° TVA intracommunautaire : {value}",
+      "contact": "Contact : {value}",
+      "directorTitle": "Directeur de la publication",
+      "directorBody": "{name}",
+      "hostTitle": "Hébergeur",
+      "hostBody": "Le site est hébergé par {name} ({url}).",
+      "ipTitle": "Propriété intellectuelle",
+      "ipBody": "L'ensemble des contenus du site — marque, textes, visuels, cinématiques d'invitation, code — est protégé par le droit de la propriété intellectuelle. Toute reproduction ou réutilisation sans autorisation écrite est interdite. Les contenus déposés par les utilisateurs (photos, textes d'invitation) restent leur propriété ; ils nous accordent uniquement les droits d'usage nécessaires à la fourniture du service.",
+      "dataTitle": "Données personnelles",
+      "dataBody": "Le traitement des données personnelles, les durées de conservation et l'exercice de vos droits sont décrits dans notre politique de confidentialité, accessible depuis le pied de page.",
+      "cookiesTitle": "Cookies",
+      "cookiesBody": "L'usage des cookies et la façon de les refuser sont décrits dans notre politique de cookies, accessible depuis le pied de page.",
+      "mediationTitle": "Médiation de la consommation",
+      "mediationBody": "Conformément à l'article L612-1 du code de la consommation, vous pouvez recourir gratuitement au médiateur {name} ({url}) en cas de litige non résolu avec notre service client."
     }
   },
   "Account": {
@@ -760,7 +790,8 @@
             "terms": "CGU",
             "privacy": "Confidentialité",
             "cookies": "Cookies",
-            "rgpd": "Vos droits RGPD"
+            "rgpd": "Vos droits RGPD",
+            "mentions": "Mentions légales"
           }
         }
       },
@@ -3206,7 +3237,10 @@
         "ledgerCoveredPayg": "réglés à l'événement",
         "ledgerNote": "Seuls les <strong>dépassements</strong> apparaissent ici ; les frais de base sont {context}. Retrouvez vos factures consolidées dans la <link>facturation de l'agence</link>."
       }
-    }
+    },
+    "compedTrialRemaining": "Votre compte offert se termine dans {days} jours.",
+    "compedTrialTomorrow": "Votre compte offert se termine demain.",
+    "compedTrialCta": "Choisir un forfait"
   },
   "Branding": {
     "title": "Identité visuelle",
@@ -4355,6 +4389,10 @@
     "legalAffiliation": {
       "title": "Conditions du programme partenaire — Wedillybird",
       "description": "Conditions du programme partenaire Wedillybird : attribution des ventes, commission, acquisition, versement, obligations du partenaire."
+    },
+    "legalMentions": {
+      "title": "Mentions légales — Wedillybird",
+      "description": "Éditeur, hébergeur et informations légales du service Wedillybird."
     }
   },
   "CookieConsent": {
@@ -5621,5 +5659,39 @@
     "codeLabel": "Code à partager",
     "codeHint": "À saisir au moment du paiement. Même remise, même commission — pratique pour vos stories et vos publications.",
     "termsLink": "Lire les conditions du programme partenaire"
+  },
+  "PartnerInvite": {
+    "eyebrow": "Invitation partenaire",
+    "title": "Votre compte, {months} mois offerts",
+    "subtitle": "Ouvrez votre espace agence et utilisez Wedillybird pendant {months} mois pour l'essayer en vraies conditions.",
+    "noCard": "Aucune carte bancaire demandée.",
+    "nameLabel": "Nom de votre agence",
+    "namePlaceholder": "Atelier Camille",
+    "nameHelp": "C'est le nom que verront vos couples. Vous pourrez le changer à tout moment.",
+    "submit": "Ouvrir mon espace ({months} mois offerts)",
+    "codeHint": "Votre code partenaire {code} est actif : partagez-le à votre communauté pour percevoir votre commission.",
+    "deadTitle": "Ce lien n'est plus valable",
+    "deadHelp": "Écrivez-nous à contact@wedillybird.com et nous vous en renverrons un.",
+    "dead": {
+      "unknown": "Ce lien n'existe pas. Vérifiez qu'il a bien été copié en entier.",
+      "consumed": "Ce lien a déjà servi à ouvrir un compte.",
+      "revoked": "Ce lien a été annulé.",
+      "expired": "Ce lien a expiré."
+    },
+    "errors": {
+      "unauthorized": "Connectez-vous pour ouvrir votre espace.",
+      "invite_not_found": "Ce lien n'existe pas.",
+      "invite_expired": "Ce lien a expiré.",
+      "invite_revoked": "Ce lien a été annulé.",
+      "invite_consumed": "Ce lien a déjà servi.",
+      "org_already_subscribed": "Votre agence a déjà un abonnement en cours. Contactez-nous, nous nous en occupons.",
+      "invalid_name": "Indiquez le nom de votre agence.",
+      "user_not_found": "Compte introuvable. Reconnectez-vous.",
+      "unknown": "Impossible d'ouvrir votre espace pour le moment."
+    },
+    "metaTitle": "Votre invitation partenaire — Wedillybird",
+    "signInCta": "Créer mon compte et accepter",
+    "signInHint": "Vous serez ramenée ici juste après. Aucune carte bancaire ne vous sera demandée.",
+    "deadBackHome": "Retour à l'accueil"
   }
 }

@@ -11,6 +11,9 @@
  * Convex ne suit pas les imports app-side. On duplique la règle ici — garder en
  * phase avec `PREMIUM_EXTRA_FEATURES`.
  */
+
+import { isCompActive } from './partnerInvite';
+
 export type GatedFeature =
   | 'faceSearch'
   | 'galleryZipDownload'
@@ -123,25 +126,38 @@ export function vendorCapForTier(
 export type OrgSubscriptionState = {
   subscriptionStatus?: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
   paygCredits?: number;
+  /** Compte offert (partenariat, démo) — actif tant que `expiresAt` est devant. */
+  compedSubscription?: { expiresAt: number } | null;
 };
 
 /**
  * L'organisation a-t-elle **choisi un forfait** et donc accès aux
  * fonctionnalités du back-office (créer un mariage, rétroplanning, prestataires…) ?
  *
- * `true` si : abonnement `active` ou `trialing`, OU crédits Pay-as-you-go > 0
- * (l'agence a payé au moins un événement). `false` sinon — notamment une agence
- * fraîchement onboardée qui n'a encore rien choisi (aucun statut, 0 crédit), ou
- * dont l'abonnement est `past_due`/`canceled`/`unpaid` sans crédit PAYG.
+ * `true` si : abonnement `active` ou `trialing`, OU **compte offert non
+ * expiré**, OU crédits Pay-as-you-go > 0 (l'agence a payé au moins un
+ * événement). `false` sinon — notamment une agence fraîchement onboardée qui
+ * n'a encore rien choisi (aucun statut, 0 crédit), ou dont l'abonnement est
+ * `past_due`/`canceled`/`unpaid` sans crédit PAYG.
+ *
+ * La branche « compte offert » est datée à dessein. Un cadeau n'a **aucun**
+ * abonnement Stripe derrière : personne ne viendrait clore quoi que ce soit à
+ * l'échéance. Poser un statut `trialing` aurait donc ouvert l'accès à vie —
+ * c'est en lisant `expiresAt` à chaque appel que « six mois » veut dire six
+ * mois. Un cadeau expiré ne bloque en revanche jamais une agence qui a
+ * réellement souscrit depuis : le statut Stripe est testé en premier.
  *
  * Aligné sur `decidePublishGate` (convex/events.ts) : mêmes statuts « actifs »
  * (active/trialing) + repli PAYG. Le back-office est donc verrouillé tant que
- * l'agence n'a pas d'abonnement ou de crédit — impossible de créer mariages /
- * rétroplanning sans avoir choisi un forfait. Miroir app-side :
- * `lib/payments/entitlements.ts:orgHasActiveAccess`.
+ * l'agence n'a pas d'abonnement, de cadeau en cours ou de crédit. Miroir
+ * app-side : `lib/payments/entitlements.ts:orgHasActiveAccess`.
  */
-export function orgHasActiveAccess(org: OrgSubscriptionState | null | undefined): boolean {
+export function orgHasActiveAccess(
+  org: OrgSubscriptionState | null | undefined,
+  now: number = Date.now(),
+): boolean {
   if (!org) return false;
   if (org.subscriptionStatus === 'active' || org.subscriptionStatus === 'trialing') return true;
+  if (isCompActive(org.compedSubscription, now)) return true;
   return (org.paygCredits ?? 0) > 0;
 }

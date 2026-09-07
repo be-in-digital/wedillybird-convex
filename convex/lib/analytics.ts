@@ -25,7 +25,12 @@ export type AnalyticsPayment = {
   createdAt: number;
   updatedAt: number;
 };
-export type AnalyticsOrg = { subscriptionTier?: string; subscriptionStatus?: string };
+export type AnalyticsOrg = {
+  subscriptionTier?: string;
+  subscriptionStatus?: string;
+  /** Compte offert : jamais un client, même si un tier lui est posé. */
+  compedSubscription?: { expiresAt: number } | null;
+};
 
 export interface AnalyticsInput {
   users: AnalyticsUser[];
@@ -113,10 +118,16 @@ export function computePlatformAnalytics(
     essential: events.filter((e) => e.planTier === 'essential').length,
     premium: events.filter((e) => e.planTier === 'premium').length,
   };
+  // Un compte offert porte un `subscriptionTier` — il le faut, sinon son quota
+  // d'événements serait illimité — mais ce n'est pas un client. Le compter dans
+  // le mix ferait lire un cadeau comme une vente ; il a son propre compteur.
+  const compedOrgs = orgs.filter((o) => Boolean(o.compedSubscription));
+  const payingOrgs = orgs.filter((o) => !o.compedSubscription);
   const proTierMix = {
-    starter: orgs.filter((o) => o.subscriptionTier === 'starter').length,
-    business: orgs.filter((o) => o.subscriptionTier === 'business').length,
-    agency: orgs.filter((o) => o.subscriptionTier === 'agency').length,
+    starter: payingOrgs.filter((o) => o.subscriptionTier === 'starter').length,
+    business: payingOrgs.filter((o) => o.subscriptionTier === 'business').length,
+    agency: payingOrgs.filter((o) => o.subscriptionTier === 'agency').length,
+    comped: compedOrgs.length,
   };
   const guestCounts = events.map((e) => e.maxGuests).filter((n) => n > 0);
   const avgGuests =
@@ -160,6 +171,11 @@ export function computePlatformAnalytics(
   };
   const mrrByTierMinor = { starter: 0, business: 0, agency: 0 };
   for (const o of orgs) {
+    // Ceinture ET bretelles : un cadeau ne pose pas de `subscriptionStatus`,
+    // il n'entrerait donc déjà pas ici — mais un revenu fantôme dans le MRR
+    // est une erreur qu'on ne voit pas passer, alors on l'exclut aussi par son
+    // nom.
+    if (o.compedSubscription) continue;
     if (o.subscriptionStatus === 'active' || o.subscriptionStatus === 'trialing') {
       const tier = o.subscriptionTier;
       if (tier === 'starter' || tier === 'business' || tier === 'agency') {

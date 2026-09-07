@@ -226,3 +226,55 @@ describe("decidePublishGate — quota d'events actifs (Pro, sub active)", () => 
     ).toEqual({ ok: true, consumeCredit: true, nextCredits: 1 });
   });
 });
+
+/**
+ * Compte offert (lien partenaire). Le garde-fou de CRÉATION
+ * (`orgHasActiveAccess`) et celui de PUBLICATION doivent s'ouvrir ensemble :
+ * une agence qui peut monter un mariage mais pas le publier découvre le mur à
+ * la dernière étape, après tout le travail — pire qu'un refus franc à l'entrée.
+ */
+describe('decidePublishGate — compte offert', () => {
+  const NOW = Date.UTC(2026, 8, 7, 12);
+  const FUTURE = Date.UTC(2027, 2, 7, 12);
+  const orgEvent = { organizationId: 'org1' as never };
+
+  it('cadeau en cours → publication autorisée, sans crédit consommé', () => {
+    expect(
+      decidePublishGate({
+        event: orgEvent,
+        organization: { compedSubscription: { expiresAt: FUTURE } },
+        now: NOW,
+      }),
+    ).toEqual({ ok: true, consumeCredit: false });
+  });
+
+  it('cadeau expiré → retombe sur le crédit PAYG, comme une agence sans abonnement', () => {
+    expect(
+      decidePublishGate({
+        event: orgEvent,
+        organization: { compedSubscription: { expiresAt: NOW - 1 }, paygCredits: 0 },
+        now: NOW,
+      }),
+    ).toEqual({ ok: false, error: 'PAYG_CREDIT_REQUIRED' });
+  });
+
+  it('le quota d’événements du tier s’applique AUSSI au compte offert', () => {
+    // C'est tout l'intérêt de plafonner le cadeau à Starter : un compte
+    // d'essai ne doit pas permettre d'exploiter une agence gratuitement.
+    expect(
+      decidePublishGate({
+        event: orgEvent,
+        organization: { compedSubscription: { expiresAt: FUTURE } },
+        activeEventsQuota: 5,
+        activeEventCount: 5,
+        now: NOW,
+      }),
+    ).toEqual({ ok: false, error: 'EVENT_QUOTA_EXCEEDED' });
+  });
+
+  it('sans cadeau, le comportement est inchangé', () => {
+    expect(
+      decidePublishGate({ event: orgEvent, organization: { paygCredits: 0 }, now: NOW }),
+    ).toEqual({ ok: false, error: 'PAYG_CREDIT_REQUIRED' });
+  });
+});

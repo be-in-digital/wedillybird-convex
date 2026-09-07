@@ -260,6 +260,7 @@ export const cockpit = query({
         subscriptionStatus: org.subscriptionStatus,
         subscriptionPeriodEnd: org.subscriptionPeriodEnd,
         paygCredits: org.paygCredits ?? 0,
+        compedSubscription: org.compedSubscription ?? null,
       },
       myRole: membership.role,
       usage: {

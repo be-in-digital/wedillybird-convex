@@ -58,3 +58,19 @@ export async function pickUniqueSlug<T extends TableNames>(
   }
   throw new Error('SLUG_GENERATION_FAILED');
 }
+
+/**
+ * Slug d'organisation. Partagé par la création classique (`organizations.create`)
+ * et par l'acceptation d'un lien partenaire : deux agences nommées pareil
+ * doivent produire le même slug de base, sinon `pickUniqueSlug` ne peut pas
+ * jouer son rôle de départage.
+ */
+export function slugifyOrgName(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}

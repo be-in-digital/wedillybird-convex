@@ -10,6 +10,7 @@ import { internal } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
 import { pickUniqueSlug } from './lib/uniqueSlug';
 import { eventQuotaForTier, eventHasFeature, orgHasActiveAccess } from './lib/entitlements';
+import { isCompActive } from './lib/partnerInvite';
 import { assertInvitationDesignAllowed } from './lib/invitationDesign';
 import { assertEventAccess } from './lib/eventAuth';
 import { assertOrgWrite } from './lib/orgAuth';
@@ -618,7 +619,11 @@ export type PaygPublishGateInput = {
   organization: {
     subscriptionStatus?: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
     paygCredits?: number;
+    /** Compte offert (lien partenaire) — vaut abonnement tant qu'il court. */
+    compedSubscription?: { expiresAt: number } | null;
   } | null;
+  /** Instant de référence, injectable pour les tests. */
+  now?: number;
   /**
    * Quota d'events actifs simultanés du tier Pro (5/20/50 ; `null`/absent =
    * aucun quota appliqué). Optionnel pour rétro-compat : un appelant qui ne le
@@ -644,9 +649,17 @@ export function decidePublishGate(input: PaygPublishGateInput): PaygPublishGateD
   if (!event.organizationId) {
     return { ok: false as const, error: 'PLAN_REQUIRED' as const };
   }
-  // Pro : check subscription active OU PAYG credit.
+  // Pro : abonnement actif, compte OFFERT en cours, ou crédit PAYG.
+  //
+  // Sans la branche « offert », une agence à qui l'on a ouvert un compte
+  // pourrait CRÉER un mariage (`orgHasActiveAccess` la laisse passer) mais pas
+  // le PUBLIER — elle construirait tout son événement pour se heurter au mur
+  // à la dernière étape. Un cadeau à moitié ouvert est pire qu'un refus franc.
   const status = organization?.subscriptionStatus;
-  const hasActiveSub = status === 'active' || status === 'trialing';
+  const hasActiveSub =
+    status === 'active' ||
+    status === 'trialing' ||
+    isCompActive(organization?.compedSubscription, input.now ?? Date.now());
   if (hasActiveSub) {
     // Quota d'events actifs simultanés : si l'orga est déjà à son quota de
     // tier, on bloque (l'event simultané supplémentaire est un upsell payant,
@@ -712,7 +725,11 @@ export const publish = mutation({
     const decision = decidePublishGate({
       event: { planTier: ev.planTier, organizationId: ev.organizationId },
       organization: org
-        ? { subscriptionStatus: org.subscriptionStatus, paygCredits: org.paygCredits }
+        ? {
+            subscriptionStatus: org.subscriptionStatus,
+            paygCredits: org.paygCredits,
+            compedSubscription: org.compedSubscription,
+          }
         : null,
       activeEventsQuota,
       activeEventCount,

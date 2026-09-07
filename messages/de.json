@@ -92,7 +92,12 @@
       "confirmSuspend": "{name} sperren?",
       "suspend": "Sperren",
       "confirmChangeRole": "Rolle in „{role}“ ändern?",
-      "rolePlaceholder": "Rolle…"
+      "rolePlaceholder": "Rolle…",
+      "colPartner": "Partner",
+      "partnersOnly": "Nur Partner",
+      "attachPartner": "Code zuordnen",
+      "detachPartner": "Trennen",
+      "confirmDetachPartner": "Diesen Partnercode von diesem Konto trennen?"
     },
     "events": {
       "searchPlaceholder": "Ein Event suchen…",
@@ -244,6 +249,7 @@
     "terms": "AGB",
     "privacy": "Datenschutz",
     "cookies": "Cookies",
+    "mentions": "Impressum",
     "faq": "FAQ",
     "contact": "Kontakt"
   },
@@ -330,6 +336,30 @@
       "article10Body": "Der Partner erhält keine Informationen über die Identität der Käufer: Sein Bereich zeigt Beträge, Daten und Status — niemals einen Namen, eine E-Mail-Adresse oder eine identifizierbare Hochzeit.\nDie Daten des Partners (Identität, Kontaktdaten, Bankverbindung) werden zur Durchführung des Programms und zur Auszahlung der Provisionen verarbeitet und so lange aufbewahrt, wie es unsere buchhalterischen Pflichten verlangen. Wie Rechte ausgeübt werden, steht in der Datenschutzerklärung.",
       "article11Title": "11. Änderungen, anwendbares Recht und Streitigkeiten",
       "article11Body": "Wir können diese Bedingungen ändern. Jede Änderung wird dem Partner dreißig Tage vor Inkrafttreten mitgeteilt und gilt nicht für bereits zugeordnete Verkäufe.\nDiese Bedingungen unterliegen französischem Recht. Für Streitigkeiten über ihre Durchführung sind ausschließlich die Gerichte von Paris zuständig, vorbehaltlich zwingender entgegenstehender Vorschriften."
+    },
+    "mentions": {
+      "title": "Impressum",
+      "lastUpdated": "Zuletzt aktualisiert: 7. September 2026",
+      "publisherTitle": "Anbieter",
+      "tradeName": "Betreibt den Dienst unter dem Handelsnamen {value}",
+      "capital": "Stammkapital: {value} €",
+      "siren": "SIREN {value}",
+      "siret": "SIRET {value}",
+      "rcs": "Handelsregister {city}, Nr. {value}",
+      "vat": "USt-IdNr.: {value}",
+      "contact": "Kontakt: {value}",
+      "directorTitle": "Verantwortlich für den Inhalt",
+      "directorBody": "{name}",
+      "hostTitle": "Hosting",
+      "hostBody": "Die Website wird von {name} ({url}) gehostet.",
+      "ipTitle": "Urheberrecht",
+      "ipBody": "Sämtliche Inhalte der Website — Marke, Texte, Bilder, Einladungs-Cinematics, Code — sind urheberrechtlich geschützt. Jede Vervielfältigung oder Weiterverwendung ohne schriftliche Zustimmung ist untersagt. Von Nutzern hochgeladene Inhalte (Fotos, Einladungstexte) bleiben deren Eigentum; sie räumen uns nur die zur Erbringung des Dienstes nötigen Rechte ein.",
+      "dataTitle": "Personenbezogene Daten",
+      "dataBody": "Verarbeitung personenbezogener Daten, Speicherfristen und die Ausübung Ihrer Rechte sind in unserer Datenschutzerklärung beschrieben, verlinkt in der Fußzeile.",
+      "cookiesTitle": "Cookies",
+      "cookiesBody": "Der Einsatz von Cookies und deren Ablehnung sind in unserer Cookie-Richtlinie beschrieben, verlinkt in der Fußzeile.",
+      "mediationTitle": "Verbraucherschlichtung",
+      "mediationBody": "Gemäß Artikel L612-1 des französischen Verbrauchergesetzbuchs können Sie sich bei einem ungelösten Streitfall mit unserem Kundendienst kostenlos an die Schlichtungsstelle {name} ({url}) wenden."
     }
   },
   "Account": {
@@ -760,7 +790,8 @@
             "terms": "AGB",
             "privacy": "Datenschutz",
             "cookies": "Cookies",
-            "rgpd": "Deine DSGVO-Rechte"
+            "rgpd": "Deine DSGVO-Rechte",
+            "mentions": "Impressum"
           }
         }
       },
@@ -3206,7 +3237,10 @@
         "ledgerCoveredPayg": "pro Veranstaltung bezahlt",
         "ledgerNote": "Hier erscheinen nur <strong>Mehrverbräuche</strong>; die Grundgebühren sind {context}. Ihre konsolidierten Rechnungen finden Sie in der <link>Agentur-Abrechnung</link>."
       }
-    }
+    },
+    "compedTrialRemaining": "Ihr geschenktes Konto endet in {days} Tagen.",
+    "compedTrialTomorrow": "Ihr geschenktes Konto endet morgen.",
+    "compedTrialCta": "Tarif wählen"
   },
   "Branding": {
     "title": "Visuelle Identität",
@@ -4355,6 +4389,10 @@
     "legalAffiliation": {
       "title": "Bedingungen des Partnerprogramms — Wedillybird",
       "description": "Bedingungen des Wedillybird-Partnerprogramms: Verkaufszuordnung, Provision, Fälligkeit, Auszahlung, Pflichten des Partners."
+    },
+    "legalMentions": {
+      "title": "Impressum — Wedillybird",
+      "description": "Anbieter, Hosting und rechtliche Angaben zum Dienst Wedillybird."
     }
   },
   "CookieConsent": {
@@ -5621,5 +5659,39 @@
     "codeLabel": "Code zum Teilen",
     "codeHint": "Beim Bezahlen einzugeben. Gleicher Rabatt, gleiche Provision — praktisch für Ihre Stories und Beiträge.",
     "termsLink": "Bedingungen des Partnerprogramms lesen"
+  },
+  "PartnerInvite": {
+    "eyebrow": "Partner-Einladung",
+    "title": "Ihr Konto, {months} Monate geschenkt",
+    "subtitle": "Eröffnen Sie Ihren Agentur-Bereich und nutzen Sie Wedillybird {months} Monate lang, um es an echten Hochzeiten zu testen.",
+    "noCard": "Es wird keine Kreditkarte verlangt.",
+    "nameLabel": "Name Ihrer Agentur",
+    "namePlaceholder": "Atelier Camille",
+    "nameHelp": "Diesen Namen sehen Ihre Paare. Sie können ihn jederzeit ändern.",
+    "submit": "Bereich eröffnen ({months} Monate geschenkt)",
+    "codeHint": "Ihr Partnercode {code} ist aktiv: Teilen Sie ihn mit Ihrer Community, um Ihre Provision zu erhalten.",
+    "deadTitle": "Dieser Link ist nicht mehr gültig",
+    "deadHelp": "Schreiben Sie an contact@wedillybird.com, wir senden Ihnen einen neuen.",
+    "dead": {
+      "unknown": "Diesen Link gibt es nicht. Prüfen Sie, ob er vollständig kopiert wurde.",
+      "consumed": "Mit diesem Link wurde bereits ein Konto eröffnet.",
+      "revoked": "Dieser Link wurde storniert.",
+      "expired": "Dieser Link ist abgelaufen."
+    },
+    "errors": {
+      "unauthorized": "Melden Sie sich an, um Ihren Bereich zu eröffnen.",
+      "invite_not_found": "Diesen Link gibt es nicht.",
+      "invite_expired": "Dieser Link ist abgelaufen.",
+      "invite_revoked": "Dieser Link wurde storniert.",
+      "invite_consumed": "Dieser Link wurde bereits verwendet.",
+      "org_already_subscribed": "Ihre Agentur hat bereits ein laufendes Abonnement. Melden Sie sich, wir kümmern uns darum.",
+      "invalid_name": "Geben Sie den Namen Ihrer Agentur an.",
+      "user_not_found": "Konto nicht gefunden. Bitte erneut anmelden.",
+      "unknown": "Ihr Bereich lässt sich derzeit nicht eröffnen."
+    },
+    "metaTitle": "Ihre Partner-Einladung — Wedillybird",
+    "signInCta": "Konto erstellen und annehmen",
+    "signInHint": "Sie kehren direkt hierher zurück. Es wird keine Kreditkarte verlangt.",
+    "deadBackHome": "Zurück zur Startseite"
   }
 }
