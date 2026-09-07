@@ -21,10 +21,12 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
 import {
   buildQuotaGauges,
+  proSubscriptionBanner,
   tierHasFeature,
   BYTES_PER_GO,
   PRO_OVERAGE_EUR_MINOR,
   type ProQuotaGauges,
+  type ProSubscriptionBanner,
   type QuotaStatus,
 } from '@/lib/payments/entitlements';
 import type { SubscriptionTier, SubscriptionStatus } from '@/lib/payments/subscriptions';
@@ -45,6 +47,12 @@ export interface CockpitData {
     subscriptionStatus?: SubscriptionStatus | null;
     subscriptionPeriodEnd?: number | null;
     paygCredits: number;
+    /**
+     * Compte offert (lien partenaire). Sans lui ici, le bandeau d'abonnement
+     * ne voyait que Stripe et réclamait un forfait à une agence à qui l'on
+     * venait d'en offrir un.
+     */
+    compedSubscription?: { expiresAt: number } | null;
   };
   usage: {
     activeEvents: number;
@@ -309,6 +317,8 @@ export async function Cockpit(data: CockpitData) {
           tier={tier}
           status={org.subscriptionStatus ?? null}
           periodEnd={org.subscriptionPeriodEnd ?? null}
+          paygCredits={org.paygCredits}
+          compedSubscription={org.compedSubscription ?? null}
           locale={locale}
           t={t}
         />
@@ -677,20 +687,19 @@ function ActivityCard({
 /* -------------------------------------------------------------------------- */
 
 function resolveBanner(
-  tier: SubscriptionTier | null,
-  status: SubscriptionStatus | null,
+  kind: Exclude<ProSubscriptionBanner, 'none'>,
   periodEnd: number | null,
   locale: string,
   t: T,
 ): { tone: 'danger' | 'warning' | 'info'; message: string; cta: string } {
-  if (!tier || !status) {
+  if (kind === 'no_plan') {
     return {
       tone: 'warning',
       message: t('cockpit.bannerNoSubscription'),
       cta: t('cockpit.bannerChoosePlan'),
     };
   }
-  if (status === 'past_due' || status === 'unpaid') {
+  if (kind === 'payment_failed') {
     return {
       tone: 'danger',
       message: t('cockpit.bannerPaymentFailed'),
@@ -710,18 +719,33 @@ function SubscriptionBanner({
   tier,
   status,
   periodEnd,
+  paygCredits,
+  compedSubscription,
   locale,
   t,
 }: {
   tier: SubscriptionTier | null;
   status: SubscriptionStatus | null;
   periodEnd: number | null;
+  paygCredits: number;
+  compedSubscription: { expiresAt: number } | null;
   locale: string;
   t: T;
 }) {
-  if (tier && (status === 'active' || status === 'trialing')) return null;
+  // La décision vit dans `lib/payments/entitlements` : c'est le même « l'agence
+  // a-t-elle accès ? » que le serveur, compte offert et crédits PAYG compris.
+  const kind = proSubscriptionBanner(
+    {
+      subscriptionTier: tier,
+      subscriptionStatus: status,
+      paygCredits,
+      compedSubscription,
+    },
+    clockNow(),
+  );
+  if (kind === 'none') return null;
 
-  const { tone, message, cta } = resolveBanner(tier, status, periodEnd, locale, t);
+  const { tone, message, cta } = resolveBanner(kind, periodEnd, locale, t);
 
   const toneStyles: Record<
     'danger' | 'warning' | 'info',

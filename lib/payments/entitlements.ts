@@ -193,6 +193,45 @@ export function orgHasActiveAccess(
   return (org.paygCredits ?? 0) > 0;
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Bandeau d'abonnement du cockpit agence                                     */
+/* -------------------------------------------------------------------------- */
+
+/** Bandeau à afficher en tête du cockpit — `'none'` = aucun. */
+export type ProSubscriptionBanner = 'none' | 'no_plan' | 'payment_failed' | 'cancelled';
+
+/**
+ * Quel bandeau d'abonnement le cockpit agence doit-il afficher ?
+ *
+ * Le bandeau « Aucun abonnement actif — choisissez un forfait pour débloquer le
+ * back-office » se lisait sur le seul couple (tier, statut Stripe). Or un
+ * **compte offert** n'a par construction aucun objet Stripe derrière
+ * (cf. `convex/lib/partnerInvite.ts`) : une partenaire à qui l'on venait
+ * d'ouvrir six mois lisait donc, sous son propre décompte, qu'elle n'avait rien
+ * choisi et que son back-office était verrouillé — alors que le serveur la
+ * laissait entrer. Même faux mur pour une agence Pay-as-you-go, qui a payé au
+ * moins un événement.
+ *
+ * La règle est donc celle de l'accès réel (`orgHasActiveAccess`, le garde-fou
+ * serveur) : on ne réclame un forfait que si le back-office est effectivement
+ * verrouillé. Un incident de paiement (`past_due`/`unpaid`) ou une résiliation
+ * restent en revanche annoncés tels quels — ce sont des faits Stripe, pas un
+ * défaut d'accès.
+ */
+export function proSubscriptionBanner(
+  org: (OrgAccessState & { subscriptionTier?: SubscriptionTier | null }) | null | undefined,
+  now: number = Date.now(),
+): ProSubscriptionBanner {
+  const tier = org?.subscriptionTier ?? null;
+  const status = org?.subscriptionStatus ?? null;
+  if (tier && (status === 'active' || status === 'trialing')) return 'none';
+  if (!tier || !status) {
+    return orgHasActiveAccess(org, now) ? 'none' : 'no_plan';
+  }
+  if (status === 'past_due' || status === 'unpaid') return 'payment_failed';
+  return 'cancelled';
+}
+
 /** État d'accès d'une galerie, du point de vue de l'écran comme du serveur. */
 export type GalleryAccess = 'open' | 'locked' | 'expired';
 
