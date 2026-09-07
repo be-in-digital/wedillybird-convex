@@ -128,3 +128,49 @@ export function inviteState(
   if (invite.expiresAt <= now) return 'expired';
   return 'usable';
 }
+
+/* ==================== Ouverture du cadeau hors lien d'invitation ==================== */
+
+/**
+ * Un compte partenaire ne doit jamais avoir à choisir un forfait ni à payer :
+ * le cadeau six mois est la contrepartie du partenariat. Or il n'était posé
+ * que par la redemption d'un lien d'invitation. Une partenaire rattachée
+ * depuis l'admin restait donc en rôle `couple`, sans organisation ni cadeau —
+ * et l'assistant de création d'événement lui présentait l'étape « choisir le
+ * forfait », puis le mur du paiement à la publication.
+ *
+ * Cette décision est partagée par les deux chemins d'ouverture (lien et
+ * rattachement admin) pour qu'ils ne puissent pas diverger.
+ */
+export type PartnerCompDecision =
+  | { action: 'grant' }
+  | { action: 'skip'; reason: 'already_comped' }
+  | { action: 'refuse'; reason: 'org_subscribed' };
+
+export interface PartnerCompOrgState {
+  /** Abonnement Stripe réel — sa présence signe une organisation cliente. */
+  stripeSubscriptionId?: string;
+  compedSubscription?: { expiresAt: number };
+}
+
+/**
+ * Faut-il ouvrir (ou ré-ouvrir) le compte offert de cette organisation ?
+ *
+ *  - **Refus** si elle est déjà cliente : lui poser un cadeau la sortirait du
+ *    MRR alors qu'elle paie. Ce cas se règle à la main, jamais automatiquement.
+ *  - **Skip** si un cadeau court encore : re-rattacher un affilié ne doit pas
+ *    prolonger les six mois en silence, sinon le cadeau devient perpétuel.
+ *  - **Grant** sinon — y compris quand un ancien cadeau a expiré, ce qui est
+ *    un renouvellement explicite décidé par l'admin qui rattache.
+ */
+export function decidePartnerComp(input: {
+  org?: PartnerCompOrgState | null;
+  now: number;
+}): PartnerCompDecision {
+  const org = input.org;
+  if (org?.stripeSubscriptionId) return { action: 'refuse', reason: 'org_subscribed' };
+  if (org?.compedSubscription && org.compedSubscription.expiresAt > input.now) {
+    return { action: 'skip', reason: 'already_comped' };
+  }
+  return { action: 'grant' };
+}
