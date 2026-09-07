@@ -21,11 +21,18 @@ function mapError(code: string, t: (k: string) => string): string {
   switch (code) {
     case 'INVALID_INPUT':
       return t('errors.invalidCode');
+    // Les noms du serveur (`INVALID_CODE`, `TOO_MANY_ATTEMPTS`, `NO_ACTIVE_OTP`)
+    // ne correspondaient à aucun de ces cas : les anciens alias sont conservés
+    // au cas où un appelant les emploie encore.
     case 'OTP_INVALID':
+    case 'INVALID_CODE':
       return t('errors.invalidCode');
     case 'OTP_EXPIRED':
       return t('errors.expired');
+    case 'NO_ACTIVE_OTP':
+      return t('errors.expired');
     case 'OTP_TOO_MANY_ATTEMPTS':
+    case 'TOO_MANY_ATTEMPTS':
       return t('errors.tooManyAttempts');
     case 'RATE_LIMITED':
       return t('errors.rateLimited');
