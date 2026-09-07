@@ -172,9 +172,14 @@ function encode(value: unknown): unknown {
 /**
  * Réponse d'échec au format attendu par `ConvexHttpClient` : HTTP 200 avec
  * `status: "error"` (le client accepte 200 comme 560, cf. `http_client.js`).
+ *
+ * Seul le MESSAGE de l'erreur sort — jamais la pile. Les tests assertent sur
+ * les codes métier (`INVITE_EXPIRED`, `REWARD_TYPE_MISMATCH`…), qui sont des
+ * messages ; la pile n'apporterait rien et exposerait l'arborescence du
+ * serveur (c'est ce que relève `js/stack-trace-exposure`).
  */
 function udfError(res: ServerResponse, error: unknown): void {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : 'Erreur inattendue';
   const data = error instanceof ConvexError ? (error.data as Value) : undefined;
   sendJson(res, 200, {
     status: 'error',
@@ -182,6 +187,15 @@ function udfError(res: ServerResponse, error: unknown): void {
     ...(data !== undefined ? { errorData: convexToJson(data) } : {}),
     logLines: [],
   });
+}
+
+/**
+ * Échec de plomberie (corps illisible, route qui jette) : le détail reste dans
+ * les logs du serveur, la réponse ne porte qu'un libellé générique.
+ */
+function plumbingError(res: ServerResponse, error: unknown): void {
+  console.error('[convex-mem] requête en échec :', error);
+  sendJson(res, 500, { status: 'error', errorMessage: 'INTERNAL_ERROR', logLines: [] });
 }
 
 /** Décode les args : tableau à un élément, encodé Convex sur `/api/*`. */
@@ -329,7 +343,7 @@ export function startConvexMemServer(): Promise<{ port: number; close: () => Pro
 
   const server = createServer((req, res) => {
     void route(req, res).catch((error: unknown) => {
-      udfError(res, error);
+      plumbingError(res, error);
     });
   });
 
