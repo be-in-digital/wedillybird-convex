@@ -25,6 +25,7 @@ import { NotificationsPanel } from '@/components/notifications/notifications-pan
 import { UpgradeCard } from '@/components/payments/upgrade-card';
 import { PostEventUpsellCard } from '@/components/payments/post-event-upsell-card';
 import { routePayment } from '@/lib/payments/country';
+import { eventNeedsConsumerPlan } from '@/lib/payments/entitlements';
 import { togglePublishAction } from '@/app/[locale]/(app)/events/actions';
 import { cn } from '@/lib/cn';
 
@@ -224,7 +225,9 @@ export default async function EventDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <PlanBadge
             tier={planTier}
-            label={planLabel}
+            // Event d'agence : le forfait n'est pas une décision de cet écran.
+            coveredByOrganization={!eventNeedsConsumerPlan(event)}
+            label={eventNeedsConsumerPlan(event) ? planLabel : t('planByOrganization')}
             upsellSuffix={hasUpsell ? t('planUpsellSuffix') : null}
             activateLabel={t('activatePlan')}
           />
@@ -467,7 +470,10 @@ export default async function EventDetailPage({
     />
   );
 
-  const upgradeSection = (
+  // Un mariage porté par une agence est couvert par l'abonnement (ou le compte
+  // offert) de l'organisation : lui proposer un forfait particulier ferait dire
+  // à l'écran l'inverse de ce que fait `decidePublishGate`.
+  const upgradeSection = !eventNeedsConsumerPlan(event) ? null : (
     <div id="upgrade" className="flex scroll-mt-24 flex-col gap-4">
       <UpgradeCard
         eventId={eventId}
@@ -563,17 +569,24 @@ function DetailCard({
  * de point d'entrée vers la section UpgradeCard plus bas dans la page (ancre
  * `#upgrade`). Avec plan, affiche le tier et un suffix optionnel si l'upsell
  * post-mariage a été activé.
+ *
+ * `coveredByOrganization` coupe le lien : sur un mariage d'agence, la section
+ * `#upgrade` n'existe pas et il n'y a pas de forfait à activer. Le badge ne
+ * doit pas non plus rester muet — « Aucun forfait » laisserait croire qu'il
+ * manque quelque chose à payer.
  */
 function PlanBadge({
   tier,
   label,
   upsellSuffix,
   activateLabel,
+  coveredByOrganization = false,
 }: {
   tier: 'essential' | 'premium' | undefined;
   label: string;
   upsellSuffix: string | null;
   activateLabel: string;
+  coveredByOrganization?: boolean;
 }) {
   const colors = tier
     ? {
@@ -602,7 +615,7 @@ function PlanBadge({
     </span>
   );
 
-  if (!tier) {
+  if (!tier && !coveredByOrganization) {
     return (
       <a
         href="#upgrade"
