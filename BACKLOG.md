@@ -62,7 +62,7 @@ Reproduire `.env.local` sur Vercel → Project Settings → Environment Variable
 
 ### PDF facture (post-Sprint 6) ✅ livré
 - `@react-pdf/renderer` installé.
-- Composant `lib/payments/invoice.tsx` (`<InvoicePDF payment={...} />`) — en-tête Wedillybird, bloc émetteur/client, ligne plan, TVA 20 % isolée pour EUR, mention "TVA non applicable, art. 293 B du CGI" pour XOF/MAD/TND, footer mentions légales + provider.
+- Composant `lib/payments/invoice.tsx` (`<InvoicePDF payment={...} />`) — en-tête Wedillybird, bloc émetteur/client, ligne plan, mention de TVA, footer mentions légales + provider. Le taux vient de `lib/payments/vat.ts` : **à zéro pour toutes les devises depuis 2026-09-07** (franchise en base), donc la facture porte la mention 293 B et n'isole plus de ligne de TVA. La ligne HT + TVA réapparaît d'elle-même si un taux y est réintroduit.
 - Route `app/api/payments/[paymentId]/invoice.pdf/route.tsx` (GET) — auth session, query Convex `paymentsInvoice:getForInvoice` (ownership = buyer OR event owner), 200 `application/pdf` attachment idempotent.
 - Strings i18n dans `messages/fr.json` section `Invoice`.
 - Tests : `tests/unit/lib/invoice-pdf.test.tsx` (composant + buildInvoiceNumber) + `tests/unit/app/invoice-pdf-route.test.tsx` (401/403/404/200).
