@@ -35,6 +35,7 @@ import type * as lib_currency from "../lib/currency.js";
 import type * as lib_email from "../lib/email.js";
 import type * as lib_entitlements from "../lib/entitlements.js";
 import type * as lib_eventAuth from "../lib/eventAuth.js";
+import type * as lib_eventPlan from "../lib/eventPlan.js";
 import type * as lib_guestStats from "../lib/guestStats.js";
 import type * as lib_invitationDesign from "../lib/invitationDesign.js";
 import type * as lib_magicLink from "../lib/magicLink.js";
@@ -110,6 +111,7 @@ declare const fullApi: ApiFromModules<{
   "lib/email": typeof lib_email;
   "lib/entitlements": typeof lib_entitlements;
   "lib/eventAuth": typeof lib_eventAuth;
+  "lib/eventPlan": typeof lib_eventPlan;
   "lib/guestStats": typeof lib_guestStats;
   "lib/invitationDesign": typeof lib_invitationDesign;
   "lib/magicLink": typeof lib_magicLink;

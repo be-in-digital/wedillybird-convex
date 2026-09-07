@@ -3,6 +3,7 @@ import { mutation, query } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import { computePlatformAnalytics, computeRefundOutcome } from './lib/analytics';
 import { reverseReferralBySession, restoreCreditForRefundedSession } from './affiliate';
+import { galleryExpiresAtFor } from './lib/eventPlan';
 
 async function assertAdmin(
   ctx: { db: { get: (id: Id<'users'>) => Promise<{ role: string } | null> } },
@@ -192,6 +193,8 @@ export const listAllEvents = query({
       timezone: e.timezone,
       status: e.status,
       planTier: e.planTier,
+      /** Forfait offert (partenariat / geste co) plutôt que payé. */
+      comped: e.compedPlan ? { grantedAt: e.compedPlan.grantedAt } : null,
       maxGuests: e.maxGuests,
       ownerName: ownerMap.get(e.ownerId)?.fullName ?? null,
       ownerEmail: ownerMap.get(e.ownerId)?.email ?? null,
@@ -761,5 +764,96 @@ export const updatePhotoBookStatus = mutation({
       createdAt: Date.now(),
     });
     return { ok: true as const, status };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Forfait offert (partenariat / geste commercial / compte de démo)
+//
+// `planTier` n'était écrit QUE par `payments:markSucceeded`, après une vraie
+// transaction Stripe : offrir un accès Premium à une partenaire imposait de
+// fabriquer un coupon 100 % et de lui faire dérouler un checkout à 0 €. Ces
+// deux mutations font la même chose de front, avec traçabilité (`compedPlan` +
+// journal d'audit) pour qu'un accès offert ne ressemble jamais à un revenu.
+// ---------------------------------------------------------------------------
+
+export const grantEventPlan = mutation({
+  args: {
+    adminId: v.id('users'),
+    eventId: v.id('events'),
+    planTier: v.union(v.literal('essential'), v.literal('premium')),
+    /** Pourquoi (nom du partenariat, ticket support…) — atterrit dans l'audit. */
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, { adminId, eventId, planTier, reason }) => {
+    await assertAdmin(ctx, adminId);
+    const event = await ctx.db.get(eventId);
+    if (!event) throw new Error('EVENT_NOT_FOUND');
+
+    const now = Date.now();
+    const previousPlan = event.planTier ?? null;
+    await ctx.db.patch(eventId, {
+      planTier,
+      // Même calcul que le chemin payant (`galleryExpiresAtFor`) : un forfait
+      // offert doit ouvrir exactement les mêmes droits, à la même échéance.
+      paidAt: event.paidAt ?? now,
+      galleryExpiresAt: galleryExpiresAtFor(planTier, event.eventDate),
+      pendingPlanTier: undefined,
+      compedPlan: { grantedBy: adminId, grantedAt: now, reason },
+      updatedAt: now,
+    });
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'grant_event_plan',
+      targetType: 'event',
+      targetId: eventId,
+      details: JSON.stringify({ previousPlan, planTier, reason: reason ?? null }),
+      createdAt: now,
+    });
+    return { ok: true };
+  },
+});
+
+/**
+ * Retire un forfait OFFERT (fin de partenariat). Refuse net sur un event
+ * réellement payé : révoquer un accès acheté couperait la galerie d'un client
+ * en règle — c'est un remboursement (`markPaymentRefunded`), pas une révocation.
+ */
+export const revokeEventPlan = mutation({
+  args: {
+    adminId: v.id('users'),
+    eventId: v.id('events'),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, { adminId, eventId, reason }) => {
+    await assertAdmin(ctx, adminId);
+    const event = await ctx.db.get(eventId);
+    if (!event) throw new Error('EVENT_NOT_FOUND');
+    if (!event.compedPlan) throw new Error('PLAN_NOT_COMPED');
+
+    const paid = await ctx.db
+      .query('payments')
+      .withIndex('by_event', (q) => q.eq('eventId', eventId))
+      .collect();
+    if (paid.some((p) => p.status === 'succeeded')) throw new Error('EVENT_HAS_PAID_PAYMENT');
+
+    const now = Date.now();
+    const previousPlan = event.planTier ?? null;
+    await ctx.db.patch(eventId, {
+      planTier: undefined,
+      paidAt: undefined,
+      galleryExpiresAt: undefined,
+      compedPlan: undefined,
+      updatedAt: now,
+    });
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'revoke_event_plan',
+      targetType: 'event',
+      targetId: eventId,
+      details: JSON.stringify({ previousPlan, reason: reason ?? null }),
+      createdAt: now,
+    });
+    return { ok: true };
   },
 });

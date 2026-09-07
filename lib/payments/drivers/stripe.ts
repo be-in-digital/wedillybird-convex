@@ -132,7 +132,10 @@ export const stripeDriver: PaymentDriver = {
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-      return parseSession(session, event.id, 'succeeded');
+      return {
+        ...parseSession(session, event.id, 'succeeded'),
+        promotionCode: (await resolveSessionPromotionCode(session)) ?? undefined,
+      };
     }
     if (event.type === 'checkout.session.async_payment_failed') {
       const session = event.data.object as Stripe.Checkout.Session;
@@ -154,11 +157,19 @@ export const stripeDriver: PaymentDriver = {
     const override = STRIPE_CURRENCY_DIVISOR_OVERRIDE[currencyRaw];
     const amountMinor = override ? stripeAmount * override : stripeAmount;
     return {
-      paid: session.payment_status === 'paid',
+      // Une session à 0 € (coupon 100 %) est marquée `no_payment_required`, pas
+      // `paid` : sans ce cas, le webhook la finalisait mais la réconciliation de
+      // secours (cron / page de succès) la voyait « impayée » et la signalait
+      // bloquée à vie. On l'accepte uniquement si la session est `complete` —
+      // strictement plus large que l'ancienne condition, jamais plus étroit.
+      paid:
+        session.payment_status === 'paid' ||
+        (session.status === 'complete' && session.payment_status === 'no_payment_required'),
       providerSessionId: session.id,
       providerEventId: session.id,
       amountMinor,
       currency: currencyRaw,
+      promotionCode: (await resolveSessionPromotionCode(session)) ?? undefined,
     };
   },
 };
@@ -994,6 +1005,29 @@ export async function retrieveConnectedAccountStatus(
 /*  One-shot payment helpers (existing)                                       */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Code promo lisible (« SARAH ») appliqué à une session, ou `null`.
+ *
+ * Dans un payload de webhook, `session.discounts[].promotion_code` est un ID
+ * (`promo_…`), pas le code affiché — il faut un aller-retour API pour le
+ * résoudre. Best-effort strict : une erreur Stripe ne doit jamais faire échouer
+ * la confirmation d'un paiement (au pire l'attribution est perdue, ce qui est
+ * exactement l'état d'avant).
+ */
+async function resolveSessionPromotionCode(
+  session: Stripe.Checkout.Session,
+): Promise<string | null> {
+  const applied = session.discounts?.[0]?.promotion_code;
+  if (!applied) return null;
+  if (typeof applied !== 'string') return applied.code ?? null;
+  try {
+    const promo = await getStripe().promotionCodes.retrieve(applied);
+    return promo.code ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function parseSession(
   session: Stripe.Checkout.Session,
   eventId: string,
@@ -1279,13 +1313,23 @@ function mapCoupon(c: Stripe.Coupon): AdminCoupon {
 }
 
 /**
- * Coupon Stripe montant-fixe à usage unique — crédit de parrainage appliqué à
- * un checkout précis. `amount_off` dans la devise, `duration: once`, 1 seule
- * redemption, expiration courte (24 h). Retourne l'id du coupon.
+ * Coupon Stripe montant-fixe à usage unique — crédit de parrainage et/ou remise
+ * affiliée appliqués à un checkout précis. `amount_off` dans la devise,
+ * `duration: once`, 1 seule redemption, expiration courte (24 h). Retourne l'id
+ * du coupon.
+ *
+ * Un SEUL coupon par session : Stripe n'accepte qu'une entrée dans `discounts`,
+ * donc crédit et remise sont fusionnés en amont (`splitOrderDiscounts`). `kind`
+ * n'existe que pour la lisibilité côté Dashboard Stripe et la réconciliation
+ * comptable — il ne change aucun montant.
  */
 export async function createOneTimeAmountCoupon(
   amountOffMinor: number,
   currency: Currency,
+  kind:
+    | 'referral_credit'
+    | 'affiliate_discount'
+    | 'referral_credit_and_discount' = 'referral_credit',
 ): Promise<string> {
   const stripe = getStripe();
   const coupon = await stripe.coupons.create({
@@ -1294,11 +1338,20 @@ export async function createOneTimeAmountCoupon(
     duration: 'once',
     max_redemptions: 1,
     redeem_by: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000),
-    name: 'Crédit de parrainage Wedillybird',
-    metadata: { wedillybird: 'referral_credit' },
+    name: COUPON_LABEL[kind],
+    metadata: { wedillybird: kind },
   });
   return coupon.id;
 }
+
+const COUPON_LABEL: Record<
+  'referral_credit' | 'affiliate_discount' | 'referral_credit_and_discount',
+  string
+> = {
+  referral_credit: 'Crédit de parrainage Wedillybird',
+  affiliate_discount: 'Remise partenaire Wedillybird',
+  referral_credit_and_discount: 'Remise partenaire + crédit de parrainage Wedillybird',
+};
 
 /**
  * Crée un coupon plateforme. Exactement un de `percentOff` / `amountOffMinor`.
@@ -1391,6 +1444,47 @@ export async function resolveProPlanProductIds(): Promise<string[]> {
     if (product) products.add(product);
   }
   return [...products];
+}
+
+/**
+ * Produits Stripe des forfaits COUPLE (Essentiel / Premium), résolus depuis
+ * leurs Prices EUR — pendant B2C de `resolveProPlanProductIds`.
+ *
+ * Sert à restreindre un coupon partenaire (`applies_to.products`) : sans cette
+ * restriction, le code d'une créatrice s'appliquerait aussi à un abonnement pro
+ * (les checkouts pros ouvrent également `allow_promotion_codes`) — une remise
+ * de 10 % offerte à son audience deviendrait 10 % sur un Agency à 449 €/mois.
+ * La restriction est IMMUABLE après création côté Stripe : mieux vaut refuser
+ * la création que créer un coupon trop large.
+ *
+ * Toutes les devises d'un même forfait partagent le même produit Stripe, donc
+ * résoudre via EUR suffit.
+ */
+export async function resolveConsumerPlanProductIds(): Promise<string[]> {
+  const stripe = getStripe();
+  const priceIds = (['essential', 'premium'] as const)
+    .map((plan) => priceIdForPlan(plan, 'EUR'))
+    .filter((id): id is string => Boolean(id));
+
+  const products = new Set<string>();
+  for (const priceId of priceIds) {
+    const price = await stripe.prices.retrieve(priceId);
+    const product = typeof price.product === 'string' ? price.product : price.product?.id;
+    if (product) products.add(product);
+  }
+  return [...products];
+}
+
+/**
+ * Retrouve un code promo par sa chaîne lisible, ou `null`. Garde anti-doublon
+ * avant d'en créer un : deux codes identiques rendraient l'attribution
+ * ambiguë (on ne saurait plus quel affilié créditer).
+ */
+export async function findPromotionCodeByCode(code: string): Promise<AdminPromotionCode | null> {
+  const stripe = getStripe();
+  const res = await stripe.promotionCodes.list({ code, limit: 1 });
+  const found = res.data[0];
+  return found ? mapPromotionCode(found) : null;
 }
 
 export async function listCoupons(limit = 100): Promise<AdminCoupon[]> {

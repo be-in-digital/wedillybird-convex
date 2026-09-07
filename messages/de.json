@@ -106,7 +106,14 @@
       "colOwner": "Inhaber",
       "confirmChangeStatus": "Status in „{status}“ ändern?",
       "statusPlaceholder": "Status…",
-      "confirmDelete": "Das Event „{title}“ löschen?"
+      "confirmDelete": "Das Event „{title}“ löschen?",
+      "compedBadge": "Geschenkt",
+      "grantPlanPlaceholder": "Freischalten…",
+      "grantEssential": "Essential freischalten",
+      "grantPremium": "Premium freischalten",
+      "confirmGrantPlan": "Den Tarif „{plan}“ für dieses Event ohne Zahlung freischalten?",
+      "revokePlan": "Freischaltung entziehen",
+      "confirmRevokePlan": "Den geschenkten Tarif für dieses Event entziehen?"
     },
     "moderation": {
       "photosHeading": "Ausstehende Fotos ({count})",
@@ -297,6 +304,32 @@
       "thirdPartiesTitle": "Drittanbieter-Cookies",
       "thirdPartiesBody": "Stripe setzt eigene Cookies auf seinen Zahlungsseiten (außerhalb der Wedillybird-Domain), um Betrug zu verhindern. Konsultieren Sie deren Datenschutzerklärung.",
       "description": "Für den Betrieb von Wedillybird notwendige Cookies: HMAC-Session, Offline-Cache für Check-in. Keine Werbe-Cookies, keine Drittanbieter-Tracker."
+    },
+    "affiliation": {
+      "title": "Bedingungen des Partnerprogramms",
+      "lastUpdated": "Zuletzt aktualisiert: 7. September 2026",
+      "article1Title": "1. Gegenstand",
+      "article1Body": "Das Partnerprogramm von Wedillybird ermöglicht es Content-Creatorinnen und -Creatoren, Hochzeitsplanerinnen und allen, die Paare begleiten, Wedillybird zu empfehlen und eine Provision auf die so erzielten Verkäufe zu erhalten.\nDiese Bedingungen regeln das Verhältnis zwischen Wedillybird („wir“) und der zum Programm zugelassenen Person („der Partner“). Sie betreffen nicht die Empfehlung unter Privatpersonen, die zu einem im Dienst einlösbaren Guthaben führt und den Allgemeinen Nutzungsbedingungen unterliegt.",
+      "article2Title": "2. Aufnahme und Status des Partners",
+      "article2Body": "Der Zugang zum Programm erfolgt auf Einladung: Wir erstellen das Partnerkonto, seinen Code und seinen Link. Eine unaufgeforderte Bewerbung begründet keinen Anspruch.\nDer Partner handelt vollständig eigenständig. Das Programm begründet weder ein Arbeitsverhältnis noch ein Auftragsverhältnis, keine gemeinsame Gesellschaft und keine Exklusivität auf einer der beiden Seiten. Der Partner kommt für seine steuerlichen und sozialversicherungsrechtlichen Pflichten selbst auf und versichert, sofern sein nationales Recht dies verlangt, über den Status zu verfügen, der ihm die Ausstellung einer Rechnung erlaubt.",
+      "article3Title": "3. Empfehlungslink und Aktionscode",
+      "article3Body": "Wir stellen dem Partner einen Empfehlungslink (in der Form wedillybird.com/?ref=CODE) zur Verfügung und, sofern ein Rabatt für sein Publikum vorgesehen ist, einen Aktionscode mit derselben Zeichenfolge.\nDer Code gilt für die Paartarife (Essential und Premium). Er gilt weder für Profi-Abonnements noch für die HD-Option nach der Hochzeit.\nDer Code ist ab seiner Erstellung zwölf Monate gültig und kann verlängert werden. Der Partner darf ihn weder übertragen noch weiterverkaufen noch Varianten davon erstellen.",
+      "article4Title": "4. Zuordnung der Verkäufe",
+      "article4Body": "Ein Verkauf wird dem Partner in zwei Fällen zugeordnet:\n— der Käufer hat innerhalb der vorangegangenen dreißig Tage auf seinen Empfehlungslink geklickt; wurden mehrere Empfehlungslinks aufgerufen, ist der zuerst empfangene maßgeblich;\n— oder der Käufer hat seinen Code beim Bezahlen eingegeben.\nIst keine dieser beiden Bedingungen erfüllt, entsteht kein Provisionsanspruch, insbesondere wenn der Käufer seine Cookies gelöscht oder das Gerät gewechselt hat, ohne den Code einzugeben. Für eigene Käufe erhält der Partner keine Provision.",
+      "article5Title": "5. Provision",
+      "article5Body": "Die Provision ist ein Prozentsatz des von Wedillybird tatsächlich vereinnahmten Betrags, nach Abzug jedes Rabatts und ohne Steuern. Ist der Preis inklusive Steuern ausgewiesen, wird die Mehrwertsteuer vor der Berechnung abgezogen, nach derselben Aufschlüsselung wie die dem Paar ausgestellte Rechnung. Sie beträgt 20 %, sofern mit dem Partner kein abweichender Satz schriftlich vereinbart wurde.\nDer dem Publikum gewährte Rabatt und die Provision des Partners dürfen zusammen 25 % des Preises nicht überschreiten.\nDie Provisionen werden in der Währung der Transaktion berechnet und ausgezahlt, ohne Umrechnung.",
+      "article6Title": "6. Fälligkeit und Stornierung",
+      "article6Body": "Eine Provision wird am Tag der betreffenden Hochzeit fällig, frühestens jedoch sieben Tage nach dem Kauf. Diese Frist entspricht dem Zeitraum, in dem das Paar noch eine Rückerstattung erhalten kann.\nVor der Auszahlung wird eine Provision storniert, wenn der zugehörige Kauf zurückerstattet, nicht bezahlt oder bei der Bank angefochten wird. Nach der Auszahlung können wir den entsprechenden Betrag mit späteren Provisionen verrechnen.",
+      "article7Title": "7. Auszahlung",
+      "article7Body": "Der Partner sieht seine zugeordneten Verkäufe und den ihm zustehenden Betrag jederzeit in seinem Partnerbereich.\nFällige Provisionen werden per Überweisung ausgezahlt, auf Anfrage und höchstens einmal monatlich, innerhalb von dreißig Tagen nach Eingang einer ordnungsgemäßen Rechnung. Es gilt eine Mindestgrenze von 50 €; darunter wird der Saldo auf die nächste Auszahlung übertragen. Bankgebühren für eine Überweisung außerhalb des SEPA-Raums trägt der Partner.",
+      "article8Title": "8. Pflichten des Partners",
+      "article8Body": "Der Partner verpflichtet sich:\n— den kommerziellen Charakter seiner Veröffentlichungen gesetzeskonform klar zu kennzeichnen; in Frankreich muss der Hinweis „publicité“ oder „collaboration commerciale“ während der gesamten Dauer der Werbung sichtbar bleiben;\n— den Dienst ausschließlich mit seinen tatsächlichen Funktionen darzustellen, ohne Erfolgsversprechen und ohne irreführende Angaben zu Preisen oder Rabatten;\n— nicht auf die Marke „Wedillybird“ oder ähnliche Begriffe in der Suchmaschinenwerbung zu bieten;\n— seinen Link oder Code nicht über unaufgeforderte Nachrichten und nicht auf Gutscheinportalen ohne unsere schriftliche Zustimmung zu verbreiten;\n— Name und Bildmaterial von Wedillybird nur so zu verwenden, wie wir sie bereitstellen.\nDer Partner äußert sich nicht im Namen von Wedillybird und geht in unserem Namen keine Verpflichtungen ein.",
+      "article9Title": "9. Aussetzung und Ende des Programms",
+      "article9Body": "Jede Partei kann das Programm jederzeit ohne Frist und ohne Entschädigung beenden. Code und Link werden dann deaktiviert und führen zu keinen neuen Zuordnungen mehr.\nLiegt kein Verstoß vor, werden bereits fällige und noch fällig werdende Provisionen gemäß Artikel 7 ausgezahlt. Bei Verstoß gegen die Pflichten aus Artikel 8 oder bei Machenschaften zur Erzeugung künstlicher Verkäufe verfallen die noch nicht ausgezahlten Provisionen.",
+      "article10Title": "10. Personenbezogene Daten",
+      "article10Body": "Der Partner erhält keine Informationen über die Identität der Käufer: Sein Bereich zeigt Beträge, Daten und Status — niemals einen Namen, eine E-Mail-Adresse oder eine identifizierbare Hochzeit.\nDie Daten des Partners (Identität, Kontaktdaten, Bankverbindung) werden zur Durchführung des Programms und zur Auszahlung der Provisionen verarbeitet und so lange aufbewahrt, wie es unsere buchhalterischen Pflichten verlangen. Wie Rechte ausgeübt werden, steht in der Datenschutzerklärung.",
+      "article11Title": "11. Änderungen, anwendbares Recht und Streitigkeiten",
+      "article11Body": "Wir können diese Bedingungen ändern. Jede Änderung wird dem Partner dreißig Tage vor Inkrafttreten mitgeteilt und gilt nicht für bereits zugeordnete Verkäufe.\nDiese Bedingungen unterliegen französischem Recht. Für Streitigkeiten über ihre Durchführung sind ausschließlich die Gerichte von Paris zuständig, vorbehaltlich zwingender entgegenstehender Vorschriften."
     }
   },
   "Account": {
@@ -4319,6 +4352,10 @@
     "legalCookies": {
       "title": "Cookie-Richtlinie — Wedillybird",
       "description": "Für den Betrieb von Wedillybird notwendige Cookies: HMAC-Session, Offline-Cache für Check-in. Keine Werbe-Cookies, keine Drittanbieter-Tracker."
+    },
+    "legalAffiliation": {
+      "title": "Bedingungen des Partnerprogramms — Wedillybird",
+      "description": "Bedingungen des Wedillybird-Partnerprogramms: Verkaufszuordnung, Provision, Fälligkeit, Auszahlung, Pflichten des Partners."
     }
   },
   "CookieConsent": {
@@ -5548,5 +5585,42 @@
       "size": "Datei zu groß (max. 10 MB)",
       "network": "Upload fehlgeschlagen – bitte erneut versuchen"
     }
+  },
+  "Partner": {
+    "eyebrow": "Partnerprogramm",
+    "title": "Ihr Partnerbereich",
+    "subtitle": "Teilen Sie Ihren Link, verfolgen Sie die daraus entstehenden Verkäufe und Ihr Guthaben.",
+    "linkTitle": "Ihr Link zum Teilen",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "codeDisabled": "Deaktiviert",
+    "codeTerms": "{rate} % Provision auf jeden zugeordneten Verkauf.",
+    "codeTermsWithDiscount": "{rate} % Provision und {discount} % Rabatt für Ihre Community.",
+    "earningsTitle": "Ihre Provisionen",
+    "statSales": "Zugeordnete Verkäufe",
+    "statVested": "Fällig",
+    "statVestedHint": "Bereit zur Auszahlung.",
+    "statPending": "Ausstehend",
+    "statPendingHint": "Wird am Hochzeitstag fällig.",
+    "statPaid": "Bereits ausgezahlt",
+    "ledgerTitle": "Übersicht",
+    "ledgerEmpty": "Noch keine zugeordneten Verkäufe.",
+    "colDate": "Datum",
+    "colCode": "Code",
+    "colReward": "Provision",
+    "colStatus": "Status",
+    "payoutNote": "Eine Provision wird am Tag der betreffenden Hochzeit fällig: bis dahin kann das Paar noch eine Rückerstattung erhalten. Auszahlungen erfolgen per Überweisung; schreiben Sie uns bei Fragen zu einem Betrag.",
+    "status": {
+      "pending": "Ausstehend",
+      "vested": "Fällig",
+      "paid": "Ausgezahlt",
+      "credited": "Gutgeschrieben",
+      "reversed": "Storniert"
+    },
+    "linkLabel": "Link",
+    "linkHint": "Jeder Verkauf über einen Klick auf diesen Link wird Ihnen automatisch zugeordnet.",
+    "codeLabel": "Code zum Teilen",
+    "codeHint": "Beim Bezahlen einzugeben. Gleicher Rabatt, gleiche Provision — praktisch für Ihre Stories und Beiträge.",
+    "termsLink": "Bedingungen des Partnerprogramms lesen"
   }
 }

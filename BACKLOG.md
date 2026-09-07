@@ -67,6 +67,75 @@ Reproduire `.env.local` sur Vercel → Project Settings → Environment Variable
 - Strings i18n dans `messages/fr.json` section `Invoice`.
 - Tests : `tests/unit/lib/invoice-pdf.test.tsx` (composant + buildInvoiceNumber) + `tests/unit/app/invoice-pdf-route.test.tsx` (401/403/404/200).
 
+## Affiliation / partenariats créatrices
+
+Le ledger (`convex/affiliate.ts`, `affiliates` + `affiliateReferrals`) est en
+place depuis la PR #68. Le lot « partnership readiness » ferme les trois trous
+qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
+
+### Livré
+- **Un code qui remise ET attribue** : `buyerDiscountBps` était persisté sur
+  l'affilié mais jamais lu au checkout. Il est désormais appliqué
+  (`lib/payments/affiliate-discount.ts`), fusionné avec un éventuel crédit de
+  parrainage dans un coupon Stripe unique (`discounts` n'en accepte qu'un).
+- **Rattrapage d'attribution** : un acheteur qui TAPE le code au checkout (sans
+  cookie `wdb_ref`) est rattaché au partenaire — le code promo est relu depuis
+  la session Stripe et résolu en affilié dans `payments:markSucceeded`.
+- **Commission sur le net réel** : `applyReferral` recevait le prix catalogue,
+  ce qui surévaluait la commission dès qu'une remise s'appliquait. Le montant
+  vient maintenant de `amount_total`, sur les trois chemins de confirmation
+  (webhook, cron de réconciliation, page de succès).
+- **Forfait offert** : `admin:grantEventPlan` / `revokeEventPlan` posent
+  `planTier` sans passer par Stripe (partenariat, démo, geste commercial),
+  tracés par `events.compedPlan` + journal d'audit. La révocation refuse tout
+  event portant un paiement `succeeded`.
+- **Versement** : `affiliate:markReferralPaid` + bouton « Marquer versé » dans
+  `/admin/affiliates` — le ledger a enfin une sortie de `vested`.
+- **Espace partenaire** `/partenaire` : le partenaire voit SON lien, ses ventes
+  et son dû (lecture scopée `by_owner`, aucune donnée acheteur exposée).
+- **CGU du programme** : `/legal/affiliation` (11 articles, 7 locales, page
+  publique et indexable — une créatrice doit pouvoir les lire AVANT d'accepter,
+  alors qu'elle n'a pas encore de compte ; l'espace partenaire y renvoie).
+  Chiffres tirés du code, et `tests/unit/lib/affiliation-terms.test.ts` échoue
+  si une constante bouge sans que le texte suive.
+  **Paramètres commerciaux à valider par le fondateur** (choisis par défaut,
+  modifiables) : versement mensuel sur facture sous 30 j, seuil minimum 50 €,
+  préavis de 30 j pour toute modification des conditions.
+  **Assiette tranchée (2026-09-07) : HORS TAXES.** La commission portait sur le
+  montant encaissé TTC (`amount_total`), donc sur de la TVA reversée à l'État.
+  Elle porte désormais sur le HT : `lib/payments/vat.ts` est la source unique de
+  la règle, partagée avec la facture (`invoice.tsx`) pour qu'un partenaire qui
+  recalcule depuis la facture d'un couple tombe sur notre chiffre. Stripe ne
+  calcule aucune taxe sur ce compte (ni `automatic_tax`, ni `tax_behavior`),
+  d'où une déduction par taux plutôt qu'une lecture d'`amount_tax`. L'assiette
+  est STOCKÉE (`affiliateReferrals.commissionBaseMinor`) pour rester auditable
+  si le taux change, et affichée dans le ledger admin.
+  Les CGU n'ont **pas** été relues par un juriste, et l'entité légale reste
+  « à compléter » (cf. `Invoice.issuerSiret`).
+- **Coupon Stripe auto** : `adminCreateAffiliateAction` crée le coupon + le code
+  promo Stripe sous la MÊME chaîne que `affiliates.code` dès que
+  `buyerDiscountBps > 0`, restreint aux produits couple (`applies_to.products`,
+  immuable — on refuse plutôt que de créer trop large). Un seul code circule
+  donc vraiment : par le lien il attribue en silence, tapé au checkout il
+  remise ET attribue (rattrapage via `markSucceeded`). Le code est affiché au
+  partenaire dans `/partenaire`, à côté de son lien — mais seulement s'il est
+  réellement accepté au checkout (`shareable`), pour ne jamais lui faire
+  promettre un code que Stripe refuserait. L'activation du code promo suit
+  celle de l'affilié, et `adminEnsureAffiliateCouponAction` rattrape un échec
+  Stripe ou un affilié ouvert avant cette bascule.
+
+### Reste à faire
+- **`scripts/create-affiliate-code.ts` redondant** — il crée un coupon Stripe
+  SANS ligne d'affilié côté Convex (attribution au compteur `times_redeemed`,
+  commission calculée à la main). Le chemin `/admin/affiliates` fait mieux et
+  branche le ledger. À supprimer une fois qu'on est sûr qu'aucun code créé par
+  ce script n'est encore en circulation.
+- **Versement automatisé** (Stripe Connect Express pour les partenaires cash) —
+  aujourd'hui virement manuel, acté a posteriori dans le ledger. Suffisant à
+  1-2 partenaires, pas au-delà.
+- **Notification partenaire** (« nouvelle vente attribuée », « commission
+  acquise ») — rien n'est envoyé, le partenaire doit venir voir la page.
+
 ## Multi-utilisateurs (post-Sprint 7)
 
 ### Branding upload organisation

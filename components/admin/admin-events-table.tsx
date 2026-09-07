@@ -15,6 +15,8 @@ import { useServerAction } from '@/components/admin/use-admin-action';
 import {
   adminUpdateEventStatusAction,
   adminDeleteEventAction,
+  adminGrantEventPlanAction,
+  adminRevokeEventPlanAction,
 } from '@/app/[locale]/(app)/admin/actions';
 
 type Event = {
@@ -25,6 +27,8 @@ type Event = {
   timezone: string;
   status: 'draft' | 'active' | 'archived' | 'cancelled';
   planTier?: string;
+  /** Forfait offert par l'équipe (non payé) — cf. `admin:grantEventPlan`. */
+  comped?: { grantedAt: number } | null;
   maxGuests: number;
   ownerName: string | null;
   ownerEmail: string | null;
@@ -122,6 +126,8 @@ function EventRow({ event }: { event: Event }) {
     adminUpdateEventStatusAction,
   );
   const { execute: deleteEvent, loading: deleting } = useServerAction(adminDeleteEventAction);
+  const { execute: grantPlan, loading: granting } = useServerAction(adminGrantEventPlanAction);
+  const { execute: revokePlan, loading: revoking } = useServerAction(adminRevokeEventPlanAction);
   const { confirm, confirmDialog } = useConfirm();
 
   return (
@@ -140,7 +146,10 @@ function EventRow({ event }: { event: Event }) {
           <Badge variant={STATUS_VARIANT[event.status] ?? 'neutral'}>{event.status}</Badge>
         </td>
         <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-          {event.planTier ?? '—'}
+          <span className="flex flex-wrap items-center gap-1.5">
+            {event.planTier ?? '—'}
+            {event.comped ? <Badge variant="warning">{t('events.compedBadge')}</Badge> : null}
+          </span>
         </td>
         <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
           {event.ownerName ?? event.ownerEmail ?? '—'}
@@ -169,6 +178,42 @@ function EventRow({ event }: { event: Event }) {
                 <SelectItem value="cancelled">{t('eventStatuses.cancelled')}</SelectItem>
               </SelectContent>
             </Select>
+            {/* Forfait offert : la seule façon de donner un accès Premium sans
+                transaction Stripe (partenariat, démo). La révocation n'est
+                proposée que sur un forfait effectivement offert — le serveur
+                refuse de toute façon sur un event payé. */}
+            {event.comped ? (
+              <button
+                onClick={async () => {
+                  if (await confirm({ title: t('events.confirmRevokePlan'), destructive: true })) {
+                    revokePlan(event._id, undefined);
+                  }
+                }}
+                disabled={revoking}
+                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
+              >
+                {t('events.revokePlan')}
+              </button>
+            ) : (
+              <Select
+                value=""
+                disabled={granting}
+                onValueChange={async (v) => {
+                  const tier = v as 'essential' | 'premium';
+                  if (await confirm({ title: t('events.confirmGrantPlan', { plan: tier }) })) {
+                    grantPlan(event._id, tier, undefined);
+                  }
+                }}
+              >
+                <SelectTrigger className="rounded-md border border-[color:var(--color-border)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-muted-foreground)]">
+                  <SelectValue placeholder={t('events.grantPlanPlaceholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="essential">{t('events.grantEssential')}</SelectItem>
+                  <SelectItem value="premium">{t('events.grantPremium')}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             {event.status !== 'cancelled' ? (
               <button
                 onClick={async () => {

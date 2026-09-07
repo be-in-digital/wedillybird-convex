@@ -106,7 +106,14 @@
       "colOwner": "Owner",
       "confirmChangeStatus": "Change status to “{status}”?",
       "statusPlaceholder": "Status…",
-      "confirmDelete": "Delete the event “{title}”?"
+      "confirmDelete": "Delete the event “{title}”?",
+      "compedBadge": "Comped",
+      "grantPlanPlaceholder": "Grant…",
+      "grantEssential": "Grant Essential",
+      "grantPremium": "Grant Premium",
+      "confirmGrantPlan": "Grant the “{plan}” plan to this event, with no payment?",
+      "revokePlan": "Revoke comp",
+      "confirmRevokePlan": "Revoke the comped plan on this event?"
     },
     "moderation": {
       "photosHeading": "Pending photos ({count})",
@@ -297,6 +304,32 @@
       "thirdPartiesTitle": "Third-party cookies",
       "thirdPartiesBody": "Stripe sets its own cookies on its payment pages (outside the Wedillybird domain) for fraud prevention. See its privacy policy.",
       "description": "Cookies essential to Wedillybird's operation: HMAC session, offline check-in cache. No advertising cookies or third-party trackers."
+    },
+    "affiliation": {
+      "title": "Partner programme terms",
+      "lastUpdated": "Last updated: 7 September 2026",
+      "article1Title": "1. Purpose",
+      "article1Body": "The Wedillybird partner programme allows a content creator, a wedding planner or anyone supporting couples to recommend Wedillybird and earn a commission on the sales they generate.\nThese terms govern the relationship between Wedillybird (“we”) and the person admitted to the programme (“the Partner”). They do not cover referrals between individuals, which earn credit usable on the Service and are governed by the Terms of Service.",
+      "article2Title": "2. Admission and Partner status",
+      "article2Body": "The programme is invitation-only: we create the partner account, its code and its link. An unsolicited application confers no right.\nThe Partner acts entirely independently. The programme creates no employment contract, no agency, no joint venture and no exclusivity either way. The Partner is responsible for their own tax and social security obligations and confirms holding, where their national law requires it, the status allowing them to issue an invoice.",
+      "article3Title": "3. Referral link and promotional code",
+      "article3Body": "We provide the Partner with a referral link (in the form wedillybird.com/?ref=CODE) and, where a discount is offered to their audience, a promotional code carrying the same string.\nThe code applies to the couple plans (Essential and Premium). It applies neither to professional subscriptions nor to the post-wedding HD option.\nThe code is valid for twelve months from creation and may be renewed. The Partner may not transfer it, resell it, or create variants of it.",
+      "article4Title": "4. Sale attribution",
+      "article4Body": "A sale is attributed to the Partner in two cases:\n— the buyer clicked their referral link within the previous thirty days; where several referral links were followed, the first one received carries the attribution;\n— or the buyer entered their code at checkout.\nNo commission is due where neither condition is met, in particular if the buyer cleared their cookies or changed device without entering the code. The Partner earns no commission on their own purchases.",
+      "article5Title": "5. Commission",
+      "article5Body": "The commission is a percentage of the amount actually collected by Wedillybird, after any discount and excluding taxes. Where the price is displayed inclusive of tax, VAT is deducted before the calculation, using the same breakdown as the invoice issued to the couple. It is 20%, unless a different rate is agreed in writing with the Partner.\nThe discount granted to the audience and the Partner's commission may not together exceed 25% of the price.\nCommissions are calculated and paid in the currency of the transaction, without conversion.",
+      "article6Title": "6. Vesting and cancellation",
+      "article6Body": "A commission vests on the date of the wedding concerned, and no earlier than seven days after the purchase. That period matches the window during which the couple can still obtain a refund.\nBefore payout, a commission is cancelled if the corresponding purchase is refunded, unpaid or disputed with the bank. After payout, we may offset the corresponding amount against subsequent commissions.",
+      "article7Title": "7. Payout",
+      "article7Body": "The Partner can see their attributed sales and the amount owed to them at any time from their partner space.\nVested commissions are paid by bank transfer, on request and at most once a month, within thirty days of receiving a compliant invoice. A minimum threshold of €50 applies; below it, the balance carries over to the next payout. Bank fees relating to a transfer outside the SEPA area remain payable by the Partner.",
+      "article8Title": "8. Partner obligations",
+      "article8Body": "The Partner undertakes to:\n— clearly disclose the commercial nature of their posts, as required by law; in France, the wording “publicité” or “collaboration commerciale” must remain visible throughout the promotion;\n— present the Service only through its actual features, with no promise of results and no misleading statement about prices or discounts;\n— not bid on the “Wedillybird” brand or on similar terms in search engine advertising;\n— not distribute their link or code through unsolicited messages, nor on coupon aggregator sites without our written agreement;\n— use the Wedillybird name and visuals only as we supply them.\nThe Partner does not speak on behalf of Wedillybird and enters into no commitment in our name.",
+      "article9Title": "9. Suspension and end of the programme",
+      "article9Body": "Either party may end the programme at any time, without notice or compensation. The code and link are then deactivated and stop producing new attributions.\nAbsent any breach, commissions already vested and those still vesting are paid under article 7. In the event of a breach of the article 8 obligations, or of any scheme intended to create artificial sales, commissions not yet paid are forfeited.",
+      "article10Title": "10. Personal data",
+      "article10Body": "The Partner receives no information about buyers' identity: their space shows amounts, dates and statuses — never a name, an email address or an identifiable wedding.\nThe Partner's own data (identity, contact details, bank details) is processed to run the programme and pay commissions, and kept for as long as our accounting obligations require. How to exercise your rights is set out in the privacy policy.",
+      "article11Title": "11. Changes, governing law and disputes",
+      "article11Body": "We may amend these terms. Any amendment is notified to the Partner thirty days before it takes effect and does not apply to sales already attributed.\nThese terms are governed by French law. Any dispute relating to their performance falls within the exclusive jurisdiction of the courts of Paris, save for any mandatory provision to the contrary."
     }
   },
   "Account": {
@@ -4315,6 +4348,10 @@
     "legalCookies": {
       "title": "Cookie Policy — Wedillybird",
       "description": "Cookies essential to Wedillybird's operation: HMAC session, offline check-in cache. No advertising cookies or third-party trackers."
+    },
+    "legalAffiliation": {
+      "title": "Partner programme terms — Wedillybird",
+      "description": "Wedillybird partner programme terms: sale attribution, commission, vesting, payout, partner obligations."
     }
   },
   "CookieConsent": {
@@ -5544,5 +5581,42 @@
       "size": "File too large (10 MB max)",
       "network": "Upload failed — try again"
     }
+  },
+  "Partner": {
+    "eyebrow": "Partner programme",
+    "title": "Your partner space",
+    "subtitle": "Share your link, follow the sales it generates and what you are owed.",
+    "linkTitle": "Your sharing link",
+    "copy": "Copy",
+    "copied": "Copied",
+    "codeDisabled": "Disabled",
+    "codeTerms": "{rate}% commission on every attributed sale.",
+    "codeTermsWithDiscount": "{rate}% commission, and {discount}% off for your community.",
+    "earningsTitle": "Your commissions",
+    "statSales": "Attributed sales",
+    "statVested": "Vested",
+    "statVestedHint": "Ready to be paid out.",
+    "statPending": "Pending",
+    "statPendingHint": "Vests on the wedding day.",
+    "statPaid": "Already paid",
+    "ledgerTitle": "Breakdown",
+    "ledgerEmpty": "No attributed sale yet.",
+    "colDate": "Date",
+    "colCode": "Code",
+    "colReward": "Commission",
+    "colStatus": "Status",
+    "payoutNote": "A commission vests on the day of the wedding it relates to: until then, the couple can still be refunded. Payouts are made by bank transfer; write to us with any question about an amount.",
+    "status": {
+      "pending": "Pending",
+      "vested": "Vested",
+      "paid": "Paid",
+      "credited": "Credited",
+      "reversed": "Reversed"
+    },
+    "linkLabel": "Link",
+    "linkHint": "Any sale coming from a click on this link is attributed to you automatically.",
+    "codeLabel": "Code to share",
+    "codeHint": "To be entered at checkout. Same discount, same commission — handy for your stories and posts.",
+    "termsLink": "Read the partner programme terms"
   }
 }

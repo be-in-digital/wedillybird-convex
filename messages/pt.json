@@ -106,7 +106,14 @@
       "colOwner": "Proprietário",
       "confirmChangeStatus": "Mudar o status para «{status}»?",
       "statusPlaceholder": "Status…",
-      "confirmDelete": "Excluir o evento «{title}»?"
+      "confirmDelete": "Excluir o evento «{title}»?",
+      "compedBadge": "Oferecido",
+      "grantPlanPlaceholder": "Oferecer…",
+      "grantEssential": "Oferecer Essencial",
+      "grantPremium": "Oferecer Premium",
+      "confirmGrantPlan": "Oferecer o plano «{plan}» a este evento, sem pagamento?",
+      "revokePlan": "Retirar oferta",
+      "confirmRevokePlan": "Retirar o plano oferecido deste evento?"
     },
     "moderation": {
       "photosHeading": "Fotos pendentes ({count})",
@@ -297,6 +304,32 @@
       "thirdPartiesTitle": "Cookies de terceiros",
       "thirdPartiesBody": "A Stripe coloca os seus próprios cookies nas páginas de pagamento (fora do domínio Wedillybird) para prevenir fraudes. Consulta a respetiva política de privacidade.",
       "description": "Cookies essenciais ao funcionamento da Wedillybird: sessão HMAC, cache offline check-in. Sem cookies publicitários nem trackers de terceiros."
+    },
+    "affiliation": {
+      "title": "Condições do programa de parceiros",
+      "lastUpdated": "Última atualização: 7 de setembro de 2026",
+      "article1Title": "1. Objeto",
+      "article1Body": "O programa de parceiros da Wedillybird permite a uma criadora ou criador de conteúdos, a uma organizadora de casamentos ou a qualquer pessoa que acompanhe casais recomendar a Wedillybird e receber uma comissão sobre as vendas assim geradas.\nEstas condições regem a relação entre a Wedillybird («nós») e a pessoa admitida no programa («o Parceiro»). Não abrangem a recomendação entre particulares, que dá direito a um crédito utilizável no Serviço e se rege pelas condições gerais de utilização.",
+      "article2Title": "2. Admissão e estatuto do Parceiro",
+      "article2Body": "O acesso ao programa faz-se por convite: somos nós que criamos a conta de parceiro, o seu código e a sua ligação. Uma candidatura espontânea não confere qualquer direito.\nO Parceiro atua com total independência. O programa não cria contrato de trabalho, nem mandato, nem sociedade comum, nem exclusividade de qualquer das partes. O Parceiro assume as suas obrigações fiscais e sociais e declara dispor, se o seu direito nacional o exigir, do estatuto que lhe permite emitir fatura.",
+      "article3Title": "3. Ligação de recomendação e código promocional",
+      "article3Body": "Fornecemos ao Parceiro uma ligação de recomendação (com o formato wedillybird.com/?ref=CODIGO) e, quando está prevista um desconto para o seu público, um código promocional com a mesma cadeia de caracteres.\nO código aplica-se aos planos de casal (Essencial e Premium). Não se aplica nem às subscrições profissionais nem à opção HD pós-casamento.\nO código é válido durante doze meses a contar da sua criação e pode ser renovado. O Parceiro não o pode ceder, revender nem criar variantes.",
+      "article4Title": "4. Atribuição das vendas",
+      "article4Body": "Uma venda é atribuída ao Parceiro em dois casos:\n— o comprador clicou na sua ligação nos trinta dias anteriores; se foram seguidas várias ligações de recomendação, prevalece a primeira recebida;\n— ou o comprador introduziu o seu código no momento do pagamento.\nNão é devida qualquer comissão quando nenhuma destas duas condições se verifica, nomeadamente se o comprador apagou os cookies ou mudou de dispositivo sem introduzir o código. O Parceiro não recebe comissão pelas suas próprias compras.",
+      "article5Title": "5. Comissão",
+      "article5Body": "A comissão é uma percentagem do montante efetivamente recebido pela Wedillybird, após aplicação de qualquer desconto e sem impostos. Quando o preço é apresentado com impostos incluídos, o IVA é deduzido antes do cálculo, segundo a mesma decomposição da fatura entregue ao casal. É de 20 %, salvo taxa diferente acordada por escrito com o Parceiro.\nA soma do desconto concedido ao público e da comissão do Parceiro não pode exceder 25 % do preço.\nAs comissões são calculadas e pagas na moeda da transação, sem conversão.",
+      "article6Title": "6. Aquisição e anulação",
+      "article6Body": "Uma comissão é adquirida na data do casamento em causa e, no mínimo, sete dias após a compra. Esse prazo corresponde ao período durante o qual o casal ainda pode obter um reembolso.\nAntes do pagamento, uma comissão é anulada se a compra correspondente for objeto de reembolso, incumprimento ou contestação bancária. Após o pagamento, podemos imputar o montante correspondente às comissões seguintes.",
+      "article7Title": "7. Pagamento",
+      "article7Body": "O Parceiro consulta a qualquer momento as suas vendas atribuídas e o montante que lhe é devido a partir do seu espaço de parceiro.\nAs comissões adquiridas são pagas por transferência bancária, mediante pedido e no máximo uma vez por mês, no prazo de trinta dias após a receção de uma fatura conforme. Aplica-se um limite mínimo de 50 €; abaixo desse valor, o saldo transita para o pagamento seguinte. As despesas bancárias de uma transferência fora da zona SEPA ficam a cargo do Parceiro.",
+      "article8Title": "8. Obrigações do Parceiro",
+      "article8Body": "O Parceiro compromete-se a:\n— indicar claramente o carácter comercial das suas publicações, nos termos da lei; em França, a menção «publicité» ou «collaboration commerciale» deve permanecer visível durante toda a promoção;\n— apresentar o Serviço apenas com as suas funcionalidades reais, sem promessa de resultados nem afirmações enganosas sobre preços ou descontos;\n— não licitar sobre a marca «Wedillybird» nem sobre termos semelhantes em publicidade nos motores de busca;\n— não divulgar a sua ligação ou o seu código através de mensagens não solicitadas, nem em sites agregadores de códigos promocionais sem o nosso acordo escrito;\n— utilizar o nome e os materiais visuais Wedillybird apenas tal como lhos fornecemos.\nO Parceiro não se pronuncia em nome da Wedillybird e não assume qualquer compromisso em nosso nome.",
+      "article9Title": "9. Suspensão e fim do programa",
+      "article9Body": "Qualquer das partes pode pôr termo ao programa a qualquer momento, sem pré-aviso nem indemnização. O código e a ligação são então desativados e deixam de produzir novas atribuições.\nNa ausência de incumprimento, as comissões já adquiridas e as que estão em aquisição são pagas nos termos do artigo 7. Em caso de incumprimento das obrigações do artigo 8 ou de manobras destinadas a criar vendas artificiais, as comissões ainda não pagas são perdidas.",
+      "article10Title": "10. Dados pessoais",
+      "article10Body": "O Parceiro não recebe qualquer informação sobre a identidade dos compradores: o seu espaço mostra montantes, datas e estados, nunca um nome, um endereço de e-mail ou um casamento identificável.\nOs dados do Parceiro (identidade, contactos, dados bancários) são tratados para a gestão do programa e o pagamento das comissões, e conservados pelo tempo exigido pelas nossas obrigações contabilísticas. O exercício dos direitos consta da política de privacidade.",
+      "article11Title": "11. Alteração, lei aplicável e litígios",
+      "article11Body": "Podemos alterar as presentes condições. Qualquer alteração é notificada ao Parceiro trinta dias antes da sua entrada em vigor e não se aplica às vendas já atribuídas.\nAs presentes condições regem-se pelo direito francês. Qualquer litígio relativo à sua execução é da competência exclusiva dos tribunais de Paris, salvo disposição imperativa em contrário."
     }
   },
   "Account": {
@@ -4319,6 +4352,10 @@
     "legalCookies": {
       "title": "Política de cookies — Wedillybird",
       "description": "Cookies essenciais ao funcionamento da Wedillybird: sessão HMAC, cache offline check-in. Sem cookies publicitários nem trackers de terceiros."
+    },
+    "legalAffiliation": {
+      "title": "Condições do programa de parceiros — Wedillybird",
+      "description": "Condições do programa de parceiros Wedillybird: atribuição de vendas, comissão, aquisição, pagamento, obrigações do parceiro."
     }
   },
   "CookieConsent": {
@@ -5548,5 +5585,42 @@
       "size": "Ficheiro demasiado grande (máx. 10 MB)",
       "network": "Falha no envio — tente novamente"
     }
+  },
+  "Partner": {
+    "eyebrow": "Programa de parceiros",
+    "title": "O seu espaço de parceiro",
+    "subtitle": "Partilhe o seu link, acompanhe as vendas que gera e o que lhe é devido.",
+    "linkTitle": "O seu link para partilhar",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "codeDisabled": "Desativado",
+    "codeTerms": "{rate} % de comissão em cada venda atribuída.",
+    "codeTermsWithDiscount": "{rate} % de comissão e {discount} % de desconto para a sua comunidade.",
+    "earningsTitle": "As suas comissões",
+    "statSales": "Vendas atribuídas",
+    "statVested": "Adquirido",
+    "statVestedHint": "Pronto para pagamento.",
+    "statPending": "Pendente",
+    "statPendingHint": "Adquirido no dia do casamento.",
+    "statPaid": "Já pago",
+    "ledgerTitle": "Detalhe",
+    "ledgerEmpty": "Ainda não há vendas atribuídas.",
+    "colDate": "Data",
+    "colCode": "Código",
+    "colReward": "Comissão",
+    "colStatus": "Estado",
+    "payoutNote": "Uma comissão é adquirida no dia do casamento a que diz respeito: até lá, o casal ainda pode ser reembolsado. Os pagamentos são feitos por transferência; escreva-nos com qualquer dúvida sobre um valor.",
+    "status": {
+      "pending": "Pendente",
+      "vested": "Adquirido",
+      "paid": "Pago",
+      "credited": "Creditado",
+      "reversed": "Anulado"
+    },
+    "linkLabel": "Link",
+    "linkHint": "Qualquer venda proveniente de um clique neste link é-lhe atribuída automaticamente.",
+    "codeLabel": "Código para partilhar",
+    "codeHint": "A introduzir no momento do pagamento. Mesmo desconto, mesma comissão — prático para as suas stories e publicações.",
+    "termsLink": "Ler as condições do programa de parceiros"
   }
 }

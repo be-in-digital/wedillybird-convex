@@ -116,6 +116,13 @@ describe('GET /api/cron/reconcile-payments', () => {
       provider: 'stripe',
       providerSessionId: 'sess_1',
       providerEventId: 'sess_1',
+      // Mêmes bases d'affiliation que le webhook : encaissement RÉEL relu chez
+      // Stripe, assiette hors taxes (2900 TTC → 2417 HT en EUR) et code promo
+      // tapé au checkout, pour que ce cron attribue et calcule exactement comme
+      // le webhook s'il gagne la course.
+      netMinor: 2900,
+      commissionBaseMinor: 2417,
+      promotionCode: undefined,
     });
     // Analytics revenu émis pour le paiement récupéré, comme le webhook.
     expect(captureServerMock).toHaveBeenCalledWith(

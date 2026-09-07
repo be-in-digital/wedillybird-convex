@@ -106,7 +106,14 @@
       "colOwner": "Proprietario",
       "confirmChangeStatus": "Cambiare lo stato in «{status}»?",
       "statusPlaceholder": "Stato…",
-      "confirmDelete": "Eliminare l'evento «{title}»?"
+      "confirmDelete": "Eliminare l'evento «{title}»?",
+      "compedBadge": "Omaggio",
+      "grantPlanPlaceholder": "Offri…",
+      "grantEssential": "Offri Essenziale",
+      "grantPremium": "Offri Premium",
+      "confirmGrantPlan": "Offrire il piano «{plan}» a questo evento, senza pagamento?",
+      "revokePlan": "Revoca omaggio",
+      "confirmRevokePlan": "Revocare il piano offerto per questo evento?"
     },
     "moderation": {
       "photosHeading": "Foto in attesa ({count})",
@@ -297,6 +304,32 @@
       "thirdPartiesTitle": "Cookie di terze parti",
       "thirdPartiesBody": "Stripe deposita i propri cookie sulle pagine di pagamento (al di fuori del dominio Wedillybird) per prevenire le frodi. Consulta la sua informativa sulla privacy.",
       "description": "Cookie essenziali al funzionamento di Wedillybird: sessione HMAC, cache offline check-in. Nessun cookie pubblicitario né tracker di terze parti."
+    },
+    "affiliation": {
+      "title": "Condizioni del programma partner",
+      "lastUpdated": "Ultimo aggiornamento: 7 settembre 2026",
+      "article1Title": "1. Oggetto",
+      "article1Body": "Il programma partner di Wedillybird consente a una creator o a un creator di contenuti, a un'organizzatrice di matrimoni o a chiunque accompagni delle coppie di consigliare Wedillybird e di percepire una commissione sulle vendite così generate.\nLe presenti condizioni regolano il rapporto tra Wedillybird («noi») e la persona ammessa al programma («il Partner»). Non riguardano il passaparola tra privati, che dà diritto a un credito utilizzabile sul Servizio ed è disciplinato dalle condizioni generali d'uso.",
+      "article2Title": "2. Ammissione e status del Partner",
+      "article2Body": "L'accesso al programma avviene su invito: siamo noi a creare l'account partner, il suo codice e il suo link. Una candidatura spontanea non attribuisce alcun diritto.\nIl Partner agisce in piena indipendenza. Il programma non crea né contratto di lavoro, né mandato, né società comune, né esclusiva da nessuna delle due parti. Il Partner provvede ai propri obblighi fiscali e previdenziali e dichiara di disporre, se il suo diritto nazionale lo esige, dello status che gli consente di emettere fattura.",
+      "article3Title": "3. Link di segnalazione e codice promozionale",
+      "article3Body": "Forniamo al Partner un link di segnalazione (nella forma wedillybird.com/?ref=CODICE) e, quando è previsto uno sconto per il suo pubblico, un codice promozionale con la stessa stringa di caratteri.\nIl codice si applica ai piani coppia (Essenziale e Premium). Non si applica né agli abbonamenti professionali né all'opzione HD post-matrimonio.\nIl codice è valido dodici mesi dalla creazione e può essere rinnovato. Il Partner non può cederlo, rivenderlo né crearne varianti.",
+      "article4Title": "4. Attribuzione delle vendite",
+      "article4Body": "Una vendita è attribuita al Partner in due casi:\n— l'acquirente ha cliccato il suo link nei trenta giorni precedenti; se sono stati seguiti più link di segnalazione, prevale il primo ricevuto;\n— oppure l'acquirente ha inserito il suo codice al momento del pagamento.\nNessuna commissione è dovuta quando non ricorre nessuna delle due condizioni, in particolare se l'acquirente ha cancellato i cookie o ha cambiato dispositivo senza inserire il codice. Il Partner non percepisce commissioni sui propri acquisti.",
+      "article5Title": "5. Commissione",
+      "article5Body": "La commissione è una percentuale dell'importo effettivamente incassato da Wedillybird, dopo l'applicazione di ogni sconto e al netto delle imposte. Quando il prezzo è esposto comprensivo di imposte, l'IVA è dedotta prima del calcolo, secondo lo stesso conteggio della fattura rilasciata alla coppia. È pari al 20 %, salvo diversa aliquota concordata per iscritto con il Partner.\nIl cumulo dello sconto concesso al pubblico e della commissione del Partner non può superare il 25 % del prezzo.\nLe commissioni sono calcolate e versate nella valuta della transazione, senza conversione.",
+      "article6Title": "6. Maturazione e annullamento",
+      "article6Body": "Una commissione matura alla data del matrimonio interessato e non prima di sette giorni dall'acquisto. Tale termine corrisponde al periodo in cui la coppia può ancora ottenere un rimborso.\nPrima del versamento, una commissione è annullata se l'acquisto corrispondente è oggetto di rimborso, insoluto o contestazione bancaria. Dopo il versamento, possiamo compensare l'importo corrispondente sulle commissioni successive.",
+      "article7Title": "7. Versamento",
+      "article7Body": "Il Partner consulta in qualsiasi momento le vendite attribuite e l'importo a lui dovuto dal proprio spazio partner.\nLe commissioni maturate sono versate tramite bonifico, su richiesta e al massimo una volta al mese, entro trenta giorni dal ricevimento di una fattura conforme. Si applica una soglia minima di 50 €; al di sotto, il saldo è riportato al versamento successivo. Le spese bancarie relative a un bonifico fuori dall'area SEPA restano a carico del Partner.",
+      "article8Title": "8. Obblighi del Partner",
+      "article8Body": "Il Partner si impegna a:\n— indicare chiaramente la natura commerciale delle proprie pubblicazioni, come previsto dalla legge; in Francia la dicitura «publicité» o «collaboration commerciale» deve restare visibile per tutta la durata della promozione;\n— presentare il Servizio solo con le sue funzionalità reali, senza promesse di risultato né affermazioni ingannevoli su prezzi o sconti;\n— non fare offerte sul marchio «Wedillybird» né su termini simili nella pubblicità sui motori di ricerca;\n— non diffondere il proprio link o codice tramite messaggi non richiesti, né su siti aggregatori di codici sconto senza il nostro accordo scritto;\n— utilizzare il nome e i materiali visivi Wedillybird solo così come glieli forniamo.\nIl Partner non si esprime a nome di Wedillybird e non assume alcun impegno in nostro nome.",
+      "article9Title": "9. Sospensione e fine del programma",
+      "article9Body": "Ciascuna delle parti può porre fine al programma in qualsiasi momento, senza preavviso né indennizzo. Il codice e il link vengono allora disattivati e cessano di produrre nuove attribuzioni.\nIn assenza di inadempimento, le commissioni già maturate e quelle in corso di maturazione sono versate secondo l'articolo 7. In caso di violazione degli obblighi dell'articolo 8 o di manovre volte a creare vendite artificiali, le commissioni non ancora versate sono perdute.",
+      "article10Title": "10. Dati personali",
+      "article10Body": "Il Partner non riceve alcuna informazione sull'identità degli acquirenti: il suo spazio mostra importi, date e stati, mai un nome, un indirizzo e-mail o un matrimonio identificabile.\nI dati del Partner (identità, recapiti, coordinate bancarie) sono trattati per la gestione del programma e il versamento delle commissioni, e conservati per il tempo richiesto dai nostri obblighi contabili. Le modalità di esercizio dei diritti sono indicate nell'informativa sulla privacy.",
+      "article11Title": "11. Modifica, legge applicabile e controversie",
+      "article11Body": "Possiamo modificare le presenti condizioni. Ogni modifica è notificata al Partner trenta giorni prima della sua entrata in vigore e non si applica alle vendite già attribuite.\nLe presenti condizioni sono regolate dal diritto francese. Ogni controversia relativa alla loro esecuzione rientra nella competenza esclusiva dei tribunali di Parigi, salvo disposizione imperativa contraria."
     }
   },
   "Account": {
@@ -4319,6 +4352,10 @@
     "legalCookies": {
       "title": "Informativa sui cookie — Wedillybird",
       "description": "Cookie essenziali al funzionamento di Wedillybird: sessione HMAC, cache offline check-in. Nessun cookie pubblicitario né tracker di terze parti."
+    },
+    "legalAffiliation": {
+      "title": "Condizioni del programma partner — Wedillybird",
+      "description": "Condizioni del programma partner Wedillybird: attribuzione delle vendite, commissione, maturazione, versamento, obblighi del partner."
     }
   },
   "CookieConsent": {
@@ -5548,5 +5585,42 @@
       "size": "File troppo grande (max 10 MB)",
       "network": "Caricamento non riuscito: riprova"
     }
+  },
+  "Partner": {
+    "eyebrow": "Programma partner",
+    "title": "Il tuo spazio partner",
+    "subtitle": "Condividi il tuo link, segui le vendite che genera e quanto ti spetta.",
+    "linkTitle": "Il tuo link da condividere",
+    "copy": "Copia",
+    "copied": "Copiato",
+    "codeDisabled": "Disattivato",
+    "codeTerms": "{rate} % di commissione su ogni vendita attribuita.",
+    "codeTermsWithDiscount": "{rate} % di commissione e {discount} % di sconto per la tua community.",
+    "earningsTitle": "Le tue commissioni",
+    "statSales": "Vendite attribuite",
+    "statVested": "Maturato",
+    "statVestedHint": "Pronto per il pagamento.",
+    "statPending": "In attesa",
+    "statPendingHint": "Matura il giorno del matrimonio.",
+    "statPaid": "Già pagato",
+    "ledgerTitle": "Dettaglio",
+    "ledgerEmpty": "Nessuna vendita attribuita per ora.",
+    "colDate": "Data",
+    "colCode": "Codice",
+    "colReward": "Commissione",
+    "colStatus": "Stato",
+    "payoutNote": "Una commissione matura il giorno del matrimonio a cui si riferisce: fino ad allora la coppia può ancora essere rimborsata. I pagamenti avvengono tramite bonifico; scrivici per qualsiasi domanda su un importo.",
+    "status": {
+      "pending": "In attesa",
+      "vested": "Maturato",
+      "paid": "Pagato",
+      "credited": "Accreditato",
+      "reversed": "Annullato"
+    },
+    "linkLabel": "Link",
+    "linkHint": "Ogni vendita che arriva da un clic su questo link ti viene attribuita automaticamente.",
+    "codeLabel": "Codice da condividere",
+    "codeHint": "Da inserire al momento del pagamento. Stesso sconto, stessa commissione — comodo per le tue storie e i tuoi post.",
+    "termsLink": "Leggere le condizioni del programma partner"
   }
 }
