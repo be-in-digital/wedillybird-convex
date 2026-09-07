@@ -46,6 +46,14 @@ type PartnerCode = {
   ownerEmail: string | null;
 };
 
+/** Clés de traduction des rôles — le badge affichait la valeur brute en base. */
+const ROLE_LABEL_KEY = {
+  couple: 'roles.couple',
+  pro: 'roles.pro',
+  guest: 'roles.guest',
+  admin: 'roles.admin',
+} as const;
+
 const ROLE_VARIANT: Record<string, 'neutral' | 'primary' | 'accent' | 'warning' | 'destructive'> = {
   couple: 'primary',
   pro: 'accent',
@@ -172,7 +180,9 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
           </div>
         </td>
         <td className="px-4 py-3">
-          <Badge variant={ROLE_VARIANT[user.role] ?? 'neutral'}>{user.role}</Badge>
+          <Badge variant={ROLE_VARIANT[user.role] ?? 'neutral'}>
+            {t(ROLE_LABEL_KEY[user.role])}
+          </Badge>
         </td>
         <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
           {user.planTier ?? '—'}
@@ -255,7 +265,12 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
                 disabled={changing}
                 onValueChange={async (v) => {
                   const newRole = v as User['role'];
-                  if (await confirm({ title: t('users.confirmChangeRole', { role: newRole }) })) {
+                  if (
+                    await confirm({
+                      // Libellé traduit, pas la valeur en base : « Couple », pas « couple ».
+                      title: t('users.confirmChangeRole', { role: t(ROLE_LABEL_KEY[newRole]) }),
+                    })
+                  ) {
                     changeRole(user._id, newRole);
                   }
                 }}

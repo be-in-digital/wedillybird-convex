@@ -18,6 +18,14 @@ export default async function AdminUsersPage({ params }: { params: Promise<{ loc
     convex.query(convexApi.adminListUsers, { adminId: session!.userId }),
     convex.query(convexApi.listAffiliates, { adminId: session!.userId }),
   ]);
+  // Les comptes d'administration ne sont pas des clients : les compter ici
+  // gonflerait un chiffre qui se lit comme « combien de gens utilisent
+  // Wedillybird ». Ils restent dans le tableau — c'est le seul écran qui dit
+  // qui détient les droits admin, et `ADMIN_PHONE` / `ADMIN_EMAIL` promeuvent
+  // silencieusement à la connexion : les masquer créerait un angle mort.
+  const adminCount = users.filter((u) => u.role === 'admin').length;
+  const clientCount = users.length - adminCount;
+
   // Codes partenaire encore sans compte rattaché : c'est ce qu'on peut relier
   // depuis cette page. Le parrainage particulier est exclu — il est créé PAR le
   // compte du parrain, il ne se rattache pas à la main.
@@ -40,7 +48,10 @@ export default async function AdminUsersPage({ params }: { params: Promise<{ loc
             Utilisateurs
           </h1>
           <p className="mt-1 text-sm text-[color:var(--color-muted-foreground)]">
-            {users.length} utilisateurs enregistrés
+            {clientCount} utilisateurs enregistrés
+            {adminCount > 0
+              ? ` · ${adminCount} compte${adminCount > 1 ? 's' : ''} d'administration, hors décompte`
+              : ''}
           </p>
         </header>
         <AdminUsersTable users={users} partnerCodes={attachablePartnerCodes} />
