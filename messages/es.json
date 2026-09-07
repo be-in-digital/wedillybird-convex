@@ -119,7 +119,6 @@
       "statusPlaceholder": "Estado…",
       "confirmDelete": "¿Eliminar el evento «{title}»?",
       "compedBadge": "Cortesía",
-      "grantPlanPlaceholder": "Conceder…",
       "grantEssential": "Conceder Esencial",
       "grantPremium": "Conceder Premium",
       "confirmGrantPlan": "¿Conceder el plan «{plan}» a este evento, sin pago?",

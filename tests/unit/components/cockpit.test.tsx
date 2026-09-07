@@ -156,9 +156,17 @@ describe('Cockpit — rendu agence (Business, abonnement actif)', () => {
 });
 
 describe('Cockpit — sans abonnement', () => {
+  // Une agence qui n'a rien choisi n'a pas non plus de crédit PAYG : le
+  // `paygCredits: 2` de `baseData` (agence Business) débloquerait le
+  // back-office et rendrait le bandeau mensonger.
   const noSub: CockpitData = {
     ...baseData,
-    org: { ...baseData.org, subscriptionTier: null, subscriptionStatus: null },
+    org: {
+      ...baseData.org,
+      subscriptionTier: null,
+      subscriptionStatus: null,
+      paygCredits: 0,
+    },
   };
 
   it('affiche le bandeau « Choisir un forfait » et l’état quotas vide', async () => {
@@ -170,6 +178,46 @@ describe('Cockpit — sans abonnement', () => {
   it('sans CRM : pas de bouton « Nouveau client »', async () => {
     render(await Cockpit(noSub));
     expect(screen.queryByText('Nouveau client')).toBeNull();
+  });
+
+  it('un crédit Pay-as-you-go suffit à faire taire le bandeau', async () => {
+    // Le back-office lui est ouvert (`orgHasActiveAccess`) : lui dire de
+    // choisir un forfait « pour le débloquer » serait faux.
+    render(await Cockpit({ ...noSub, org: { ...noSub.org, paygCredits: 1 } }));
+    expect(screen.queryByText('Choisir un forfait')).toBeNull();
+  });
+});
+
+/**
+ * Compte offert (lien partenaire) : le tier est écrit sur l'organisation mais
+ * il n'y a AUCUN objet Stripe derrière, donc aucun `subscriptionStatus`. Le
+ * bandeau se lisait sur ce seul statut — une partenaire à qui l'on venait
+ * d'ouvrir six mois lisait « Aucun abonnement actif » juste sous le décompte
+ * de son cadeau.
+ */
+describe('Cockpit — compte offert', () => {
+  const comped = (expiresAt: number): CockpitData => ({
+    ...baseData,
+    org: {
+      ...baseData.org,
+      subscriptionTier: 'starter',
+      subscriptionStatus: null,
+      paygCredits: 0,
+      compedSubscription: { expiresAt },
+    },
+  });
+
+  it('cadeau en cours → aucun bandeau « choisissez un forfait »', async () => {
+    render(await Cockpit(comped(Date.now() + 181 * 24 * 60 * 60 * 1000)));
+    expect(screen.queryByText('Choisir un forfait')).toBeNull();
+    expect(screen.queryByText(/Aucun abonnement actif/)).toBeNull();
+    // Les quotas du tier offert, eux, restent affichés.
+    expect(screen.getByText('Consommation du forfait')).toBeTruthy();
+  });
+
+  it('cadeau expiré → le bandeau revient', async () => {
+    render(await Cockpit(comped(Date.now() - 1)));
+    expect(screen.getByText('Choisir un forfait')).toBeTruthy();
   });
 });
 

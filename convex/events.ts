@@ -807,8 +807,14 @@ export const orgPublishQuotaStatus = query({
 
     const org = await ctx.db.get(orgId);
     if (!org) return { applicable: false as const };
+    // Mêmes couvertures que `decidePublishGate`, compte offert compris : la
+    // mutation `publish` applique le quota du tier à un compte offert aussi, or
+    // un `applicable: false` ici laissait le bouton actif jusqu'au throw
+    // EVENT_QUOTA_EXCEEDED, que le form action ne remonte pas.
     const hasActiveSub =
-      org.subscriptionStatus === 'active' || org.subscriptionStatus === 'trialing';
+      org.subscriptionStatus === 'active' ||
+      org.subscriptionStatus === 'trialing' ||
+      isCompActive(org.compedSubscription);
     if (!hasActiveSub) return { applicable: false as const };
 
     const quota = eventQuotaForTier(org.subscriptionTier);

@@ -119,7 +119,6 @@
       "statusPlaceholder": "Status…",
       "confirmDelete": "Delete the event “{title}”?",
       "compedBadge": "Comped",
-      "grantPlanPlaceholder": "Grant…",
       "grantEssential": "Grant Essential",
       "grantPremium": "Grant Premium",
       "confirmGrantPlan": "Grant the “{plan}” plan to this event, with no payment?",

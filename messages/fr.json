@@ -119,7 +119,6 @@
       "statusPlaceholder": "Statut…",
       "confirmDelete": "Supprimer l’événement « {title} » ?",
       "compedBadge": "Offert",
-      "grantPlanPlaceholder": "Offrir…",
       "grantEssential": "Offrir Essentiel",
       "grantPremium": "Offrir Premium",
       "confirmGrantPlan": "Offrir le forfait « {plan} » à cet événement, sans paiement ?",

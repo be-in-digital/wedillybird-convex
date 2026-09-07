@@ -917,7 +917,8 @@ export async function adminMarkReferralPaidAction(
 
 export async function adminGrantEventPlanAction(
   eventId: string,
-  planTier: 'essential' | 'premium',
+  /** Omis ⇒ le défaut serveur (`DEFAULT_COMPED_EVENT_PLAN`, soit Premium). */
+  planTier?: 'essential' | 'premium',
   reason?: string,
 ): Promise<ActionResult> {
   try {
@@ -926,7 +927,7 @@ export async function adminGrantEventPlanAction(
     await convex.mutation(convexApi.adminGrantEventPlan, {
       adminId,
       eventId,
-      planTier,
+      ...(planTier ? { planTier } : {}),
       ...(reason ? { reason } : {}),
     });
     revalidatePath('/admin/events');

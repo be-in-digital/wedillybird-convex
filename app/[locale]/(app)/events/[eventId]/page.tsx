@@ -26,6 +26,7 @@ import { UpgradeCard } from '@/components/payments/upgrade-card';
 import { PostEventUpsellCard } from '@/components/payments/post-event-upsell-card';
 import { routePayment } from '@/lib/payments/country';
 import { eventNeedsConsumerPlan } from '@/lib/payments/entitlements';
+import { isCompActive } from '@/lib/payments/comped-trial';
 import { togglePublishAction } from '@/app/[locale]/(app)/events/actions';
 import { cn } from '@/lib/cn';
 
@@ -142,8 +143,14 @@ export default async function EventDetailPage({
     const orgRole = await convex
       .query(convexApi.myOrganization, { userId: session!.userId })
       .catch(() => null);
+    // Miroir de `decidePublishGate` : un **compte offert** vaut abonnement tant
+    // qu'il court. Sans cette branche, une partenaire à qui l'on vient d'ouvrir
+    // six mois voyait « achetez un crédit » et un bouton Publier grisé, alors
+    // que le serveur l'aurait laissée publier.
     const hasActiveSub =
-      orgRole?.subscriptionStatus === 'active' || orgRole?.subscriptionStatus === 'trialing';
+      orgRole?.subscriptionStatus === 'active' ||
+      orgRole?.subscriptionStatus === 'trialing' ||
+      isCompActive(orgRole?.compedSubscription);
     if (hasActiveSub) {
       // Sub active : publication OK… sauf si l'orga a déjà atteint son quota
       // d'events actifs simultanés (Starter 5 / Business 20 / Agency 50). Dans
