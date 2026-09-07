@@ -14,7 +14,7 @@ import {
 import { pickUniqueSlug, slugifyOrgName } from './lib/uniqueSlug';
 
 /**
- * Liens d'invitation partenaire — « voici ton compte, six mois offerts ».
+ * Liens d'invitation partenaire — « voici ton compte, la durée offerte ».
  *
  * Le parcours qu'ils remplacent : une partenaire s'inscrit, nomme son agence,
  * arrive sur le dashboard, et `orgHasActiveAccess` lui renvoie `false` faute
@@ -326,7 +326,7 @@ export const redeem = mutation({
     // Lien « compte personnel » : pas d'agence, pas d'abonnement.
     //
     // Les forfaits particuliers s'achètent une fois, pour un mariage : il n'y
-    // a donc rien à faire courir pendant six mois. Le cadeau est posé comme
+    // a donc aucune durée à faire courir. Le cadeau est posé comme
     // une créance sur le compte, que le premier mariage créé consommera —
     // c'est le seul moment où il existe un événement à créditer.
     // ---------------------------------------------------------------------

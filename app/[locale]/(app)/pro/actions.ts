@@ -270,7 +270,7 @@ export type RedeemPartnerInviteResult =
   | { ok: false; error: string };
 
 /**
- * Accepte un lien d'invitation partenaire : compte agence créé et six mois
+ * Accepte un lien d'invitation partenaire : compte agence créé et durée
  * offerts, sans carte bancaire ni choix de forfait.
  *
  * Tout se joue dans une seule mutation Convex — organisation, cadeau,

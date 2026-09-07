@@ -7,7 +7,7 @@ import { compDaysRemaining } from '@/lib/payments/comped-trial';
  *
  * Un cadeau posé en interne n'a aucun abonnement Stripe derrière : rien ne
  * viendra prélever, donc rien ne préviendra non plus. Sans cette bannière, une
- * partenaire découvrirait la fin de ses six mois le jour où le back-office se
+ * partenaire découvrirait la fin de son cadeau le jour où le back-office se
  * referme. Elle reste discrète et ne se met en avant que dans le dernier mois —
  * un décompte insistant dès le premier jour transforme un cadeau en compte à
  * rebours anxiogène.

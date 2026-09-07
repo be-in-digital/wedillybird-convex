@@ -694,7 +694,7 @@ async function createPartnerCouponForAffiliate(
 }
 
 /**
- * Crée le lien d'invitation d'un partenaire — « voici ton compte, six mois
+ * Crée le lien d'invitation d'un partenaire — « voici ton compte, offert
  * offerts, sans carte ».
  *
  * Créer un nouveau lien révoque le précédent côté Convex : deux liens vivants

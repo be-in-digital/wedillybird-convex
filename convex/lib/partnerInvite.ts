@@ -54,8 +54,19 @@ export function inviteKind(invite: { kind?: PartnerInviteKind | null }): Partner
  */
 export const DEFAULT_PARTNER_COMP_EVENT_TIER = 'premium' as const;
 
-/** Durée du compte offert, en mois calendaires. */
-export const DEFAULT_PARTNER_COMP_MONTHS = 6;
+/**
+ * Durée du compte agence offert, en mois calendaires.
+ *
+ * Douze mois, et non six : une agence se juge sur une **saison de mariages
+ * entière**. Six mois lui font traverser la moitié d'un cycle — elle
+ * découvrirait l'échéance en pleine haute saison, au moment où elle a le moins
+ * de temps pour arbitrer un abonnement.
+ *
+ * Cette valeur ne s'applique qu'aux liens **créés après** sa modification :
+ * `grantMonths` est figé sur chaque invitation à sa création, pour que ce qui
+ * a été promis reste ce qui est livré.
+ */
+export const DEFAULT_PARTNER_COMP_MONTHS = 12;
 
 /**
  * Validité du LIEN, distincte de la durée du compte. Un lien qui offre six

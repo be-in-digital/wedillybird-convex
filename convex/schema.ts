@@ -159,7 +159,7 @@ export default defineSchema({
      * qu'un cadeau ne sera jamais compté comme du revenu (le MRR se calcule sur
      * `subscriptionStatus`, qu'un cadeau ne pose pas).
      *
-     * `expiresAt` est ce qui fait que « six mois » veut dire six mois :
+     * `expiresAt` est ce qui fait que la durée offerte veut dire quelque chose :
      * `orgHasActiveAccess` le lit à chaque appel. Sans lui, un cadeau posé une
      * fois ne s'éteindrait jamais, faute d'abonnement Stripe pour le clore.
      *
@@ -1645,7 +1645,7 @@ export default defineSchema({
    * heurterait à un mur avant d'avoir rien vu. Ce lien lève ce mur, sans lui
    * demander de carte bancaire ni même de choisir un forfait.
    *
-   * **Usage unique et périssable, délibérément.** Un lien qui offre six mois
+   * **Usage unique et périssable, délibérément.** Un lien qui offre un compte
    * les offre à quiconque l'ouvre : transféré ou publié dans la communauté du
    * partenaire, il distribuerait des comptes agence. `consumedAt` le ferme
    * après la première utilisation, `expiresAt` le périme s'il dort, et
