@@ -4421,7 +4421,12 @@
       "linkExpiry": "Dieser Link ist bis zum {date} gültig. Die Gratismonate beginnen an dem Tag, an dem Sie Ihr Konto eröffnen.",
       "noCard": "Es wird keine Zahlungskarte verlangt, weder jetzt noch am Ende der Gratismonate.",
       "preheader": "Eröffnen Sie Ihren Agenturbereich — {months} Monate gratis, ohne Karte.",
-      "subject": "Ihr Wedillybird-Konto, {months} Monate gratis"
+      "subject": "Ihr Wedillybird-Konto, {months} Monate gratis",
+      "subjectCouple": "Ihre Hochzeit auf Wedillybird, Premium geschenkt",
+      "preheaderCouple": "Eröffnen Sie Ihr Konto — Hochzeit in Premium geschenkt, ohne Karte.",
+      "introCouple": "Wir würden Sie gerne als Partner gewinnen. Hier ist ein persönlicher Link, um Ihr Wedillybird-Konto zu eröffnen: Ihre Hochzeit wird kostenlos auf Premium gehoben — Einladungen, RSVP und geteilte Galerie inklusive.",
+      "ctaLabelCouple": "Mein Konto eröffnen (Premium gratis)",
+      "linkExpiryCouple": "Dieser Link ist bis zum {date} gültig. Der Tarif gilt für die Hochzeit, die Sie anlegen."
     }
   },
   "Metadata": {
@@ -5789,6 +5794,10 @@
     "metaTitle": "Ihre Partner-Einladung — Wedillybird",
     "signInCta": "Konto erstellen und annehmen",
     "signInHint": "Sie kehren direkt hierher zurück. Es wird keine Kreditkarte verlangt.",
-    "deadBackHome": "Zurück zur Startseite"
+    "deadBackHome": "Zurück zur Startseite",
+    "titleCouple": "Ihre Hochzeit, Premium geschenkt",
+    "subtitleCouple": "Eröffnen Sie Ihr Konto: Ihre Hochzeit wird kostenlos auf Premium gehoben — Einladungen, RSVP und geteilte Galerie inklusive.",
+    "submitCouple": "Mein Konto eröffnen (Premium gratis)",
+    "codeHintCouple": "Ihr Partnercode {code} ist aktiv: Teilen Sie ihn mit Ihrer Community, um Ihre Provision zu erhalten."
   }
 }

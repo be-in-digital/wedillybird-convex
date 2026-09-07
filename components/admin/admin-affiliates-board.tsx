@@ -42,6 +42,8 @@ interface PartnerInvite {
   expiresAt: number;
   consumedAt: number | null;
   createdAt: number;
+  /** Type de compte ouvert par le lien : agence ou compte personnel. */
+  kind: 'pro' | 'couple';
   /** Dernier envoi réussi — dit à l'admin s'il doit envoyer ou relancer. */
   lastSentAt: number | null;
   lastSentTo: string | null;
@@ -217,12 +219,13 @@ export function AdminAffiliatesBoard({
     return `${origin}/rejoindre/${token}`;
   }
 
-  function createInvite(a: Affiliate) {
+  function createInvite(a: Affiliate, kind: 'pro' | 'couple') {
     setError(null);
     startTransition(async () => {
       const res = await adminCreatePartnerInviteAction(a.id, {
         ...(a.ownerEmail ? { inviteeEmail: a.ownerEmail } : {}),
         ...(a.displayName ? { inviteeName: a.displayName } : {}),
+        kind,
       });
       if (!res.ok) {
         setError(res.error);
@@ -486,7 +489,7 @@ export function AdminAffiliatesBoard({
                       <PartnerInviteCell
                         invite={latestInvite.get(a.id) ?? null}
                         pending={pending}
-                        onCreate={() => createInvite(a)}
+                        onCreate={(kind) => createInvite(a, kind)}
                         onRevoke={revokeInvite}
                         onSend={sendInvite}
                         fallbackEmail={a.ownerEmail ?? null}
@@ -624,7 +627,7 @@ function PartnerInviteCell({
 }: {
   invite: PartnerInvite | null;
   pending: boolean;
-  onCreate: () => void;
+  onCreate: (kind: 'pro' | 'couple') => void;
   onRevoke: (inviteId: string) => void;
   onSend: (inviteId: string) => void;
   /** E-mail de l'affilié, si l'invitation n'en porte pas elle-même. */
@@ -637,22 +640,38 @@ function PartnerInviteCell({
   const recipient = invite?.inviteeEmail ?? fallbackEmail;
 
   if (!invite) {
+    // Deux boutons plutôt qu'un choix caché : le type décide de ce qu'on offre
+    // (abonnement agence ou mariage en Premium) et ne se corrige pas après
+    // coup — le lien consommé a créé le compte.
     return (
-      <button
-        type="button"
-        onClick={onCreate}
-        disabled={pending}
-        className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
-      >
-        Créer le lien
-      </button>
+      <div className="flex flex-col items-start gap-1">
+        <button
+          type="button"
+          onClick={() => onCreate('pro')}
+          disabled={pending}
+          className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+        >
+          Lien agence
+        </button>
+        <button
+          type="button"
+          onClick={() => onCreate('couple')}
+          disabled={pending}
+          className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+        >
+          Lien personnel
+        </button>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col items-start gap-1">
       <span className="text-xs text-[color:var(--color-ink-500)]">
-        {INVITE_STATE_LABEL[invite.state]} · {invite.grantMonths} mois {invite.grantTier}
+        {INVITE_STATE_LABEL[invite.state]} ·{' '}
+        {invite.kind === 'couple'
+          ? 'personnel · mariage Premium offert'
+          : `agence · ${invite.grantMonths} mois ${invite.grantTier}`}
       </span>
       {invite.lastSentAt ? (
         <span className="text-[11px] text-[color:var(--color-ink-500)]">
@@ -698,7 +717,7 @@ function PartnerInviteCell({
       ) : (
         <button
           type="button"
-          onClick={onCreate}
+          onClick={() => onCreate(invite.kind)}
           disabled={pending}
           className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
         >

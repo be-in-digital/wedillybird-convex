@@ -4421,7 +4421,12 @@
       "linkExpiry": "Este link é válido até {date}. Os meses grátis começam no dia em que abre a sua conta.",
       "noCard": "Não é pedido qualquer cartão bancário, nem agora nem no final dos meses grátis.",
       "preheader": "Abra o seu espaço de agência — {months} meses grátis, sem cartão.",
-      "subject": "A sua conta Wedillybird, {months} meses grátis"
+      "subject": "A sua conta Wedillybird, {months} meses grátis",
+      "subjectCouple": "O seu casamento no Wedillybird, Premium oferecido",
+      "preheaderCouple": "Abra a sua conta — casamento em Premium grátis, sem cartão.",
+      "introCouple": "Gostaríamos de o contar entre os nossos parceiros. Aqui está um link pessoal para abrir a sua conta Wedillybird: o seu casamento passa a Premium, grátis — convites, RSVP e galeria partilhada incluídos.",
+      "ctaLabelCouple": "Abrir a minha conta (Premium grátis)",
+      "linkExpiryCouple": "Este link é válido até {date}. O plano aplica-se ao casamento que criar."
     }
   },
   "Metadata": {
@@ -5789,6 +5794,10 @@
     "metaTitle": "O seu convite de parceiro — Wedillybird",
     "signInCta": "Criar a minha conta e aceitar",
     "signInHint": "Voltará aqui logo a seguir. Não lhe será pedido nenhum cartão bancário.",
-    "deadBackHome": "Voltar ao início"
+    "deadBackHome": "Voltar ao início",
+    "titleCouple": "O seu casamento, Premium oferecido",
+    "subtitleCouple": "Abra a sua conta: o seu casamento passa a Premium, grátis — convites, RSVP e galeria partilhada incluídos.",
+    "submitCouple": "Abrir a minha conta (Premium grátis)",
+    "codeHintCouple": "O seu código de parceiro {code} está ativo: partilhe-o com a sua comunidade para receber a sua comissão."
   }
 }
