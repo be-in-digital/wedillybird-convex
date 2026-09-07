@@ -244,12 +244,17 @@ export const sendMagicLinkEmail = internalAction({
     token: v.string(),
     ipAddress: v.optional(v.string()),
     locale: v.optional(v.string()),
+    /** Chemin interne a rejoindre apres verification (valide cote Next). */
+    next: v.optional(v.string()),
   },
-  handler: async (_ctx, { to, token, ipAddress, locale }) => {
+  handler: async (_ctx, { to, token, ipAddress, locale, next }) => {
     const baseUrl = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
+    // `next` voyage dans le lien plutot que dans un cookie : le lien est
+    // souvent ouvert depuis une autre application, parfois un autre appareil,
+    // ou aucun cookie pose a la demande ne serait la.
     const verifyUrl = `${baseUrl.replace(/\/$/, '')}/api/auth/magic-link/verify?email=${encodeURIComponent(
       to,
-    )}&token=${encodeURIComponent(token)}`;
+    )}&token=${encodeURIComponent(token)}${next ? `&next=${encodeURIComponent(next)}` : ''}`;
 
     const rendered = renderMagicLink({
       verifyUrl,

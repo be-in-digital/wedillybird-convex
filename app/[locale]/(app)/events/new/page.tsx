@@ -27,7 +27,12 @@ export default async function NewEventPage({ params }: { params: Promise<{ local
   }
 
   const convex = getConvexServerClient();
-  const user = await convex.query(convexApi.currentUser, { userId: session!.userId });
+  const [user, organization] = await Promise.all([
+    convex.query(convexApi.currentUser, { userId: session!.userId }),
+    // Même source que `createEventAction` : c'est elle qui décide du
+    // rattachement, donc c'est elle qui doit décider de l'étape « forfait ».
+    convex.query(convexApi.myOrganization, { userId: session!.userId }),
+  ]);
   if (!user?.fullName) {
     redirect({ href: '/onboarding', locale });
   }
@@ -61,7 +66,7 @@ export default async function NewEventPage({ params }: { params: Promise<{ local
           </p>
         </div>
 
-        <EventCreateWizard userRole={user!.role ?? 'couple'} />
+        <EventCreateWizard hasOrganization={Boolean(organization)} />
       </div>
     </AppShell>
   );

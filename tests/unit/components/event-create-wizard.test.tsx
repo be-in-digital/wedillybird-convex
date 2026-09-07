@@ -50,13 +50,13 @@ async function fillStepsUpToPlan(user: ReturnType<typeof userEvent.setup>) {
 
 describe('EventCreateWizard — couple', () => {
   it('starts on step 1 (couple info)', () => {
-    render(<EventCreateWizard userRole="couple" />);
+    render(<EventCreateWizard hasOrganization={false} />);
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('stepCouple');
   });
 
   it('disables Next until title and partners are filled', async () => {
     const user = userEvent.setup();
-    render(<EventCreateWizard userRole="couple" />);
+    render(<EventCreateWizard hasOrganization={false} />);
     const next = screen.getByRole('button', { name: 'EventCreate.next' });
     expect(next).toBeDisabled();
 
@@ -68,7 +68,7 @@ describe('EventCreateWizard — couple', () => {
 
   it('disables submit on the plan step until a forfait is selected', async () => {
     const user = userEvent.setup();
-    render(<EventCreateWizard userRole="couple" />);
+    render(<EventCreateWizard hasOrganization={false} />);
 
     await fillStepsUpToPlan(user);
 
@@ -84,7 +84,7 @@ describe('EventCreateWizard — couple', () => {
   it('submits with the selected pendingPlanTier', async () => {
     createEventActionMock.mockResolvedValue({ ok: true, slug: 'fatou-amadou' });
     const user = userEvent.setup();
-    render(<EventCreateWizard userRole="couple" />);
+    render(<EventCreateWizard hasOrganization={false} />);
 
     await fillStepsUpToPlan(user);
 
@@ -106,7 +106,7 @@ describe('EventCreateWizard — couple', () => {
       fieldErrors: { title: ['Titre trop court'] },
     });
     const user = userEvent.setup();
-    render(<EventCreateWizard userRole="couple" />);
+    render(<EventCreateWizard hasOrganization={false} />);
 
     await fillStepsUpToPlan(user);
     await user.click(screen.getByTestId('plan-option-essential'));
@@ -121,7 +121,7 @@ describe('EventCreateWizard — pro', () => {
   it('skips the plan step (pro billing handled separately)', async () => {
     createEventActionMock.mockResolvedValue({ ok: true, slug: 'pro-event' });
     const user = userEvent.setup();
-    render(<EventCreateWizard userRole="pro" />);
+    render(<EventCreateWizard hasOrganization />);
 
     await user.type(screen.getByLabelText('EventCreate.titleLabel'), 'Mariage Pro');
     await user.type(screen.getByLabelText('EventCreate.partnerALabel'), 'A');
