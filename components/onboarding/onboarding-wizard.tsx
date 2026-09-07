@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { OtpInput } from '@/components/auth/otp-input';
+import { PhoneInput } from '@/components/auth/phone-input';
 import { cn } from '@/lib/cn';
 import { analytics } from '@/lib/analytics/posthog-client';
 import { completeOnboardingAction } from '@/app/[locale]/(auth)/actions';
@@ -179,6 +180,7 @@ export function OnboardingWizard({
         }
         setSecureError(mapLinkErrorToCopy(json.error ?? 'UNKNOWN', t));
       } catch {
+        // Seul un fetch qui échoue est une vraie erreur réseau.
         setSecureError(t('errors.network'));
       }
     });
@@ -205,6 +207,7 @@ export function OnboardingWizard({
         }
         setSecureError(mapLinkErrorToCopy(json.error ?? 'UNKNOWN', t));
       } catch {
+        // Seul un fetch qui échoue est une vraie erreur réseau.
         setSecureError(t('errors.network'));
       }
     });
@@ -408,21 +411,18 @@ export function OnboardingWizard({
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="onboarding-phone">{t('phoneLabel')}</Label>
-                  <Input
+                  {/* Sélecteur pays + numéro local : l'indicatif n'est jamais
+                      saisi à la main, donc jamais oublié ni mal formaté. Le
+                      composant rend l'E.164 complet via `onValueChange`. */}
+                  <PhoneInput
                     id="onboarding-phone"
                     name="phone"
-                    type="tel"
                     autoComplete="tel"
-                    inputMode="tel"
                     autoFocus
-                    placeholder={t('phonePlaceholder')}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    defaultValue={phone}
+                    onValueChange={setPhone}
                     aria-invalid={!!secureError}
                   />
-                  <p className="text-xs text-[color:var(--color-ink-500)]">
-                    {t('phoneRequiredHint')}
-                  </p>
                   {secureError ? (
                     <p role="alert" className="text-xs text-[color:var(--color-destructive)]">
                       {secureError}
@@ -589,8 +589,14 @@ function Progress({ current, total }: { current: number; total: number }) {
 
 /**
  * Map des codes d'erreur retournés par l'API `/api/account/link/phone/*` vers
- * la copie FR de l'onboarding. Pas de fusion avec un user existant : si le
+ * la copie de l'onboarding. Pas de fusion avec un user existant : si le
  * numéro est déjà utilisé, on guide vers la connexion WhatsApp.
+ *
+ * Le `default` ne doit **jamais** dire « erreur réseau » : l'API répond aussi
+ * `INVALID_INPUT` (numéro rejeté par le schéma), `UNAUTHENTICATED` (session
+ * expirée) et `UNKNOWN` (erreur serveur). Les faire tomber sur « vérifie ta
+ * connexion » envoyait l'utilisateur chercher une panne qui n'existe pas,
+ * alors que son numéro ou sa session était en cause.
  */
 function mapLinkErrorToCopy(
   code: string,
@@ -614,7 +620,14 @@ function mapLinkErrorToCopy(
       return t('errors.rateLimited');
     case 'SEND_FAILED':
       return t('errors.sendFailed');
-    default:
+    case 'INVALID_INPUT':
+    case 'INVALID_BODY':
+      return t('errors.invalidPhone');
+    case 'UNAUTHENTICATED':
+      return t('errors.sessionExpired');
+    case 'NETWORK':
       return t('errors.network');
+    default:
+      return t('errors.submit');
   }
 }

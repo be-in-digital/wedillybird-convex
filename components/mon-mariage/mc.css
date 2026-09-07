@@ -1221,6 +1221,25 @@
   background: var(--color-surface-warm);
   white-space: nowrap;
 }
+
+/* Le slot indicatif porte un vrai sélecteur pays : on efface le chrome natif
+   du <select> pour qu'il se fonde dans le champ, sans perdre l'accessibilité
+   ni le clavier. */
+.mc-qa-phone .cc select {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+}
+.mc-qa-phone .cc select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .mc-qa-phone .cc .wa {
   color: var(--color-sage-700);
 }

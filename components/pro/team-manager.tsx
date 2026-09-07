@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/auth/phone-input';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import {
   Select,
@@ -738,12 +739,9 @@ function InviteCard({
             aria-label={t('team.channelEmail')}
           />
         ) : (
-          <Input
-            name="phone"
-            type="tel"
-            placeholder="+33 6 12 34 56 78"
-            aria-label={t('team.whatsappNumberAria')}
-          />
+          /* `PhoneInput` porte un input caché `name="phone"` avec l'E.164
+             complet : la soumission du formulaire reste inchangée. */
+          <PhoneInput name="phone" aria-label={t('team.whatsappNumberAria')} />
         )}
         <Select name="role" defaultValue="planner">
           <SelectTrigger

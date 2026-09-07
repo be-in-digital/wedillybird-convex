@@ -922,6 +922,7 @@
     "changeNumber": "تغيير الرقم",
     "countryCodeLabel": "رمز البلد",
     "phoneLabel": "رقم WhatsApp",
+    "phoneLengthHint": "يبدو هذا الرقم غير مكتمل. الصيغة المتوقعة: {format}.",
     "phonePlaceholder": "+33 6 12 34 56 78",
     "codeLabel": "الرمز المُستلَم عبر WhatsApp",
     "codePlaceholder": "6 أرقام",
@@ -1010,6 +1011,7 @@
       "rateLimited": "طلبات كثيرة جدًا. انتظر بضع دقائق.",
       "sendFailed": "فشل إرسال الرمز. حاول مجددًا.",
       "network": "خطأ في الشبكة. تحقّق من اتصالك.",
+      "sessionExpired": "انتهت جلستك. سجّل الدخول من جديد ثم أعد المحاولة.",
       "emailTaken": "هذا العنوان مستخدَم بالفعل من حساب آخر.",
       "submit": "حدث خطأ ما. حاول مجددًا."
     },
@@ -5180,6 +5182,7 @@
       "guestNamePlaceholder": "اسم الضيف",
       "nameAria": "اسم الضيف",
       "whatsappAria": "رقم واتساب",
+      "countryCodeAria": "رمز الدولة",
       "add": "إضافة",
       "newGuestGroup": "غير مصنَّف",
       "searchGuest": "ابحث عن ضيف…",

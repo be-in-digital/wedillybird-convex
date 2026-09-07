@@ -922,6 +922,7 @@
     "changeNumber": "Change number",
     "countryCodeLabel": "Country code",
     "phoneLabel": "Phone number",
+    "phoneLengthHint": "This number looks incomplete. Expected format: {format}.",
     "phonePlaceholder": "+33 6 12 34 56 78",
     "codeLabel": "Code received by text",
     "codePlaceholder": "6 digits",
@@ -1010,6 +1011,7 @@
       "rateLimited": "Too many requests. Please wait a few minutes.",
       "sendFailed": "Failed to send code. Try again.",
       "network": "Network error. Check your connection.",
+      "sessionExpired": "Your session has expired. Sign in again, then retry.",
       "emailTaken": "This address is already used by another account.",
       "submit": "Something went wrong. Try again."
     },
@@ -5180,6 +5182,7 @@
       "guestNamePlaceholder": "Guest name",
       "nameAria": "Guest name",
       "whatsappAria": "WhatsApp number",
+      "countryCodeAria": "Country code",
       "add": "Add",
       "newGuestGroup": "To sort",
       "searchGuest": "Search for a guest…",

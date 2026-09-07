@@ -926,6 +926,7 @@
     "changeNumber": "Nummer ändern",
     "countryCodeLabel": "Ländervorwahl",
     "phoneLabel": "WhatsApp-Nummer",
+    "phoneLengthHint": "Diese Nummer scheint unvollständig. Erwartetes Format: {format}.",
     "phonePlaceholder": "+49 151 12345678",
     "codeLabel": "Per WhatsApp erhaltener Code",
     "codePlaceholder": "6 Ziffern",
@@ -1014,6 +1015,7 @@
       "rateLimited": "Zu viele Anfragen. Warte ein paar Minuten.",
       "sendFailed": "Senden des Codes fehlgeschlagen. Versuch es erneut.",
       "network": "Netzwerkfehler. Prüfe deine Verbindung.",
+      "sessionExpired": "Ihre Sitzung ist abgelaufen. Melden Sie sich erneut an und versuchen Sie es noch einmal.",
       "emailTaken": "Diese Adresse wird bereits von einem anderen Konto verwendet.",
       "submit": "Etwas ist schiefgelaufen. Versuche es erneut."
     },
@@ -5184,6 +5186,7 @@
       "guestNamePlaceholder": "Name des Gastes",
       "nameAria": "Name des Gastes",
       "whatsappAria": "WhatsApp-Nummer",
+      "countryCodeAria": "Ländervorwahl",
       "add": "Hinzufügen",
       "newGuestGroup": "Noch zuzuordnen",
       "searchGuest": "Gast suchen…",

@@ -926,6 +926,7 @@
     "changeNumber": "Cambiar de número",
     "countryCodeLabel": "Código de país",
     "phoneLabel": "Número de WhatsApp",
+    "phoneLengthHint": "Este número parece incompleto. Formato esperado: {format}.",
     "phonePlaceholder": "+34 612 34 56 78",
     "codeLabel": "Código recibido por WhatsApp",
     "codePlaceholder": "6 dígitos",
@@ -1014,6 +1015,7 @@
       "rateLimited": "Demasiadas solicitudes. Espera unos minutos.",
       "sendFailed": "Error al enviar el código. Inténtalo de nuevo.",
       "network": "Error de red. Comprueba tu conexión.",
+      "sessionExpired": "Tu sesión ha caducado. Vuelve a iniciar sesión e inténtalo de nuevo.",
       "emailTaken": "Esta dirección ya está en uso por otra cuenta.",
       "submit": "Algo salió mal. Inténtalo de nuevo."
     },
@@ -5184,6 +5186,7 @@
       "guestNamePlaceholder": "Nombre del invitado",
       "nameAria": "Nombre del invitado",
       "whatsappAria": "Número de WhatsApp",
+      "countryCodeAria": "Prefijo del país",
       "add": "Añadir",
       "newGuestGroup": "Por clasificar",
       "searchGuest": "Buscar un invitado…",
