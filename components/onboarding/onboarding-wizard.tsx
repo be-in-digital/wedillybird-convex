@@ -618,6 +618,8 @@ function mapLinkErrorToCopy(
       return t('errors.tooManyAttempts');
     case 'RATE_LIMITED':
       return t('errors.rateLimited');
+    case 'UNDELIVERABLE':
+      return t('errors.whatsappUndeliverable');
     case 'SEND_FAILED':
       return t('errors.sendFailed');
     case 'INVALID_INPUT':

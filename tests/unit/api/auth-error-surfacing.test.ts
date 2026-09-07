@@ -93,3 +93,48 @@ describe('les codes serveur atteignent les écrans', () => {
     expect(form).toContain("case 'TOO_MANY_ATTEMPTS':");
   });
 });
+
+/**
+ * Le même refus, sur l'autre écran.
+ *
+ * `requestLinkPhone` lève `WHATSAPP_UNDELIVERABLE` exactement comme
+ * `requestOtp`, mais l'onboarding ne passe pas par les actions serveur : il
+ * appelle `/api/account/link/phone/request`, dont la table de codes est
+ * distincte. Un code inconnu y devient `UNKNOWN` (HTTP 500) et l'assistant
+ * affiche « une erreur est survenue » — le message générique que tout ce
+ * fichier cherche à faire disparaître, réapparu sur l'écran où une partenaire
+ * saisit son numéro pour la première fois.
+ */
+describe('le refus définitif atteint aussi l’onboarding', () => {
+  const route = readFileSync('app/api/account/link/phone/request/route.ts', 'utf8');
+  const wizard = readFileSync('components/onboarding/onboarding-wizard.tsx', 'utf8');
+
+  it('la route traduit le refus au lieu de le laisser tomber en UNKNOWN', () => {
+    expect(route).toContain(
+      "if (message.includes('WHATSAPP_UNDELIVERABLE')) return 'UNDELIVERABLE'",
+    );
+  });
+
+  it('le refus est classé avant l’échec générique', () => {
+    // `WHATSAPP_SEND_FAILED` est le fourre-tout : s'il était testé en premier
+    // sur un message qui porte les deux, le refus définitif serait annoncé
+    // comme un incident passager.
+    expect(route.indexOf('WHATSAPP_UNDELIVERABLE')).toBeLessThan(
+      route.indexOf('WHATSAPP_SEND_FAILED'),
+    );
+  });
+
+  it('l’assistant a une copie pour ce cas, distincte de l’échec d’envoi', () => {
+    expect(wizard).toContain("case 'UNDELIVERABLE':");
+    expect(wizard).toContain("t('errors.whatsappUndeliverable')");
+  });
+
+  it('la copie existe dans les sept locales', () => {
+    for (const loc of ['fr', 'en', 'es', 'de', 'it', 'pt', 'ar']) {
+      const messages = JSON.parse(readFileSync(`messages/${loc}.json`, 'utf8'));
+      const copy = messages.Onboarding?.errors?.whatsappUndeliverable;
+      expect(typeof copy, loc).toBe('string');
+      expect(copy.length, loc).toBeGreaterThan(0);
+    }
+  });
+});

@@ -53,6 +53,13 @@ export async function POST(request: Request) {
 }
 
 function mapErrorCode(message: string): string {
+  // Le plus spécifique d'abord : `WHATSAPP_UNDELIVERABLE` est un refus
+  // DÉFINITIF du destinataire (numéro hors liste autorisée d'un WABA non
+  // vérifié, ou pas de compte WhatsApp actif), pas un incident passager.
+  // Sans ce cas il retombait en `UNKNOWN`, et l'onboarding affichait
+  // « une erreur est survenue » — la personne réessayait indéfiniment un
+  // numéro qui ne recevra jamais rien.
+  if (message.includes('WHATSAPP_UNDELIVERABLE')) return 'UNDELIVERABLE';
   if (message.includes('PHONE_TAKEN')) return 'PHONE_TAKEN';
   if (message.includes('ALREADY_LINKED')) return 'ALREADY_LINKED';
   if (message.includes('RATE_LIMITED')) return 'RATE_LIMITED';

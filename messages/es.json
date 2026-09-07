@@ -1015,6 +1015,7 @@
       "tooManyAttempts": "Demasiados intentos. Inténtalo de nuevo en unos minutos.",
       "rateLimited": "Demasiadas solicitudes. Espera unos minutos.",
       "sendFailed": "Error al enviar el código. Inténtalo de nuevo.",
+      "whatsappUndeliverable": "Este número no puede recibir el código por WhatsApp. Comprueba que tenga una cuenta de WhatsApp activa, o introduce otro número.",
       "network": "Error de red. Comprueba tu conexión.",
       "emailTaken": "Esta dirección ya está en uso por otra cuenta.",
       "submit": "Algo salió mal. Inténtalo de nuevo.",
