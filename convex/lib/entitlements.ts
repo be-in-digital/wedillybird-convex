@@ -161,3 +161,38 @@ export function orgHasActiveAccess(
   if (isCompActive(org.compedSubscription, now)) return true;
   return (org.paygCredits ?? 0) > 0;
 }
+
+/** État d'accès d'une galerie, du point de vue de l'écran comme du serveur. */
+export type GalleryAccess = 'open' | 'locked' | 'expired';
+
+/**
+ * La galerie d'un événement est-elle ouverte ?
+ *
+ * Deux régimes, parce que les deux modèles économiques ne se ressemblent pas :
+ *
+ *  - **Particulier** : la rétention est *achetée*. Une date figée sur l'event
+ *    (`galleryExpiresAt`, posée au paiement, repoussée par l'upsell HD) suffit,
+ *    et l'absence de date signifie « pas encore payé » → `locked`.
+ *  - **Agence** : la galerie vit aussi longtemps que la **couverture de
+ *    l'organisation**. Elle ne peut donc pas être figée : écrire
+ *    `galleryExpiresAt = fin de période` à la création fermerait la galerie à
+ *    la fin du mois en cours alors que l'agence continue de payer, et un
+ *    renouvellement n'irait jamais rouvrir les events déjà créés. On évalue à
+ *    la lecture, contre l'état courant de l'organisation.
+ *
+ * Un mariage d'agence sans couverture est `expired`, pas `locked` : il n'y a
+ * pas de forfait à acheter pour cet événement-là, il y a un abonnement à
+ * reprendre — et le message doit envoyer vers la facturation agence, pas vers
+ * les forfaits particuliers.
+ */
+export function galleryAccessFor(
+  event: { organizationId?: unknown; galleryExpiresAt?: number | null },
+  org: OrgSubscriptionState | null | undefined,
+  now: number = Date.now(),
+): GalleryAccess {
+  if (event.organizationId) {
+    return orgHasActiveAccess(org, now) ? 'open' : 'expired';
+  }
+  if (event.galleryExpiresAt == null) return 'locked';
+  return now > event.galleryExpiresAt ? 'expired' : 'open';
+}
