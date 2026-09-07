@@ -5688,6 +5688,10 @@
       "invalid_name": "Indiquez le nom de votre agence.",
       "user_not_found": "Compte introuvable. Reconnectez-vous.",
       "unknown": "Impossible d'ouvrir votre espace pour le moment."
-    }
+    },
+    "metaTitle": "Votre invitation partenaire — Wedillybird",
+    "signInCta": "Créer mon compte et accepter",
+    "signInHint": "Vous serez ramenée ici juste après. Aucune carte bancaire ne vous sera demandée.",
+    "deadBackHome": "Retour à l'accueil"
   }
 }

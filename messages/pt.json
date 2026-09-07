@@ -5688,6 +5688,10 @@
       "invalid_name": "Indique o nome da sua agência.",
       "user_not_found": "Conta não encontrada. Inicie sessão novamente.",
       "unknown": "Não foi possível abrir o seu espaço de momento."
-    }
+    },
+    "metaTitle": "O seu convite de parceiro — Wedillybird",
+    "signInCta": "Criar a minha conta e aceitar",
+    "signInHint": "Voltará aqui logo a seguir. Não lhe será pedido nenhum cartão bancário.",
+    "deadBackHome": "Voltar ao início"
   }
 }

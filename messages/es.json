@@ -5688,6 +5688,10 @@
       "invalid_name": "Indica el nombre de tu agencia.",
       "user_not_found": "Cuenta no encontrada. Vuelve a iniciar sesión.",
       "unknown": "No hemos podido abrir tu espacio ahora mismo."
-    }
+    },
+    "metaTitle": "Tu invitación de socio — Wedillybird",
+    "signInCta": "Crear mi cuenta y aceptar",
+    "signInHint": "Volverás aquí justo después. No se te pedirá ninguna tarjeta bancaria.",
+    "deadBackHome": "Volver al inicio"
   }
 }

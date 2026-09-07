@@ -5688,6 +5688,10 @@
       "invalid_name": "Indica il nome della tua agenzia.",
       "user_not_found": "Account non trovato. Accedi di nuovo.",
       "unknown": "Per ora non riusciamo ad aprire il tuo spazio."
-    }
+    },
+    "metaTitle": "Il tuo invito partner — Wedillybird",
+    "signInCta": "Creare il mio account e accettare",
+    "signInHint": "Tornerai qui subito dopo. Nessuna carta di credito ti verrà richiesta.",
+    "deadBackHome": "Torna alla home"
   }
 }

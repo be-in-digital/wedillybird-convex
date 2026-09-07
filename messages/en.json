@@ -5684,6 +5684,10 @@
       "invalid_name": "Enter your agency name.",
       "user_not_found": "Account not found. Please sign in again.",
       "unknown": "We couldn't open your workspace right now."
-    }
+    },
+    "metaTitle": "Your partner invitation — Wedillybird",
+    "signInCta": "Create my account and accept",
+    "signInHint": "You'll come straight back here. No card details will be asked for.",
+    "deadBackHome": "Back to home"
   }
 }

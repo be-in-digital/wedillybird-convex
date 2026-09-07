@@ -5688,6 +5688,10 @@
       "invalid_name": "Geben Sie den Namen Ihrer Agentur an.",
       "user_not_found": "Konto nicht gefunden. Bitte erneut anmelden.",
       "unknown": "Ihr Bereich lässt sich derzeit nicht eröffnen."
-    }
+    },
+    "metaTitle": "Ihre Partner-Einladung — Wedillybird",
+    "signInCta": "Konto erstellen und annehmen",
+    "signInHint": "Sie kehren direkt hierher zurück. Es wird keine Kreditkarte verlangt.",
+    "deadBackHome": "Zurück zur Startseite"
   }
 }
