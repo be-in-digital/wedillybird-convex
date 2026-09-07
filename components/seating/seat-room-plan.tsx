@@ -53,6 +53,26 @@ export interface SeatRoomPlanProps {
   highlight: { tableId: string | null; seatNumber: number | null };
 }
 
+/**
+ * Taille de police (en mètres) tenant dans la largeur d'un élément, ou `null`
+ * si même le plancher de lisibilité déborde.
+ *
+ * Approximation volontairement grossière — 0,52 em de large par glyphe couvre
+ * la Geist Sans en minuscules comme en capitales. On préfère un label absent
+ * à un label qui chevauche la table d'à côté.
+ */
+function fitLabel(label: string, widthM: number): number | null {
+  const MAX = 0.36;
+  const MIN = 0.24;
+  const GLYPH_RATIO = 0.52;
+  const usable = widthM - 0.16;
+  if (usable <= 0 || label.length === 0) return null;
+  const ideal = usable / (label.length * GLYPH_RATIO);
+  if (ideal >= MAX) return MAX;
+  if (ideal >= MIN) return ideal;
+  return null;
+}
+
 /** Teinte de sol — assez pâle pour que les tables restent le sujet. */
 const FLOOR_FILL: Record<FloorKind, string> = {
   parquet: 'var(--color-champagne-100)',
@@ -101,6 +121,10 @@ export async function SeatRoomPlan({ room, tables, elements, highlight }: SeatRo
           {elements.map((el) => {
             const spec = ELEMENT_KINDS[el.kind];
             const label = el.label?.trim() || t(`elements.${el.kind}`);
+            // Un petit élément (gâteau, cadeaux…) ne peut pas porter son nom :
+            // le texte déborderait sur la table voisine. On réduit la graisse
+            // jusqu'à un plancher lisible, puis on renonce au label.
+            const fontSize = fitLabel(label, el.w);
             return (
               <g
                 key={el.id}
@@ -117,15 +141,17 @@ export async function SeatRoomPlan({ room, tables, elements, highlight }: SeatRo
                   stroke="var(--color-champagne-300)"
                   strokeWidth={0.04}
                 />
-                <text
-                  x={el.x}
-                  y={el.y + 0.13}
-                  textAnchor="middle"
-                  fill="var(--color-ink-400)"
-                  style={{ fontSize: 0.36, letterSpacing: 0.01 }}
-                >
-                  {label}
-                </text>
+                {fontSize !== null ? (
+                  <text
+                    x={el.x}
+                    y={el.y + fontSize * 0.36}
+                    textAnchor="middle"
+                    fill="var(--color-ink-400)"
+                    style={{ fontSize, letterSpacing: 0.01 }}
+                  >
+                    {label}
+                  </text>
+                ) : null}
               </g>
             );
           })}
