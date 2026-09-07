@@ -20,7 +20,7 @@
 const MAX_LENGTH = 512;
 
 /** Caracteres de controle : cassent un en-tete Location ou trompent une comparaison. */
- 
+
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
 
 export function safeNextPath(raw: string | null | undefined): string | null {
