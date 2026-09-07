@@ -119,7 +119,6 @@
       "statusPlaceholder": "Status…",
       "confirmDelete": "Excluir o evento «{title}»?",
       "compedBadge": "Oferecido",
-      "grantPlanPlaceholder": "Oferecer…",
       "grantEssential": "Oferecer Essencial",
       "grantPremium": "Oferecer Premium",
       "confirmGrantPlan": "Oferecer o plano «{plan}» a este evento, sem pagamento?",

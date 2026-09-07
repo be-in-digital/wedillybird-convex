@@ -121,6 +121,9 @@ function Th({ children }: { children: React.ReactNode }) {
 
 function EventRow({ event }: { event: Event }) {
   const t = useTranslations('Admin');
+  // Le libellé du forfait, traduit : la confirmation disait « le forfait
+  // « premium » », c'est-à-dire la valeur en base, pas un mot français.
+  const tPlans = useTranslations('Plans.tiers');
   const locale = useLocale();
   const { execute: updateStatus, loading: updating } = useServerAction(
     adminUpdateEventStatusAction,
@@ -202,24 +205,42 @@ function EventRow({ event }: { event: Event }) {
                 {t('events.revokePlan')}
               </button>
             ) : (
-              <Select
-                value=""
-                disabled={granting}
-                onValueChange={async (v) => {
-                  const tier = v as 'essential' | 'premium';
-                  if (await confirm({ title: t('events.confirmGrantPlan', { plan: tier }) })) {
-                    grantPlan(event._id, tier, undefined);
-                  }
-                }}
-              >
-                <SelectTrigger className="rounded-md border border-[color:var(--color-border)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-muted-foreground)]">
-                  <SelectValue placeholder={t('events.grantPlanPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="essential">{t('events.grantEssential')}</SelectItem>
-                  <SelectItem value="premium">{t('events.grantPremium')}</SelectItem>
-                </SelectContent>
-              </Select>
+              // Premium est le geste par défaut : un menu où il faut encore
+              // choisir n'a pas de défaut. Le bouton principal n'envoie donc
+              // AUCUN tier — c'est `DEFAULT_COMPED_EVENT_PLAN` qui tranche côté
+              // serveur. L'Essentiel reste offrable, en le demandant.
+              <>
+                <button
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        title: t('events.confirmGrantPlan', { plan: tPlans('premium') }),
+                      })
+                    ) {
+                      grantPlan(event._id, undefined, undefined);
+                    }
+                  }}
+                  disabled={granting}
+                  className="rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs font-medium text-[color:var(--color-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
+                >
+                  {t('events.grantPremium')}
+                </button>
+                <button
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        title: t('events.confirmGrantPlan', { plan: tPlans('essential') }),
+                      })
+                    ) {
+                      grantPlan(event._id, 'essential', undefined);
+                    }
+                  }}
+                  disabled={granting}
+                  className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
+                >
+                  {t('events.grantEssential')}
+                </button>
+              </>
             )}
             {event.status !== 'cancelled' ? (
               <button
