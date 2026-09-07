@@ -962,7 +962,9 @@
       "rateLimited": "Zu viele Anfragen. Bitte warte einige Minuten.",
       "expired": "Code abgelaufen, fordere einen neuen an.",
       "unknown": "Ein Fehler ist aufgetreten. Bitte erneut versuchen.",
-      "accountSuspended": "Dieses Konto wurde gesperrt. Kontaktieren Sie uns unter contact@wedillybird.com."
+      "accountSuspended": "Dieses Konto wurde gesperrt. Kontaktieren Sie uns unter contact@wedillybird.com.",
+      "whatsappUndeliverable": "Diese Nummer kann den Code nicht über WhatsApp empfangen. Prüfen Sie, ob ein aktives WhatsApp-Konto damit verknüpft ist, oder melden Sie sich per E-Mail an.",
+      "sendFailed": "Der Code konnte nicht gesendet werden. Versuchen Sie es gleich noch einmal oder melden Sie sich per E-Mail an."
     },
     "tagline": "Bereiten Sie Ihren großen Tag vor",
     "stepOneEyebrow": "SCHRITT 01 — IDENTITÄT",

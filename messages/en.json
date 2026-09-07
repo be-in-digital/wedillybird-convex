@@ -959,7 +959,9 @@
       "rateLimited": "Too many requests. Please wait a few minutes.",
       "expired": "Code expired, request a new one.",
       "unknown": "Something went wrong. Try again.",
-      "accountSuspended": "This account has been suspended. Contact us at contact@wedillybird.com."
+      "accountSuspended": "This account has been suspended. Contact us at contact@wedillybird.com.",
+      "whatsappUndeliverable": "This number can't receive the code on WhatsApp. Check that an active WhatsApp account is linked to it, or sign in by email.",
+      "sendFailed": "We couldn't send the code. Try again in a moment, or sign in by email."
     },
     "tagline": "Prepare your big day",
     "stepOneEyebrow": "STEP 01 — IDENTITY",

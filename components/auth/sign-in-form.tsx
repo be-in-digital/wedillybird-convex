@@ -19,6 +19,16 @@ function mapError(code: string, t: (k: string) => string): string {
     // survenue » — sans quoi la personne réessaie indéfiniment.
     case 'ACCOUNT_SUSPENDED':
       return t('errors.accountSuspended');
+    // Meta a refusé CE destinataire (numéro hors liste autorisée d'un WABA non
+    // vérifié, ou pas de compte WhatsApp actif). Réessayer n'y changera rien :
+    // il faut le dire, sinon la personne boucle sur « réessayez ».
+    case 'WHATSAPP_UNDELIVERABLE':
+      return t('errors.whatsappUndeliverable');
+    case 'WHATSAPP_SEND_FAILED':
+    case 'WHATSAPP_NOT_CONFIGURED':
+    case 'SMS_SEND_FAILED':
+    case 'SMS_NOT_CONFIGURED':
+      return t('errors.sendFailed');
     default:
       return t('errors.unknown');
   }

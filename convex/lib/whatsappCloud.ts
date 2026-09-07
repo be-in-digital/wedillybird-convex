@@ -50,6 +50,14 @@ export interface WhatsAppCloudSendResult {
   mock?: boolean;
   /** Message d'erreur lisible (présent quand `ok: false`). */
   error?: string;
+  /**
+   * Code d'erreur **Meta** (`error.code` de la réponse Graph), quand Meta en
+   * renvoie un. C'est lui qui distingue un refus définitif (131030 : numéro
+   * hors liste autorisée d'un WABA non vérifié ; 131026 : destinataire sans
+   * compte WhatsApp) d'un incident passager. Sans lui, tout échec se ressemble
+   * et on ne peut pas dire à quelqu'un pourquoi son numéro ne reçoit rien.
+   */
+  errorCode?: number;
   /** Code HTTP si l'erreur vient du transport. */
   httpStatus?: number;
 }
@@ -75,6 +83,29 @@ export function shouldUseWhatsAppMock(): boolean {
  */
 export function buildWhatsAppCloudUrl(env: WhatsAppCloudEnv, graphVersion?: string): string {
   return `https://graph.facebook.com/${graphVersion ?? 'v23.0'}/${env.phoneNumberId}/messages`;
+}
+
+/**
+ * Codes Meta qui signifient « ce destinataire ne recevra PAS ce message », par
+ * opposition à un incident passager qu'un réessai réglerait.
+ *
+ *  - `131030` : le numéro n'est pas dans la liste autorisée du WABA. C'est
+ *    l'état d'un compte Meta pas encore vérifié : seuls les numéros de test
+ *    ajoutés à la main reçoivent quoi que ce soit. Symptôme caractéristique —
+ *    le numéro du fondateur marche, tout autre numéro échoue.
+ *  - `131026`, `131051` : destinataire injoignable — le plus souvent aucun
+ *    compte WhatsApp actif sur ce numéro.
+ *
+ * Les distinguer permet de dire « ce numéro ne peut pas recevoir le code »
+ * plutôt que « une erreur est survenue, réessayez » à quelqu'un qui réessaiera
+ * en boucle sans succès.
+ */
+export const WHATSAPP_UNDELIVERABLE_CODES = [131030, 131026, 131051] as const;
+
+/** Meta a-t-il refusé définitivement CE destinataire ? */
+export function isUndeliverableRecipient(errorCode?: number): boolean {
+  if (typeof errorCode !== 'number') return false;
+  return (WHATSAPP_UNDELIVERABLE_CODES as readonly number[]).includes(errorCode);
 }
 
 /**
@@ -140,7 +171,12 @@ export async function sendWhatsAppCloudTemplate(
       error?: { message?: string; code?: number };
     };
     const reason = data.error?.message ?? `HTTP ${res.status}`;
-    return { ok: false, error: reason, httpStatus: res.status };
+    return {
+      ok: false,
+      error: reason,
+      ...(typeof data.error?.code === 'number' ? { errorCode: data.error.code } : {}),
+      httpStatus: res.status,
+    };
   }
 
   const data = (await res.json().catch(() => ({}))) as {

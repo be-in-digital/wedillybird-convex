@@ -965,7 +965,9 @@
       "rateLimited": "Troppe richieste. Attendi qualche minuto.",
       "expired": "Codice scaduto, richiedine uno nuovo.",
       "unknown": "Si è verificato un errore. Riprova.",
-      "accountSuspended": "Questo account è stato sospeso. Scrivici a contact@wedillybird.com."
+      "accountSuspended": "Questo account è stato sospeso. Scrivici a contact@wedillybird.com.",
+      "whatsappUndeliverable": "Questo numero non può ricevere il codice su WhatsApp. Verifica che vi sia associato un account WhatsApp attivo, oppure accedi via e-mail.",
+      "sendFailed": "Invio del codice non riuscito. Riprova tra un istante, oppure accedi via e-mail."
     },
     "tagline": "Prepara il tuo grande giorno",
     "stepOneEyebrow": "PASSO 01 — IDENTITÀ",

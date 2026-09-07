@@ -15,6 +15,52 @@ import { isAgencyRole, resolvePostAuthDestination } from '@/lib/auth/post-auth-d
 import { asBudgetCurrency } from '@/lib/currency';
 import { safeNextPath } from '@/lib/auth/safe-next';
 
+/**
+ * Codes d'erreur que le serveur peut lever et que les écrans savent traduire.
+ * L'ordre compte : le premier trouvé gagne, donc les codes les plus spécifiques
+ * d'abord (`WHATSAPP_UNDELIVERABLE` avant `WHATSAPP_SEND_FAILED`).
+ */
+const AUTH_ERROR_CODES = [
+  'ACCOUNT_SUSPENDED',
+  'RATE_LIMITED',
+  'TOO_MANY_ATTEMPTS',
+  'INVALID_PHONE',
+  'INVALID_EMAIL',
+  'INVALID_CODE',
+  'OTP_EXPIRED',
+  'NO_ACTIVE_OTP',
+  'PHONE_TAKEN',
+  'EMAIL_TAKEN',
+  'ALREADY_LINKED',
+  'LINK_EXPIRED',
+  'NO_ACTIVE_LINK',
+  'WHATSAPP_UNDELIVERABLE',
+  'WHATSAPP_NOT_CONFIGURED',
+  'WHATSAPP_SEND_FAILED',
+  'SMS_NOT_CONFIGURED',
+  'SMS_SEND_FAILED',
+] as const;
+
+/**
+ * Extrait le code d'erreur métier du message remonté par Convex.
+ *
+ * Convex **emballe** ce qu'une action ou une mutation lève : `throw new
+ * Error('RATE_LIMITED')` arrive ici sous la forme
+ * `[Request ID: …] Server Error … Uncaught Error: RATE_LIMITED at …`. Les
+ * écrans, eux, comparaient ce message à `'RATE_LIMITED'` par égalité stricte :
+ * aucun code ne matchait jamais, et TOUTES les erreurs serveur — quota
+ * dépassé, compte suspendu, envoi WhatsApp refusé — s'affichaient en
+ * « Une erreur est survenue. Réessayez. »
+ *
+ * On cherche donc le code À L'INTÉRIEUR du message, comme le font déjà les
+ * routes `/api/account/link/*`. Fonctionne aussi bien si Convex cesse un jour
+ * d'emballer.
+ */
+function authErrorCode(err: unknown): string {
+  const message = err instanceof Error ? err.message : '';
+  return AUTH_ERROR_CODES.find((code) => message.includes(code)) ?? 'UNKNOWN';
+}
+
 type ActionResult =
   | { ok: true; phone?: string; email?: string; isNewUser?: boolean }
   | { ok: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
@@ -44,7 +90,7 @@ export async function requestOtpAction(formData: FormData): Promise<ActionResult
     });
     return { ok: true, phone: parsed.data.phone };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'UNKNOWN' };
+    return { ok: false, error: authErrorCode(err) };
   }
 }
 
@@ -78,7 +124,7 @@ export async function verifyOtpAction(formData: FormData): Promise<ActionResult>
 
     return { ok: true, phone: result.phone, isNewUser: result.isNewUser };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'UNKNOWN' };
+    return { ok: false, error: authErrorCode(err) };
   }
 }
 
@@ -124,7 +170,7 @@ export async function completeOnboardingAction(formData: FormData): Promise<Acti
         fieldErrors: { email: ['EMAIL_TAKEN'] },
       };
     }
-    return { ok: false, error: message };
+    return { ok: false, error: authErrorCode(err) };
   }
 
   // Aiguillage agence vs particulier : un pro fraîchement onboardé n'a pas
@@ -185,7 +231,7 @@ export async function requestMagicLinkAction(formData: FormData): Promise<Action
     });
     return { ok: true, email: parsed.data.email };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'UNKNOWN' };
+    return { ok: false, error: authErrorCode(err) };
   }
 }
 
