@@ -93,6 +93,20 @@ qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
   `/admin/affiliates` — le ledger a enfin une sortie de `vested`.
 - **Espace partenaire** `/partenaire` : le partenaire voit SON lien, ses ventes
   et son dû (lecture scopée `by_owner`, aucune donnée acheteur exposée).
+- **CGU du programme** : `/legal/affiliation` (11 articles, 7 locales, page
+  publique et indexable — une créatrice doit pouvoir les lire AVANT d'accepter,
+  alors qu'elle n'a pas encore de compte ; l'espace partenaire y renvoie).
+  Chiffres tirés du code, et `tests/unit/lib/affiliation-terms.test.ts` échoue
+  si une constante bouge sans que le texte suive.
+  **Paramètres commerciaux à valider par le fondateur** (choisis par défaut,
+  modifiables) : versement mensuel sur facture sous 30 j, seuil minimum 50 €,
+  préavis de 30 j pour toute modification des conditions.
+  **Point ouvert** : la commission porte sur le montant encaissé **TTC**
+  (`amount_total`), donc la TVA est incluse dans l'assiette. Passer en HT est
+  une décision produit + un changement de code — à trancher AVANT de signer un
+  partenaire, une renégociation après coup étant coûteuse.
+  Les CGU n'ont **pas** été relues par un juriste, et l'entité légale reste
+  « à compléter » (cf. `Invoice.issuerSiret`).
 - **Coupon Stripe auto** : `adminCreateAffiliateAction` crée le coupon + le code
   promo Stripe sous la MÊME chaîne que `affiliates.code` dès que
   `buyerDiscountBps > 0`, restreint aux produits couple (`applies_to.products`,
@@ -106,9 +120,6 @@ qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
   Stripe ou un affilié ouvert avant cette bascule.
 
 ### Reste à faire
-- **CGU affiliation** — aucune page légale ne décrit le programme (taux,
-  vesting à la date de l'event, reversal sur remboursement, modalités de
-  versement). À écrire avant de signer un partenaire qui facture.
 - **`scripts/create-affiliate-code.ts` redondant** — il crée un coupon Stripe
   SANS ligne d'affilié côté Convex (attribution au compteur `times_redeemed`,
   commission calculée à la main). Le chemin `/admin/affiliates` fait mieux et

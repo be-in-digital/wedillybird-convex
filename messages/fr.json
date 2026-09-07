@@ -304,6 +304,32 @@
       "thirdPartiesTitle": "Cookies tiers",
       "thirdPartiesBody": "Stripe dépose ses propres cookies sur ses pages de paiement (hors domaine Wedillybird) pour prévenir la fraude. Consultez sa politique de confidentialité.",
       "description": "Cookies essentiels au fonctionnement de Wedillybird : session HMAC, cache offline check-in. Aucun cookie publicitaire ni tracker tiers."
+    },
+    "affiliation": {
+      "title": "Conditions du programme partenaire",
+      "lastUpdated": "Dernière mise à jour : 7 septembre 2026",
+      "article1Title": "1. Objet",
+      "article1Body": "Le programme partenaire Wedillybird permet à une créatrice ou un créateur de contenu, une organisatrice de mariage ou toute personne accompagnant des couples de recommander Wedillybird et de percevoir une commission sur les ventes ainsi générées.\nLes présentes conditions régissent la relation entre Wedillybird (« nous ») et la personne admise au programme (« le Partenaire »). Elles ne concernent pas le parrainage entre particuliers, qui donne droit à un crédit utilisable sur le Service et relève des conditions générales d’utilisation.",
+      "article2Title": "2. Adhésion et statut du Partenaire",
+      "article2Body": "L’accès au programme se fait sur invitation : nous créons le compte partenaire, son code et son lien. Aucune candidature spontanée n’ouvre de droit.\nLe Partenaire agit en toute indépendance. Le programme ne crée ni contrat de travail, ni mandat, ni société commune, ni exclusivité de part et d’autre. Le Partenaire fait son affaire de ses obligations fiscales et sociales et déclare disposer, si son droit national l’exige, du statut lui permettant d’émettre une facture.",
+      "article3Title": "3. Lien de parrainage et code promotionnel",
+      "article3Body": "Nous fournissons au Partenaire un lien de parrainage (de la forme wedillybird.com/?ref=CODE) et, lorsqu’une remise est prévue pour son audience, un code promotionnel portant la même chaîne de caractères.\nLe code s’applique aux forfaits couple (Essentiel et Premium). Il ne s’applique ni aux abonnements professionnels, ni à l’option HD post-mariage.\nLe code est valable douze mois à compter de sa création et peut être renouvelé. Le Partenaire ne peut ni le céder, ni le revendre, ni en créer de variantes.",
+      "article4Title": "4. Attribution des ventes",
+      "article4Body": "Une vente est attribuée au Partenaire dans deux cas :\n— l’acheteur a cliqué son lien de parrainage au cours des trente jours précédents ; lorsque plusieurs liens de parrainage ont été suivis, le premier reçu emporte l’attribution ;\n— ou l’acheteur a saisi son code au moment du paiement.\nAucune commission n’est due lorsque aucune de ces deux conditions n’est remplie, notamment si l’acheteur a effacé ses cookies ou changé d’appareil sans saisir le code. Le Partenaire ne perçoit pas de commission sur ses propres achats.",
+      "article5Title": "5. Commission",
+      "article5Body": "La commission est un pourcentage du montant effectivement encaissé par Wedillybird, après application de toute remise et toutes taxes comprises. Elle s’élève à 20 %, sauf taux différent convenu par écrit avec le Partenaire.\nLe cumul de la remise accordée à l’audience et de la commission du Partenaire ne peut excéder 25 % du prix.\nLes commissions sont calculées et versées dans la devise de la transaction, sans conversion.",
+      "article6Title": "6. Acquisition et annulation",
+      "article6Body": "Une commission est acquise à la date du mariage concerné, et au plus tôt sept jours après l’achat. Ce délai correspond à la période pendant laquelle le couple peut encore obtenir un remboursement.\nAvant son versement, une commission est annulée si l’achat correspondant fait l’objet d’un remboursement, d’un impayé ou d’une contestation bancaire. Après versement, nous pouvons imputer le montant correspondant sur les commissions suivantes.",
+      "article7Title": "7. Versement",
+      "article7Body": "Le Partenaire consulte à tout moment ses ventes attribuées et le montant qui lui est dû depuis son espace partenaire.\nLes commissions acquises sont versées par virement, sur demande et au maximum une fois par mois, dans les trente jours suivant la réception d’une facture conforme. Un seuil minimum de 50 € s’applique ; en deçà, le solde est reporté au versement suivant. Les frais bancaires liés à un virement hors zone SEPA restent à la charge du Partenaire.",
+      "article8Title": "8. Obligations du Partenaire",
+      "article8Body": "Le Partenaire s’engage à :\n— indiquer clairement le caractère commercial de ses publications, conformément à la loi ; en France, la mention « publicité » ou « collaboration commerciale » doit être visible pendant toute la durée de la promotion ;\n— ne présenter le Service que sous ses fonctionnalités réelles, sans promesse de résultat ni affirmation trompeuse sur les prix ou les remises ;\n— ne pas enchérir sur la marque « Wedillybird » ni sur des termes voisins en publicité sur les moteurs de recherche ;\n— ne pas diffuser son lien ou son code par messages non sollicités, ni sur des sites agrégateurs de codes promotionnels sans notre accord écrit ;\n— n’utiliser le nom et les visuels Wedillybird que tels que nous les lui fournissons.\nLe Partenaire ne s’exprime pas au nom de Wedillybird et ne prend aucun engagement en notre nom.",
+      "article9Title": "9. Suspension et fin du programme",
+      "article9Body": "Chacune des parties peut mettre fin au programme à tout moment, sans préavis ni indemnité. Le code et le lien sont alors désactivés et cessent de produire de nouvelles attributions.\nEn l’absence de manquement, les commissions déjà acquises et celles en cours d’acquisition sont versées selon l’article 7. En cas de manquement aux obligations de l’article 8 ou de manœuvre destinée à créer des ventes artificielles, les commissions non encore versées sont perdues.",
+      "article10Title": "10. Données personnelles",
+      "article10Body": "Le Partenaire ne reçoit aucune information sur l’identité des acheteurs : son espace affiche des montants, des dates et des statuts, jamais un nom, une adresse e-mail ou un mariage identifiable.\nLes données du Partenaire (identité, coordonnées, coordonnées bancaires) sont traitées pour la gestion du programme et le versement des commissions, et conservées le temps requis par nos obligations comptables. Les modalités d’exercice des droits figurent dans la politique de confidentialité.",
+      "article11Title": "11. Modification, droit applicable et litiges",
+      "article11Body": "Nous pouvons modifier les présentes conditions. Toute modification est notifiée au Partenaire trente jours avant son entrée en vigueur et ne s’applique pas aux ventes déjà attribuées.\nLes présentes conditions sont régies par le droit français. Tout litige relatif à leur exécution relève de la compétence exclusive des tribunaux de Paris, sauf disposition d’ordre public contraire."
     }
   },
   "Account": {
@@ -4326,6 +4352,10 @@
     "legalCookies": {
       "title": "Politique de cookies — Wedillybird",
       "description": "Cookies essentiels au fonctionnement de Wedillybird : session HMAC, cache offline check-in. Aucun cookie publicitaire ni tracker tiers."
+    },
+    "legalAffiliation": {
+      "title": "Conditions du programme partenaire — Wedillybird",
+      "description": "Conditions du programme partenaire Wedillybird : attribution des ventes, commission, acquisition, versement, obligations du partenaire."
     }
   },
   "CookieConsent": {
@@ -5590,6 +5620,7 @@
     "linkLabel": "Lien",
     "linkHint": "Toute vente venant d’un clic sur ce lien vous est attribuée automatiquement.",
     "codeLabel": "Code à partager",
-    "codeHint": "À saisir au moment du paiement. Même remise, même commission — pratique pour vos stories et vos publications."
+    "codeHint": "À saisir au moment du paiement. Même remise, même commission — pratique pour vos stories et vos publications.",
+    "termsLink": "Lire les conditions du programme partenaire"
   }
 }

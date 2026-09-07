@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { redirect } from '@/i18n/navigation';
+import { Link, redirect } from '@/i18n/navigation';
 import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { AppShell } from '@/components/app/app-shell';
@@ -65,6 +65,18 @@ export default async function PartnerPage({ params }: { params: Promise<{ locale
           totals={data.totals}
           salesCount={data.salesCount}
         />
+
+        {/* Les conditions du programme sont l'accord qui régit ces montants :
+            le partenaire doit pouvoir les relire depuis l'endroit où il voit
+            son dû, pas seulement au moment de son admission. */}
+        <p className="text-xs text-[color:var(--color-ink-500)]">
+          <Link
+            href="/legal/affiliation"
+            className="underline underline-offset-2 transition-colors hover:text-[color:var(--color-ink-900)]"
+          >
+            {t('termsLink')}
+          </Link>
+        </p>
       </div>
     </AppShell>
   );

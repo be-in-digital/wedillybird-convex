@@ -304,6 +304,32 @@
       "thirdPartiesTitle": "Cookies de terceros",
       "thirdPartiesBody": "Stripe instala sus propias cookies en sus páginas de pago (fuera del dominio Wedillybird) para prevenir el fraude. Consulta su política de privacidad.",
       "description": "Cookies esenciales para el funcionamiento de Wedillybird: sesión HMAC, caché offline para el check-in. Sin cookies publicitarias ni rastreadores de terceros."
+    },
+    "affiliation": {
+      "title": "Condiciones del programa de socios",
+      "lastUpdated": "Última actualización: 7 de septiembre de 2026",
+      "article1Title": "1. Objeto",
+      "article1Body": "El programa de socios de Wedillybird permite a una creadora o creador de contenido, a una organizadora de bodas o a cualquier persona que acompañe a parejas recomendar Wedillybird y percibir una comisión sobre las ventas así generadas.\nEstas condiciones rigen la relación entre Wedillybird («nosotros») y la persona admitida en el programa («el Socio»). No cubren la recomendación entre particulares, que da derecho a un crédito utilizable en el Servicio y se rige por las condiciones generales de uso.",
+      "article2Title": "2. Admisión y estatus del Socio",
+      "article2Body": "El acceso al programa es por invitación: nosotros creamos la cuenta de socio, su código y su enlace. Una candidatura espontánea no genera ningún derecho.\nEl Socio actúa con total independencia. El programa no crea contrato de trabajo, ni mandato, ni sociedad conjunta, ni exclusividad por ninguna de las partes. El Socio asume sus obligaciones fiscales y sociales y declara disponer, si su derecho nacional lo exige, del estatus que le permite emitir una factura.",
+      "article3Title": "3. Enlace de recomendación y código promocional",
+      "article3Body": "Facilitamos al Socio un enlace de recomendación (con el formato wedillybird.com/?ref=CODIGO) y, cuando se prevé un descuento para su audiencia, un código promocional con la misma cadena de caracteres.\nEl código se aplica a los planes de pareja (Esencial y Premium). No se aplica ni a las suscripciones profesionales ni a la opción HD posterior a la boda.\nEl código es válido durante doce meses desde su creación y puede renovarse. El Socio no puede cederlo, revenderlo ni crear variantes.",
+      "article4Title": "4. Atribución de las ventas",
+      "article4Body": "Una venta se atribuye al Socio en dos casos:\n— el comprador hizo clic en su enlace durante los treinta días anteriores; si se siguieron varios enlaces de recomendación, prevalece el primero recibido;\n— o el comprador introdujo su código al pagar.\nNo se debe comisión alguna cuando no se cumple ninguna de estas dos condiciones, en particular si el comprador borró sus cookies o cambió de dispositivo sin introducir el código. El Socio no percibe comisión por sus propias compras.",
+      "article5Title": "5. Comisión",
+      "article5Body": "La comisión es un porcentaje del importe efectivamente cobrado por Wedillybird, tras aplicar cualquier descuento e impuestos incluidos. Asciende al 20 %, salvo que se acuerde por escrito otro porcentaje con el Socio.\nLa suma del descuento concedido a la audiencia y de la comisión del Socio no puede superar el 25 % del precio.\nLas comisiones se calculan y se abonan en la moneda de la transacción, sin conversión.",
+      "article6Title": "6. Consolidación y anulación",
+      "article6Body": "Una comisión se consolida en la fecha de la boda correspondiente y, como muy pronto, siete días después de la compra. Ese plazo corresponde al periodo durante el cual la pareja todavía puede obtener un reembolso.\nAntes de su abono, una comisión se anula si la compra correspondiente es objeto de reembolso, impago o reclamación bancaria. Tras el abono, podemos compensar el importe correspondiente con las comisiones siguientes.",
+      "article7Title": "7. Abono",
+      "article7Body": "El Socio puede consultar en todo momento sus ventas atribuidas y el importe que se le debe desde su espacio de socio.\nLas comisiones consolidadas se abonan por transferencia, a petición y como máximo una vez al mes, en un plazo de treinta días desde la recepción de una factura conforme. Se aplica un umbral mínimo de 50 €; por debajo, el saldo se traslada al abono siguiente. Los gastos bancarios de una transferencia fuera de la zona SEPA corren a cargo del Socio.",
+      "article8Title": "8. Obligaciones del Socio",
+      "article8Body": "El Socio se compromete a:\n— indicar claramente el carácter comercial de sus publicaciones, conforme a la ley; en Francia, la mención «publicité» o «collaboration commerciale» debe permanecer visible durante toda la promoción;\n— presentar el Servicio únicamente con sus funcionalidades reales, sin promesa de resultados ni afirmaciones engañosas sobre precios o descuentos;\n— no pujar por la marca «Wedillybird» ni por términos similares en publicidad en buscadores;\n— no difundir su enlace o su código mediante mensajes no solicitados, ni en sitios agregadores de códigos promocionales sin nuestro acuerdo por escrito;\n— utilizar el nombre y los materiales visuales de Wedillybird únicamente tal como se los facilitamos.\nEl Socio no se expresa en nombre de Wedillybird ni asume ningún compromiso en nuestro nombre.",
+      "article9Title": "9. Suspensión y fin del programa",
+      "article9Body": "Cualquiera de las partes puede poner fin al programa en cualquier momento, sin preaviso ni indemnización. El código y el enlace quedan entonces desactivados y dejan de generar nuevas atribuciones.\nA falta de incumplimiento, las comisiones ya consolidadas y las que estén consolidándose se abonan conforme al artículo 7. En caso de incumplimiento de las obligaciones del artículo 8 o de maniobras destinadas a crear ventas artificiales, las comisiones aún no abonadas se pierden.",
+      "article10Title": "10. Datos personales",
+      "article10Body": "El Socio no recibe ninguna información sobre la identidad de los compradores: su espacio muestra importes, fechas y estados, nunca un nombre, una dirección de correo o una boda identificable.\nLos datos del Socio (identidad, datos de contacto, datos bancarios) se tratan para la gestión del programa y el abono de las comisiones, y se conservan el tiempo exigido por nuestras obligaciones contables. El ejercicio de los derechos se detalla en la política de privacidad.",
+      "article11Title": "11. Modificación, ley aplicable y litigios",
+      "article11Body": "Podemos modificar estas condiciones. Toda modificación se notifica al Socio treinta días antes de su entrada en vigor y no se aplica a las ventas ya atribuidas.\nEstas condiciones se rigen por el derecho francés. Todo litigio relativo a su ejecución corresponde a la competencia exclusiva de los tribunales de París, salvo disposición imperativa en contrario."
     }
   },
   "Account": {
@@ -4326,6 +4352,10 @@
     "legalCookies": {
       "title": "Política de cookies — Wedillybird",
       "description": "Cookies esenciales para el funcionamiento de Wedillybird: sesión HMAC, caché offline para el check-in. Sin cookies publicitarias ni rastreadores de terceros."
+    },
+    "legalAffiliation": {
+      "title": "Condiciones del programa de socios — Wedillybird",
+      "description": "Condiciones del programa de socios de Wedillybird: atribución de ventas, comisión, consolidación, abono, obligaciones del socio."
     }
   },
   "CookieConsent": {
@@ -5590,6 +5620,7 @@
     "linkLabel": "Enlace",
     "linkHint": "Toda venta que provenga de un clic en este enlace se te atribuye automáticamente.",
     "codeLabel": "Código para compartir",
-    "codeHint": "Se introduce al pagar. Mismo descuento, misma comisión: práctico para tus stories y publicaciones."
+    "codeHint": "Se introduce al pagar. Mismo descuento, misma comisión: práctico para tus stories y publicaciones.",
+    "termsLink": "Leer las condiciones del programa de socios"
   }
 }
