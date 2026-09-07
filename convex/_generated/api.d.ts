@@ -50,6 +50,7 @@ import type * as lib_phone from "../lib/phone.js";
 import type * as lib_qrToken from "../lib/qrToken.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_rsvpAuth from "../lib/rsvpAuth.js";
+import type * as lib_sesMessage from "../lib/sesMessage.js";
 import type * as lib_twilioSms from "../lib/twilioSms.js";
 import type * as lib_uniqueSlug from "../lib/uniqueSlug.js";
 import type * as lib_webhookSecret from "../lib/webhookSecret.js";
@@ -131,6 +132,7 @@ declare const fullApi: ApiFromModules<{
   "lib/qrToken": typeof lib_qrToken;
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/rsvpAuth": typeof lib_rsvpAuth;
+  "lib/sesMessage": typeof lib_sesMessage;
   "lib/twilioSms": typeof lib_twilioSms;
   "lib/uniqueSlug": typeof lib_uniqueSlug;
   "lib/webhookSecret": typeof lib_webhookSecret;
