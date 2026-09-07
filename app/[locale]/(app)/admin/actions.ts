@@ -726,17 +726,32 @@ export async function adminSetAffiliateOwnerAction(
 
 export async function adminCreatePartnerInviteAction(
   affiliateId: string,
-  input?: { inviteeEmail?: string; inviteeName?: string; kind?: 'pro' | 'couple' },
+  input?: {
+    inviteeEmail?: string;
+    inviteeName?: string;
+    kind?: 'pro' | 'couple';
+    /** Palier agence offert. Omis ⇒ `DEFAULT_PARTNER_COMP_TIER`. */
+    grantTier?: 'starter' | 'business' | 'agency';
+    /** Durée du compte agence offert, en mois. Omise ⇒ `DEFAULT_PARTNER_COMP_MONTHS`. */
+    grantMonths?: number;
+    /** Forfait particulier offert. Omis ⇒ `DEFAULT_COMPED_EVENT_PLAN`. */
+    grantEventTier?: 'essential' | 'premium';
+  },
 ): Promise<ActionResult & { token?: string }> {
   try {
     const adminId = await requireAdmin();
     const convex = getConvexServerClient();
+    // Chaque champ n'est transmis que s'il est fourni : c'est le serveur qui
+    // porte les défauts, et les recopier ici en ferait une seconde source.
     const res = await convex.mutation(convexApi.createPartnerInvite, {
       adminId,
       affiliateId,
       ...(input?.inviteeEmail ? { inviteeEmail: input.inviteeEmail } : {}),
       ...(input?.inviteeName ? { inviteeName: input.inviteeName } : {}),
       ...(input?.kind ? { kind: input.kind } : {}),
+      ...(input?.grantTier ? { grantTier: input.grantTier } : {}),
+      ...(input?.grantMonths ? { grantMonths: input.grantMonths } : {}),
+      ...(input?.grantEventTier ? { grantEventTier: input.grantEventTier } : {}),
     });
     revalidatePath('/admin/affiliates');
     return { ok: true, token: res.token };

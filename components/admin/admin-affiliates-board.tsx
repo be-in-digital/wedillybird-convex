@@ -38,6 +38,8 @@ interface PartnerInvite {
   inviteeEmail: string | null;
   inviteeName: string | null;
   grantTier: 'starter' | 'business' | 'agency';
+  /** Forfait offert quand le lien est de type `couple`. */
+  grantEventTier: 'essential' | 'premium';
   grantMonths: number;
   expiresAt: number;
   consumedAt: number | null;
@@ -49,6 +51,43 @@ interface PartnerInvite {
   lastSentTo: string | null;
   sendCount: number;
 }
+
+/**
+ * Ce qu'un lien offre, choisi à sa création.
+ *
+ * Les valeurs vivent côté serveur (`DEFAULT_PARTNER_COMP_TIER`,
+ * `DEFAULT_PARTNER_COMP_MONTHS`, `DEFAULT_COMPED_EVENT_PLAN`) ; celles d'ici ne
+ * font que **pré-remplir les menus**. Un champ laissé au défaut n'est pas
+ * transmis, pour qu'il n'existe jamais deux sources de vérité qui dérivent.
+ */
+export interface InviteGrantOptions {
+  grantTier?: 'starter' | 'business' | 'agency';
+  grantMonths?: number;
+  grantEventTier?: 'essential' | 'premium';
+}
+
+const TIER_OPTIONS: ReadonlyArray<{ value: 'starter' | 'business' | 'agency'; label: string }> = [
+  { value: 'agency', label: 'Agency' },
+  { value: 'business', label: 'Business' },
+  { value: 'starter', label: 'Starter' },
+];
+
+/** Durées proposées, en mois. Le serveur accepte 1 à 24. */
+const MONTHS_OPTIONS: ReadonlyArray<number> = [3, 6, 12, 18, 24];
+
+const EVENT_TIER_OPTIONS: ReadonlyArray<{ value: 'essential' | 'premium'; label: string }> = [
+  { value: 'premium', label: 'Premium' },
+  { value: 'essential', label: 'Essentiel' },
+];
+
+/**
+ * Pré-sélection des menus. Doit rester alignée sur les défauts serveur — un
+ * test croise les deux pour que l'écran n'annonce jamais autre chose que ce
+ * que le lien offrira réellement.
+ */
+const DEFAULT_TIER = 'agency' as const;
+const DEFAULT_MONTHS = 12;
+const DEFAULT_EVENT_TIER = 'premium' as const;
 
 interface Referral {
   id: string;
@@ -219,13 +258,14 @@ export function AdminAffiliatesBoard({
     return `${origin}/rejoindre/${token}`;
   }
 
-  function createInvite(a: Affiliate, kind: 'pro' | 'couple') {
+  function createInvite(a: Affiliate, kind: 'pro' | 'couple', grant: InviteGrantOptions) {
     setError(null);
     startTransition(async () => {
       const res = await adminCreatePartnerInviteAction(a.id, {
         ...(a.ownerEmail ? { inviteeEmail: a.ownerEmail } : {}),
         ...(a.displayName ? { inviteeName: a.displayName } : {}),
         kind,
+        ...grant,
       });
       if (!res.ok) {
         setError(res.error);
@@ -489,7 +529,7 @@ export function AdminAffiliatesBoard({
                       <PartnerInviteCell
                         invite={latestInvite.get(a.id) ?? null}
                         pending={pending}
-                        onCreate={(kind) => createInvite(a, kind)}
+                        onCreate={(kind, grant) => createInvite(a, kind, grant)}
                         onRevoke={revokeInvite}
                         onSend={sendInvite}
                         fallbackEmail={a.ownerEmail ?? null}
@@ -627,7 +667,7 @@ function PartnerInviteCell({
 }: {
   invite: PartnerInvite | null;
   pending: boolean;
-  onCreate: (kind: 'pro' | 'couple') => void;
+  onCreate: (kind: 'pro' | 'couple', grant: InviteGrantOptions) => void;
   onRevoke: (inviteId: string) => void;
   onSend: (inviteId: string) => void;
   /** E-mail de l'affilié, si l'invitation n'en porte pas elle-même. */
@@ -635,34 +675,99 @@ function PartnerInviteCell({
   buildUrl: (token: string) => string;
 }) {
   const [copied, setCopied] = useState(false);
+  // Ce que le prochain lien offrira. Volontairement pré-rempli sur les défauts
+  // et NON sur l'invitation existante : « Nouveau lien » sert le plus souvent à
+  // remettre un partenaire aux conditions courantes, pas à reconduire des
+  // conditions périmées. Les menus restent visibles avant le clic, donc rien
+  // ne change en silence.
+  const [tier, setTier] = useState<'starter' | 'business' | 'agency'>(DEFAULT_TIER);
+  const [months, setMonths] = useState<number>(DEFAULT_MONTHS);
+  const [eventTier, setEventTier] = useState<'essential' | 'premium'>(DEFAULT_EVENT_TIER);
   // Le serveur résout le destinataire ; on reproduit la même chaîne ici pour
   // savoir s'il y a une adresse à servir, et laquelle annoncer au survol.
   const recipient = invite?.inviteeEmail ?? fallbackEmail;
 
-  if (!invite) {
-    // Deux boutons plutôt qu'un choix caché : le type décide de ce qu'on offre
-    // (abonnement agence ou mariage en Premium) et ne se corrige pas après
-    // coup — le lien consommé a créé le compte.
-    return (
-      <div className="flex flex-col items-start gap-1">
+  const selectCls =
+    'h-7 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-1.5 text-[11px] text-[color:var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-primary)] disabled:opacity-50';
+  const createBtnCls =
+    'rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs whitespace-nowrap disabled:opacity-50';
+
+  /**
+   * Les deux offres, chacune avec ses propres réglages.
+   *
+   * Deux lignes plutôt qu'un choix caché : le type de lien décide de ce qu'on
+   * donne — un abonnement agence qui court dans le temps, ou un forfait de
+   * mariage acheté une fois — et ne se corrige pas après coup, le lien consommé
+   * ayant déjà créé le compte. Les mois n'apparaissent que côté agence : un
+   * forfait particulier n'a pas de durée, il a une rétention de galerie liée à
+   * la date du mariage.
+   */
+  const creationControls = (
+    <div className="flex flex-col items-start gap-1.5">
+      <div className="flex flex-wrap items-center gap-1">
+        <select
+          aria-label="Palier offert à l'agence"
+          className={selectCls}
+          value={tier}
+          disabled={pending}
+          onChange={(e) => setTier(e.target.value as typeof tier)}
+        >
+          {TIER_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Durée du compte offert, en mois"
+          className={selectCls}
+          value={months}
+          disabled={pending}
+          onChange={(e) => setMonths(Number(e.target.value))}
+        >
+          {MONTHS_OPTIONS.map((m) => (
+            <option key={m} value={m}>
+              {m} mois
+            </option>
+          ))}
+        </select>
         <button
           type="button"
-          onClick={() => onCreate('pro')}
+          onClick={() => onCreate('pro', { grantTier: tier, grantMonths: months })}
           disabled={pending}
-          className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+          className={createBtnCls}
         >
           Lien agence
         </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-1">
+        <select
+          aria-label="Forfait offert au particulier"
+          className={selectCls}
+          value={eventTier}
+          disabled={pending}
+          onChange={(e) => setEventTier(e.target.value as typeof eventTier)}
+        >
+          {EVENT_TIER_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
-          onClick={() => onCreate('couple')}
+          onClick={() => onCreate('couple', { grantEventTier: eventTier })}
           disabled={pending}
-          className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+          className={createBtnCls}
         >
           Lien personnel
         </button>
       </div>
-    );
+    </div>
+  );
+
+  if (!invite) {
+    return creationControls;
   }
 
   return (
@@ -670,7 +775,7 @@ function PartnerInviteCell({
       <span className="text-xs text-[color:var(--color-ink-500)]">
         {INVITE_STATE_LABEL[invite.state]} ·{' '}
         {invite.kind === 'couple'
-          ? 'personnel · mariage Premium offert'
+          ? `personnel · mariage ${invite.grantEventTier === 'premium' ? 'Premium' : 'Essentiel'} offert`
           : `agence · ${invite.grantMonths} mois ${invite.grantTier}`}
       </span>
       {invite.lastSentAt ? (
@@ -715,14 +820,9 @@ function PartnerInviteCell({
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => onCreate(invite.kind)}
-          disabled={pending}
-          className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
-        >
-          Nouveau lien
-        </button>
+        // Regénérer, c'est re-choisir : un lien mort se remplace le plus
+        // souvent parce que les conditions ont changé.
+        creationControls
       )}
     </div>
   );
