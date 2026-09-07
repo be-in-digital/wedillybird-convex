@@ -1087,7 +1087,9 @@
     "booleanNo": "No",
     "requiredMark": "Obligatorio",
     "openInvitation": "Abrir la invitación",
-    "tapSeal": "Pulsa el sello"
+    "tapSeal": "Pulsa el sello",
+    "seatPassCta": "Ver mi sitio en la mesa",
+    "seatPassHint": "El plano de mesas está publicado."
   },
   "OrgPublic": {
     "poweredBy": "Desarrollado con",
@@ -1203,7 +1205,10 @@
     "undo": "Deshacer",
     "pendingQueue": "{count, plural, =1 {1 check-in pendiente de sincronización} other {# check-ins pendientes de sincronización}}",
     "pendingQueueSyncNow": "Sincronizar ahora",
-    "pendingQueueSynced": "{count, plural, =1 {1 check-in sincronizado} other {# check-ins sincronizados}}"
+    "pendingQueueSynced": "{count, plural, =1 {1 check-in sincronizado} other {# check-ins sincronizados}}",
+    "toastSeat": "{table} · asiento {seat}",
+    "toastTable": "{table}",
+    "toastNoSeat": "Sin mesa asignada"
   },
   "Pro": {
     "onboardingTitle": "Crea tu organización",
@@ -4308,6 +4313,19 @@
       "footer": "Notificación automática vinculada a la validación de Meta WhatsApp Business.",
       "textTemplate": "Plantilla: {templateName}",
       "textReason": "Motivo: {reason}"
+    },
+    "seatPass": {
+      "subject": "Tu sitio en la mesa — boda de {coupleNames}",
+      "preheader": "Tu mesa y tu sitio para la boda de {coupleNames}.",
+      "intro": "El plano de mesas de la boda de {coupleNames} del {eventDate} ya está listo. Este es tu sitio:",
+      "introVenue": "El plano de mesas de la boda de {coupleNames} del {eventDate} en {venue} ya está listo. Este es tu sitio:",
+      "memberSeat": "{name} — {table}, asiento {seat}",
+      "memberTable": "{name} — {table}",
+      "memberUnplaced": "{name} — sitio por confirmar",
+      "callToAction": "Abre tu pase para ver el plano del salón y el código que debes mostrar en la entrada:",
+      "ctaLabel": "Ver mi sitio",
+      "closing": "¡Hasta muy pronto!",
+      "footer": "Recibes este correo porque estás invitado a esta boda."
     }
   },
   "Metadata": {
@@ -4405,7 +4423,41 @@
     "print": "Imprimir",
     "shapeToggle": "Cambiar forma (redonda/rectangular)",
     "clickToUnassign": "Clic para quitar de la mesa",
-    "guestOf": "invitado/a de {host}"
+    "guestOf": "invitado/a de {host}",
+    "seatColumnLabel": "Asiento",
+    "seatOf": "Asiento {n}",
+    "seatNone": "Sin número",
+    "autoNumber": "Numerar los asientos",
+    "autoNumberDone": "{count, plural, =0 {Todos los asientos ya estaban numerados} =1 {1 asiento numerado} other {# asientos numerados}}",
+    "renumber": "Renumerar todo",
+    "renumberConfirm": "¿Renumerar todos los asientos desde 1? Se sobrescribirán los números asignados a mano.",
+    "seatConflictBadge": "Asiento duplicado",
+    "seatConflictWarning": "{count, plural, =1 {1 número de asiento duplicado por corregir} other {# números de asiento duplicados por corregir}}",
+    "unnumberedWarning": "{count, plural, =1 {1 persona sin número de asiento} other {# personas sin número de asiento}}",
+    "publishTitle": "Publicar el plano a los invitados",
+    "publishHint": "Mientras el plano no esté publicado, ningún invitado puede ver su sitio, ni siquiera con su enlace. Publica cuando estés listo.",
+    "publishCta": "Publicar el plano",
+    "unpublishCta": "Despublicar",
+    "publishedBadge": "Publicado",
+    "draftBadge": "Borrador",
+    "publishedAt": "Publicado el {date}",
+    "numberingTitle": "Lo que ve el invitado",
+    "numberingSeat": "Mesa + número de asiento",
+    "numberingTable": "Solo la mesa",
+    "showRoomPlan": "Incluir el plano del salón",
+    "noteLabel": "Unas palabras para tus invitados (opcional)",
+    "notePlaceholder": "Ej. La cena se sirve a las 20 h, ocupad vuestro sitio a partir de las 19.45 h.",
+    "notifyTitle": "Enviar los sitios",
+    "notifyHint": "Cada invitado recibe su enlace personal en el canal usado para su invitación (WhatsApp, SMS o correo).",
+    "notifyCta": "{count, plural, =0 {Todo el mundo está avisado} =1 {Enviar a 1 invitado} other {Enviar a # invitados}}",
+    "notifyForce": "Reenviar a todos",
+    "notifyForceConfirm": "¿Reenviar el pase a todos los invitados sentados, incluidos los ya avisados?",
+    "notifyDone": "{sent, plural, =0 {Ningún envío} =1 {1 pase enviado} other {# pases enviados}}",
+    "notifyFailed": "{count, plural, =1 {1 envío ha fallado} other {# envíos han fallado}}",
+    "notifySkipped": "{count, plural, =1 {1 invitado sin canal de contacto} other {# invitados sin canal de contacto}}",
+    "notifyNotPublished": "Publica el plano antes de enviar los sitios.",
+    "notifiedCount": "{notified} / {total} invitados avisados",
+    "previewLink": "Vista previa del pase"
   },
   "Marketing": {
     "guide": {
@@ -5621,5 +5673,68 @@
     "codeLabel": "Código para compartir",
     "codeHint": "Se introduce al pagar. Mismo descuento, misma comisión: práctico para tus stories y publicaciones.",
     "termsLink": "Leer las condiciones del programa de socios"
+  },
+  "SeatPass": {
+    "summary": {
+      "seatOne": "asiento {seat}",
+      "seatMany": "asientos {seats}",
+      "join": " y "
+    },
+    "sms": {
+      "body": "{name}, tu sitio en la boda de {couple}: {seat}.",
+      "optOut": "Responde STOP para darte de baja."
+    },
+    "metaTitle": "Tu sitio",
+    "eyebrow": "Plano de mesas",
+    "title": "Tu sitio",
+    "greeting": "Hola {name}",
+    "tableLabel": "Mesa",
+    "seatLabel": "Asiento",
+    "seatFree": "Asiento libre en esta mesa",
+    "partyTitle": "Tu mesa",
+    "youBadge": "Tú",
+    "noteTitle": "Unas palabras de los novios",
+    "roomTitle": "Plano del salón",
+    "roomHint": "Tu mesa está resaltada. El plano está orientado desde la entrada.",
+    "roomYourTable": "Tu mesa",
+    "roomOtherTable": "Otras mesas",
+    "roomSeatHint": "Tu silla está marcada con un punto dorado.",
+    "roomDimensions": "{width} × {length} m",
+    "qrTitle": "Tu código de entrada",
+    "qrHint": "Muestra este código en la entrada: confirma tu llegada y muestra tu sitio.",
+    "qrCodeLabel": "Código",
+    "qrAlt": "Código QR de entrada de {name}",
+    "checkedInTitle": "Llegada ya confirmada",
+    "checkedInAt": "Registrado a las {time}",
+    "backToInvitation": "Volver a la invitación",
+    "addToCalendar": "Ver la invitación",
+    "unpublishedTitle": "El plano de mesas aún no está listo",
+    "unpublishedBody": "Los novios están terminando la distribución. Tu sitio aparecerá aquí en cuanto se confirme; este enlace seguirá funcionando.",
+    "notAttendingTitle": "Confirma primero tu asistencia",
+    "notAttendingBody": "Responde a la invitación para recibir tu sitio en la mesa.",
+    "notAttendingCta": "Responder a la invitación",
+    "unplacedTitle": "Tu sitio está en camino",
+    "unplacedBody": "Tu mesa todavía no está asignada. Vuelve un poco más tarde; este enlace seguirá funcionando.",
+    "elements": {
+      "dancefloor": "Pista de baile",
+      "stage": "Escenario",
+      "dj": "DJ",
+      "bar": "Bar",
+      "buffet": "Bufé",
+      "cake": "Tarta",
+      "photobooth": "Fotomatón",
+      "gifts": "Regalos",
+      "guestbook": "Libro de firmas",
+      "entrance": "Entrada",
+      "arch": "Arco",
+      "plant": "Vegetación"
+    },
+    "floors": {
+      "parquet": "Parqué",
+      "marble": "Mármol",
+      "carpet": "Moqueta",
+      "grass": "Césped",
+      "concrete": "Hormigón"
+    }
   }
 }

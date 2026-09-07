@@ -16,6 +16,7 @@ function guest(id: string, seats = 1): SeatGuest {
     fullName: `Guest ${id}`,
     seats,
     plusOnesNames: seats > 1 ? ['Plus'] : [],
+    seatNumber: null,
   };
 }
 
@@ -28,6 +29,8 @@ function table(id: string, capacity: number, assigned: SeatGuest[] = []) {
     assigned,
     occupancy: 0,
     overCapacity: false,
+    seatConflicts: [],
+    unnumbered: 0,
   });
 }
 

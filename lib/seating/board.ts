@@ -24,6 +24,8 @@ export interface SeatGuest {
   seats: number;
   plusOnesNames: string[];
   category?: string;
+  /** Chaise attribuée à cette personne (1-basée), `null` = pas de numéro. */
+  seatNumber: number | null;
 }
 
 export interface SeatTable {
@@ -37,6 +39,10 @@ export interface SeatTable {
   assigned: SeatGuest[];
   occupancy: number;
   overCapacity: boolean;
+  /** Numéros de chaise attribués deux fois à cette table. */
+  seatConflicts: Array<{ seatNumber: number; unitIds: string[] }>;
+  /** Personnes posées à la table sans numéro de chaise. */
+  unnumbered: number;
 }
 
 export interface BoardState {
@@ -50,12 +56,32 @@ export interface SeatingPlanStats {
   seatedSeats: number;
   unassignedSeats: number;
   attendingParties: number;
+  seatConflicts: number;
+  unnumbered: number;
+}
+
+/** Publication du plan côté invité, defaults déjà appliqués côté Convex. */
+export interface SeatingPublication {
+  published: boolean;
+  publishedAt: number | null;
+  numbering: 'table' | 'seat';
+  showRoomPlan: boolean;
+  note: string | null;
+}
+
+/** File d'envoi des pass placement. */
+export interface SeatingNotifications {
+  placedGuests: number;
+  notified: number;
+  needsNotify: number;
 }
 
 /** Forme renvoyée par la query `getSeatingPlan` (et consommée par l'UI). */
 export interface SeatingPlan {
   tables: SeatTable[];
   unassigned: SeatGuest[];
+  publication: SeatingPublication;
+  notifications: SeatingNotifications;
   stats: SeatingPlanStats;
 }
 

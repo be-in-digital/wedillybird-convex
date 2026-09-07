@@ -1087,7 +1087,9 @@
     "booleanNo": "No",
     "requiredMark": "Obbligatorio",
     "openInvitation": "Apri l'invito",
-    "tapSeal": "Tocca il sigillo"
+    "tapSeal": "Tocca il sigillo",
+    "seatPassCta": "Vedi il mio posto",
+    "seatPassHint": "Il piano dei tavoli è pubblicato."
   },
   "OrgPublic": {
     "poweredBy": "Powered by",
@@ -1203,7 +1205,10 @@
     "undo": "Annulla",
     "pendingQueue": "{count, plural, =1 {1 check-in in attesa di sincronizzazione} other {# check-in in attesa di sincronizzazione}}",
     "pendingQueueSyncNow": "Sincronizza ora",
-    "pendingQueueSynced": "{count, plural, =1 {1 check-in sincronizzato} other {# check-in sincronizzati}}"
+    "pendingQueueSynced": "{count, plural, =1 {1 check-in sincronizzato} other {# check-in sincronizzati}}",
+    "toastSeat": "{table} · posto {seat}",
+    "toastTable": "{table}",
+    "toastNoSeat": "Nessun tavolo assegnato"
   },
   "Pro": {
     "onboardingTitle": "Crea la tua organizzazione",
@@ -4308,6 +4313,19 @@
       "footer": "Notifica automatica legata alla convalida Meta WhatsApp Business.",
       "textTemplate": "Template: {templateName}",
       "textReason": "Motivo: {reason}"
+    },
+    "seatPass": {
+      "subject": "Il tuo posto a tavola — matrimonio di {coupleNames}",
+      "preheader": "Il tuo tavolo e il tuo posto per il matrimonio di {coupleNames}.",
+      "intro": "Il piano dei tavoli del matrimonio di {coupleNames} del {eventDate} è pronto. Ecco il tuo posto:",
+      "introVenue": "Il piano dei tavoli del matrimonio di {coupleNames} del {eventDate} a {venue} è pronto. Ecco il tuo posto:",
+      "memberSeat": "{name} — {table}, posto {seat}",
+      "memberTable": "{name} — {table}",
+      "memberUnplaced": "{name} — posto da confermare",
+      "callToAction": "Apri il tuo pass per la piantina della sala e il codice da mostrare all’ingresso:",
+      "ctaLabel": "Vedi il mio posto",
+      "closing": "A prestissimo!",
+      "footer": "Ricevi questa e-mail perché sei invitato a questo matrimonio."
     }
   },
   "Metadata": {
@@ -4405,7 +4423,41 @@
     "print": "Stampa",
     "shapeToggle": "Cambia forma (rotonda/rettangolare)",
     "clickToUnassign": "Clicca per rimuovere dal tavolo",
-    "guestOf": "ospite di {host}"
+    "guestOf": "ospite di {host}",
+    "seatColumnLabel": "Posto",
+    "seatOf": "Posto {n}",
+    "seatNone": "Senza numero",
+    "autoNumber": "Numera i posti",
+    "autoNumberDone": "{count, plural, =0 {Tutti i posti erano già numerati} =1 {1 posto numerato} other {# posti numerati}}",
+    "renumber": "Rinumera tutto",
+    "renumberConfirm": "Rinumerare tutti i posti a partire da 1? I numeri assegnati a mano verranno sovrascritti.",
+    "seatConflictBadge": "Posto duplicato",
+    "seatConflictWarning": "{count, plural, =1 {1 numero di posto duplicato da correggere} other {# numeri di posto duplicati da correggere}}",
+    "unnumberedWarning": "{count, plural, =1 {1 persona senza numero di posto} other {# persone senza numero di posto}}",
+    "publishTitle": "Pubblica il piano agli invitati",
+    "publishHint": "Finché il piano non è pubblicato, nessun invitato può vedere il proprio posto, nemmeno con il suo link. Pubblica quando sei pronto.",
+    "publishCta": "Pubblica il piano",
+    "unpublishCta": "Rimuovi la pubblicazione",
+    "publishedBadge": "Pubblicato",
+    "draftBadge": "Bozza",
+    "publishedAt": "Pubblicato il {date}",
+    "numberingTitle": "Ciò che vede l’invitato",
+    "numberingSeat": "Tavolo + numero di posto",
+    "numberingTable": "Solo il tavolo",
+    "showRoomPlan": "Allega la piantina della sala",
+    "noteLabel": "Un messaggio per i tuoi invitati (facoltativo)",
+    "notePlaceholder": "Es. La cena è servita alle 20, raggiungete il vostro tavolo dalle 19.45.",
+    "notifyTitle": "Invia i posti",
+    "notifyHint": "Ogni invitato riceve il suo link personale sul canale usato per l’invito (WhatsApp, SMS o e-mail).",
+    "notifyCta": "{count, plural, =0 {Tutti sono stati avvisati} =1 {Invia a 1 invitato} other {Invia a # invitati}}",
+    "notifyForce": "Rinvia a tutti",
+    "notifyForceConfirm": "Rinviare il pass a tutti gli invitati seduti, compresi quelli già avvisati?",
+    "notifyDone": "{sent, plural, =0 {Nessun invio} =1 {1 pass inviato} other {# pass inviati}}",
+    "notifyFailed": "{count, plural, =1 {1 invio non riuscito} other {# invii non riusciti}}",
+    "notifySkipped": "{count, plural, =1 {1 invitato senza canale di contatto} other {# invitati senza canale di contatto}}",
+    "notifyNotPublished": "Pubblica il piano prima di inviare i posti.",
+    "notifiedCount": "{notified} / {total} invitati avvisati",
+    "previewLink": "Anteprima del pass"
   },
   "Marketing": {
     "guide": {
@@ -5621,5 +5673,68 @@
     "codeLabel": "Codice da condividere",
     "codeHint": "Da inserire al momento del pagamento. Stesso sconto, stessa commissione — comodo per le tue storie e i tuoi post.",
     "termsLink": "Leggere le condizioni del programma partner"
+  },
+  "SeatPass": {
+    "summary": {
+      "seatOne": "posto {seat}",
+      "seatMany": "posti {seats}",
+      "join": " e "
+    },
+    "sms": {
+      "body": "{name}, il tuo posto al matrimonio di {couple}: {seat}.",
+      "optOut": "Rispondi STOP per disiscriverti."
+    },
+    "metaTitle": "Il tuo posto",
+    "eyebrow": "Piano dei tavoli",
+    "title": "Il tuo posto",
+    "greeting": "Ciao {name}",
+    "tableLabel": "Tavolo",
+    "seatLabel": "Posto",
+    "seatFree": "Posto libero a questo tavolo",
+    "partyTitle": "Il tuo tavolo",
+    "youBadge": "Tu",
+    "noteTitle": "Un messaggio degli sposi",
+    "roomTitle": "Piantina della sala",
+    "roomHint": "Il tuo tavolo è evidenziato. La piantina è orientata dall’ingresso.",
+    "roomYourTable": "Il tuo tavolo",
+    "roomOtherTable": "Altri tavoli",
+    "roomSeatHint": "La tua sedia è segnata con un punto dorato.",
+    "roomDimensions": "{width} × {length} m",
+    "qrTitle": "Il tuo codice d’ingresso",
+    "qrHint": "Mostra questo codice all’ingresso: conferma il tuo arrivo e indica il tuo posto.",
+    "qrCodeLabel": "Codice",
+    "qrAlt": "Codice QR d’ingresso di {name}",
+    "checkedInTitle": "Arrivo già confermato",
+    "checkedInAt": "Registrato alle {time}",
+    "backToInvitation": "Torna all’invito",
+    "addToCalendar": "Vedi l’invito",
+    "unpublishedTitle": "Il piano dei tavoli non è ancora pronto",
+    "unpublishedBody": "Gli sposi stanno completando la disposizione. Il tuo posto apparirà qui appena confermato — questo link resterà valido.",
+    "notAttendingTitle": "Conferma prima la tua presenza",
+    "notAttendingBody": "Rispondi all’invito per ricevere il tuo posto a tavola.",
+    "notAttendingCta": "Rispondi all’invito",
+    "unplacedTitle": "Il tuo posto sta arrivando",
+    "unplacedBody": "Il tuo tavolo non è ancora assegnato. Torna un po’ più tardi — questo link resterà valido.",
+    "elements": {
+      "dancefloor": "Pista da ballo",
+      "stage": "Palco",
+      "dj": "DJ",
+      "bar": "Bar",
+      "buffet": "Buffet",
+      "cake": "Torta",
+      "photobooth": "Photobooth",
+      "gifts": "Regali",
+      "guestbook": "Libro degli ospiti",
+      "entrance": "Ingresso",
+      "arch": "Arco",
+      "plant": "Verde"
+    },
+    "floors": {
+      "parquet": "Parquet",
+      "marble": "Marmo",
+      "carpet": "Moquette",
+      "grass": "Erba",
+      "concrete": "Cemento"
+    }
   }
 }

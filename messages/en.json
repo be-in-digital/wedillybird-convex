@@ -1083,7 +1083,9 @@
     "booleanNo": "No",
     "requiredMark": "Required",
     "openInvitation": "Open the invitation",
-    "tapSeal": "Tap the seal"
+    "tapSeal": "Tap the seal",
+    "seatPassCta": "View my seat",
+    "seatPassHint": "The seating plan is published."
   },
   "OrgPublic": {
     "poweredBy": "Powered by",
@@ -1199,7 +1201,10 @@
     "undo": "Undo",
     "pendingQueue": "{count, plural, =1 {1 check-in pending sync} other {# check-ins pending sync}}",
     "pendingQueueSyncNow": "Sync now",
-    "pendingQueueSynced": "{count, plural, =1 {1 check-in synced} other {# check-ins synced}}"
+    "pendingQueueSynced": "{count, plural, =1 {1 check-in synced} other {# check-ins synced}}",
+    "toastSeat": "{table} · seat {seat}",
+    "toastTable": "{table}",
+    "toastNoSeat": "No table assigned"
   },
   "Pro": {
     "onboardingTitle": "Create your organisation",
@@ -4304,6 +4309,19 @@
       "footer": "Automated notification linked to Meta WhatsApp Business validation.",
       "textTemplate": "Template: {templateName}",
       "textReason": "Reason: {reason}"
+    },
+    "seatPass": {
+      "subject": "Your seat — {coupleNames}’s wedding",
+      "preheader": "Your table and seat for {coupleNames}’s wedding.",
+      "intro": "The seating plan for {coupleNames}’s wedding on {eventDate} is ready. Here’s where you’ll be:",
+      "introVenue": "The seating plan for {coupleNames}’s wedding on {eventDate} at {venue} is ready. Here’s where you’ll be:",
+      "memberSeat": "{name} — {table}, seat {seat}",
+      "memberTable": "{name} — {table}",
+      "memberUnplaced": "{name} — seat to be confirmed",
+      "callToAction": "Open your pass for the room plan and the code to show at the door:",
+      "ctaLabel": "View my seat",
+      "closing": "See you very soon!",
+      "footer": "You are receiving this email because you are invited to this wedding."
     }
   },
   "Metadata": {
@@ -4401,7 +4419,41 @@
     "print": "Print",
     "shapeToggle": "Toggle shape (round/rectangular)",
     "clickToUnassign": "Click to remove from table",
-    "guestOf": "guest of {host}"
+    "guestOf": "guest of {host}",
+    "seatColumnLabel": "Seat",
+    "seatOf": "Seat {n}",
+    "seatNone": "No number",
+    "autoNumber": "Number the seats",
+    "autoNumberDone": "{count, plural, =0 {All seats were already numbered} =1 {1 seat numbered} other {# seats numbered}}",
+    "renumber": "Renumber everything",
+    "renumberConfirm": "Renumber every seat from 1? Numbers set by hand will be overwritten.",
+    "seatConflictBadge": "Duplicate seat",
+    "seatConflictWarning": "{count, plural, =1 {1 duplicate seat number to fix} other {# duplicate seat numbers to fix}}",
+    "unnumberedWarning": "{count, plural, =1 {1 person without a seat number} other {# people without a seat number}}",
+    "publishTitle": "Publish the plan to guests",
+    "publishHint": "Until the plan is published, no guest can see their seat, even with their link. Publish when you’re ready.",
+    "publishCta": "Publish the plan",
+    "unpublishCta": "Unpublish",
+    "publishedBadge": "Published",
+    "draftBadge": "Draft",
+    "publishedAt": "Published on {date}",
+    "numberingTitle": "What the guest sees",
+    "numberingSeat": "Table + seat number",
+    "numberingTable": "Table only",
+    "showRoomPlan": "Include the room plan",
+    "noteLabel": "A word for your guests (optional)",
+    "notePlaceholder": "e.g. Dinner is served at 8pm, please take your seat by 7.45pm.",
+    "notifyTitle": "Send the seats",
+    "notifyHint": "Each guest receives their personal link on the channel used for their invitation (WhatsApp, SMS or email).",
+    "notifyCta": "{count, plural, =0 {Everyone has been notified} =1 {Send to 1 guest} other {Send to # guests}}",
+    "notifyForce": "Resend to everyone",
+    "notifyForceConfirm": "Resend the pass to every seated guest, including those already notified?",
+    "notifyDone": "{sent, plural, =0 {Nothing sent} =1 {1 pass sent} other {# passes sent}}",
+    "notifyFailed": "{count, plural, =1 {1 send failed} other {# sends failed}}",
+    "notifySkipped": "{count, plural, =1 {1 guest without a contact channel} other {# guests without a contact channel}}",
+    "notifyNotPublished": "Publish the plan before sending the seats.",
+    "notifiedCount": "{notified} / {total} guests notified",
+    "previewLink": "Preview the guest pass"
   },
   "Marketing": {
     "guide": {
@@ -5617,5 +5669,68 @@
     "codeLabel": "Code to share",
     "codeHint": "To be entered at checkout. Same discount, same commission — handy for your stories and posts.",
     "termsLink": "Read the partner programme terms"
+  },
+  "SeatPass": {
+    "summary": {
+      "seatOne": "seat {seat}",
+      "seatMany": "seats {seats}",
+      "join": " and "
+    },
+    "sms": {
+      "body": "{name}, your seat at {couple}’s wedding: {seat}.",
+      "optOut": "Reply STOP to opt out."
+    },
+    "metaTitle": "Your seat",
+    "eyebrow": "Seating plan",
+    "title": "Your seat",
+    "greeting": "Hello {name}",
+    "tableLabel": "Table",
+    "seatLabel": "Seat",
+    "seatFree": "Open seating at this table",
+    "partyTitle": "Your party",
+    "youBadge": "You",
+    "noteTitle": "A word from the couple",
+    "roomTitle": "Room plan",
+    "roomHint": "Your table is highlighted. The plan is oriented from the entrance.",
+    "roomYourTable": "Your table",
+    "roomOtherTable": "Other tables",
+    "roomSeatHint": "Your chair is marked with a gold dot.",
+    "roomDimensions": "{width} × {length} m",
+    "qrTitle": "Your entry code",
+    "qrHint": "Show this code at the door: it confirms your arrival and displays your seat.",
+    "qrCodeLabel": "Code",
+    "qrAlt": "Entry QR code for {name}",
+    "checkedInTitle": "Arrival already confirmed",
+    "checkedInAt": "Checked in at {time}",
+    "backToInvitation": "Back to the invitation",
+    "addToCalendar": "View the invitation",
+    "unpublishedTitle": "The seating plan isn’t ready yet",
+    "unpublishedBody": "The couple is finalising the seating. Your seat will appear here as soon as it’s confirmed — this link will keep working.",
+    "notAttendingTitle": "Please confirm your attendance first",
+    "notAttendingBody": "Reply to the invitation to receive your seat.",
+    "notAttendingCta": "Reply to the invitation",
+    "unplacedTitle": "Your seat is on its way",
+    "unplacedBody": "Your table hasn’t been assigned yet. Check back a little later — this link will keep working.",
+    "elements": {
+      "dancefloor": "Dance floor",
+      "stage": "Stage",
+      "dj": "DJ",
+      "bar": "Bar",
+      "buffet": "Buffet",
+      "cake": "Cake",
+      "photobooth": "Photo booth",
+      "gifts": "Gifts",
+      "guestbook": "Guest book",
+      "entrance": "Entrance",
+      "arch": "Arch",
+      "plant": "Greenery"
+    },
+    "floors": {
+      "parquet": "Parquet",
+      "marble": "Marble",
+      "carpet": "Carpet",
+      "grass": "Grass",
+      "concrete": "Concrete"
+    }
   }
 }

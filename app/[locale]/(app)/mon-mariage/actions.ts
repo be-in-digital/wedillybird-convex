@@ -40,6 +40,9 @@ const KNOWN_ERRORS = [
   'INVALID_STATUS',
   'INVALID_LABEL',
   'INVITATION_LIMIT_REACHED',
+  'FEATURE_NOT_IN_PLAN',
+  'SEATING_NOT_PUBLISHED',
+  'EVENT_NOT_FOUND_OR_FORBIDDEN',
   'INVALID_CINEMATIC',
   'INVALID_MUSIC_TRACK',
   'INVALID_MUSIC_KEY',
@@ -326,6 +329,69 @@ export async function mmUpsertTableAction(
       ...input,
     });
     return { ok: true as const, id };
+  });
+}
+
+/**
+ * Publie / dépublie le plan de table pour les invités (validation explicite du
+ * couple) et enregistre ce qu'ils verront. Miroir couple de
+ * `setSeatingPublicationAction` côté agence.
+ */
+export async function mmSetSeatingPublicationAction(
+  eventId: string,
+  input: {
+    published: boolean;
+    numbering?: 'table' | 'seat';
+    showRoomPlan?: boolean;
+    note?: string;
+  },
+): Promise<MmActionResult> {
+  return run(async (userId) => {
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.setSeatingPublication, {
+      eventId,
+      requesterId: userId,
+      published: input.published,
+      ...(input.numbering ? { numbering: input.numbering } : {}),
+      ...(input.showRoomPlan !== undefined ? { showRoomPlan: input.showRoomPlan } : {}),
+      ...(input.note !== undefined ? { note: input.note } : {}),
+    });
+    return { ok: true as const };
+  });
+}
+
+/** Numérote les chaises (`fill` = comble les trous, `renumber` = repart de 1). */
+export async function mmAutoNumberSeatsAction(
+  eventId: string,
+  mode?: 'fill' | 'renumber',
+): Promise<MmActionResult> {
+  return run(async (userId) => {
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.autoNumberSeats, {
+      eventId,
+      requesterId: userId,
+      ...(mode ? { mode } : {}),
+    });
+    return { ok: true as const };
+  });
+}
+
+/**
+ * Envoie les pass placement sur le canal d'invitation de chaque invité.
+ * Refusé côté Convex si le plan n'est pas publié.
+ */
+export async function mmBroadcastSeatPassesAction(
+  eventId: string,
+  force?: boolean,
+): Promise<MmActionResult & { sent?: number; failed?: number; skipped?: number }> {
+  return run(async (userId) => {
+    const convex = getConvexServerClient();
+    const res = await convex.action(convexApi.broadcastSeatPasses, {
+      eventId,
+      requesterId: userId,
+      ...(force ? { force: true } : {}),
+    });
+    return { ok: true as const, sent: res.sent, failed: res.failed, skipped: res.skipped };
   });
 }
 

@@ -33,6 +33,8 @@ Reproduire `.env.local` sur Vercel → Project Settings → Environment Variable
    - **Stripe Prices USD à créer** — lancer `pnpx tsx scripts/sync-stripe-prices.ts` côté Stripe live (idempotent, le script crée 1 Price par devise par plan). Récupérer les `STRIPE_PRICE_*_USD` imprimés sur stdout et les coller dans les env vars Vercel Production + Preview.
    - **Migration de devise pour subscriptions existantes** : statu quo = pas de migration auto. Un Pro EUR qui voyage aux US continue de payer en EUR. La page pricing affiche la grille USD aux nouveaux prospects uniquement. Toute migration de devise = action support manuelle (cancel + recreate).
 10. **Stratégie pricing LATAM** (v2) — la région `americas` v1 couvre US + CA seulement. MX / BR / AR / CL paient aujourd'hui le tarif `europe` en EUR. À ouvrir dans une v2 dédiée avec devises locales (BRL, MXN) et grille adaptée pouvoir d'achat — ne pas étendre `americas` à USD pour la zone LATAM (mauvais signal).
+11. **WhatsApp template `wedding_seat_pass`** — pass placement (table + n° de place) envoyé quand l'organisateur publie son plan. À coder dans `scripts/submit-whatsapp-templates.ts`, soumettre à Meta, puis poser `WHATSAPP_SEAT_PASS_TEMPLATE` sur Vercel + Convex. Non bloquant pour le déploiement : sans l'env var, `seatingActions.broadcastSeatPasses` bascule silencieusement sur l'e-mail (SES), et le SMS Twilio (`+1`) fonctionne déjà sans template.
+12. **Push du schéma Convex `seatingConfig` / `seatNumber`** — les champs ajoutés au plan de placement (`events.seatingConfig`, `guests.seatNumber|seatAssignedAt|seatNotifiedAt|seatNotifiedChannel`, `tableAssignments.seatNumber`) sont tous **optionnels** → migration nulle, mais le déploiement Convex doit précéder le déploiement Vercel (sinon la query `getSeatPassByToken` n'existe pas encore côté serveur).
 
 ### Pré-déploiement checklist
 - [ ] CI verte sur `main` (format, lint, typecheck, unit, build, e2e)
@@ -306,6 +308,7 @@ Tous nommés en `snake_case`, créés une fois côté Wedillybird, validés Meta
 | `rsvp_reminder_d7` | utility | Rappel J-7 invités `attending` qui ne sont pas confirmés | prénom invité, prénoms couple, date | 📤 Codé — soumission Meta à lancer |
 | `rsvp_reminder_d1` | utility | Rappel veille | prénom invité, prénoms couple, lieu | 📤 Codé — soumission Meta à lancer |
 | `rsvp_confirmation` | utility | Accusé réception après que l'invité a répondu RSVP | prénom invité, statut RSVP, prénoms couple | 📤 Codé — soumission Meta à lancer |
+| `wedding_seat_pass` | utility | Pass placement : table + n° de place, envoyé à la publication du plan | prénom invité, prénoms couple, placement résumé, date | ⚠️ **À CODER dans `scripts/submit-whatsapp-templates.ts` puis soumettre** — bouton URL dynamique = `{token}/place`. Env var `WHATSAPP_SEAT_PASS_TEMPLATE`. Sans elle, `seatingActions.broadcastSeatPasses` bascule sur l'e-mail (dégradation silencieuse, pas d'erreur) |
 
 **Lancer la soumission** :
 ```bash

@@ -1083,7 +1083,9 @@
     "booleanNo": "لا",
     "requiredMark": "إلزامي",
     "openInvitation": "افتح الدعوة",
-    "tapSeal": "اضغطوا على الختم"
+    "tapSeal": "اضغطوا على الختم",
+    "seatPassCta": "عرض مقعدي",
+    "seatPassHint": "تم نشر مخطط الطاولات."
   },
   "OrgPublic": {
     "poweredBy": "مُقدَّم من",
@@ -1199,7 +1201,10 @@
     "undo": "تراجع",
     "pendingQueue": "{count, plural, =1 {تسجيل واحد بانتظار المزامنة} =2 {تسجيلان بانتظار المزامنة} other {# تسجيلات بانتظار المزامنة}}",
     "pendingQueueSyncNow": "مزامنة الآن",
-    "pendingQueueSynced": "{count, plural, =1 {تمت مزامنة تسجيل واحد} =2 {تمت مزامنة تسجيلين} other {تمت مزامنة # تسجيلات}}"
+    "pendingQueueSynced": "{count, plural, =1 {تمت مزامنة تسجيل واحد} =2 {تمت مزامنة تسجيلين} other {تمت مزامنة # تسجيلات}}",
+    "toastSeat": "{table} · المقعد {seat}",
+    "toastTable": "{table}",
+    "toastNoSeat": "لا توجد طاولة مخصّصة"
   },
   "Pro": {
     "onboardingTitle": "أنشئ منظّمتك",
@@ -4304,6 +4309,19 @@
       "footer": "إشعار تلقائي مرتبط بالتحقق من Meta WhatsApp Business.",
       "textTemplate": "القالب: {templateName}",
       "textReason": "السبب: {reason}"
+    },
+    "seatPass": {
+      "subject": "مقعدك على الطاولة — زفاف {coupleNames}",
+      "preheader": "طاولتك ومقعدك في زفاف {coupleNames}.",
+      "intro": "مخطط الطاولات لزفاف {coupleNames} بتاريخ {eventDate} جاهز. هذا هو مكانك:",
+      "introVenue": "مخطط الطاولات لزفاف {coupleNames} بتاريخ {eventDate} في {venue} جاهز. هذا هو مكانك:",
+      "memberSeat": "{name} — {table}، المقعد {seat}",
+      "memberTable": "{name} — {table}",
+      "memberUnplaced": "{name} — المقعد قيد التأكيد",
+      "callToAction": "افتح بطاقتك للاطلاع على مخطط القاعة ورمز الدخول:",
+      "ctaLabel": "عرض مقعدي",
+      "closing": "إلى اللقاء قريباً!",
+      "footer": "تصلك هذه الرسالة لأنك مدعو إلى هذا الزفاف."
     }
   },
   "Metadata": {
@@ -4401,7 +4419,41 @@
     "print": "طباعة",
     "shapeToggle": "تغيير الشكل (دائري/مستطيل)",
     "clickToUnassign": "انقر للإزالة من الطاولة",
-    "guestOf": "ضيف {host}"
+    "guestOf": "ضيف {host}",
+    "seatColumnLabel": "المقعد",
+    "seatOf": "المقعد {n}",
+    "seatNone": "بدون رقم",
+    "autoNumber": "ترقيم المقاعد",
+    "autoNumberDone": "{count, plural, =0 {كل المقاعد كانت مرقّمة بالفعل} =1 {تم ترقيم مقعد واحد} other {تم ترقيم # مقاعد}}",
+    "renumber": "إعادة ترقيم الكل",
+    "renumberConfirm": "إعادة ترقيم كل المقاعد بدءاً من 1؟ ستُستبدل الأرقام المعيَّنة يدوياً.",
+    "seatConflictBadge": "مقعد مكرّر",
+    "seatConflictWarning": "{count, plural, =1 {رقم مقعد مكرّر واحد يجب تصحيحه} other {# أرقام مقاعد مكرّرة يجب تصحيحها}}",
+    "unnumberedWarning": "{count, plural, =1 {شخص واحد بدون رقم مقعد} other {# أشخاص بدون رقم مقعد}}",
+    "publishTitle": "نشر المخطط للمدعوين",
+    "publishHint": "ما دام المخطط غير منشور، لا يمكن لأي مدعو رؤية مقعده حتى مع رابطه. انشره عندما تكون جاهزاً.",
+    "publishCta": "نشر المخطط",
+    "unpublishCta": "إلغاء النشر",
+    "publishedBadge": "منشور",
+    "draftBadge": "مسودة",
+    "publishedAt": "نُشر في {date}",
+    "numberingTitle": "ما يراه المدعو",
+    "numberingSeat": "الطاولة + رقم المقعد",
+    "numberingTable": "الطاولة فقط",
+    "showRoomPlan": "إرفاق مخطط القاعة",
+    "noteLabel": "كلمة لمدعويك (اختياري)",
+    "notePlaceholder": "مثال: يُقدَّم العشاء في الساعة 20:00، يرجى الجلوس ابتداءً من 19:45.",
+    "notifyTitle": "إرسال المقاعد",
+    "notifyHint": "يتلقى كل مدعو رابطه الشخصي عبر القناة المستخدمة لدعوته (واتساب أو رسالة نصية أو بريد إلكتروني).",
+    "notifyCta": "{count, plural, =0 {تم إبلاغ الجميع} =1 {إرسال إلى مدعو واحد} other {إرسال إلى # مدعوين}}",
+    "notifyForce": "إعادة الإرسال للجميع",
+    "notifyForceConfirm": "إعادة إرسال البطاقة إلى كل المدعوين المُجلَسين، بمن فيهم من تم إبلاغهم؟",
+    "notifyDone": "{sent, plural, =0 {لم يتم أي إرسال} =1 {تم إرسال بطاقة واحدة} other {تم إرسال # بطاقات}}",
+    "notifyFailed": "{count, plural, =1 {فشل إرسال واحد} other {فشل # إرسالات}}",
+    "notifySkipped": "{count, plural, =1 {مدعو واحد بلا قناة تواصل} other {# مدعوين بلا قناة تواصل}}",
+    "notifyNotPublished": "انشر المخطط قبل إرسال المقاعد.",
+    "notifiedCount": "{notified} / {total} مدعوين تم إبلاغهم",
+    "previewLink": "معاينة بطاقة المدعو"
   },
   "Marketing": {
     "guide": {
@@ -5617,5 +5669,68 @@
     "codeLabel": "الرمز للمشاركة",
     "codeHint": "يُدخل عند الدفع. الخصم نفسه والعمولة نفسها — عملي لقصصك ومنشوراتك.",
     "termsLink": "قراءة شروط برنامج الشركاء"
+  },
+  "SeatPass": {
+    "summary": {
+      "seatOne": "المقعد {seat}",
+      "seatMany": "المقاعد {seats}",
+      "join": " و "
+    },
+    "sms": {
+      "body": "{name}، مقعدك في حفل زفاف {couple}: {seat}.",
+      "optOut": "أرسل STOP لإلغاء الاشتراك."
+    },
+    "metaTitle": "مقعدك",
+    "eyebrow": "مخطط الطاولات",
+    "title": "مقعدك",
+    "greeting": "مرحباً {name}",
+    "tableLabel": "الطاولة",
+    "seatLabel": "المقعد",
+    "seatFree": "الجلوس حر على هذه الطاولة",
+    "partyTitle": "رفقتك على الطاولة",
+    "youBadge": "أنت",
+    "noteTitle": "كلمة من العروسين",
+    "roomTitle": "مخطط القاعة",
+    "roomHint": "طاولتك مميّزة. المخطط موجّه انطلاقاً من المدخل.",
+    "roomYourTable": "طاولتك",
+    "roomOtherTable": "طاولات أخرى",
+    "roomSeatHint": "كرسيك معلَّم بنقطة ذهبية.",
+    "roomDimensions": "{width} × {length} م",
+    "qrTitle": "رمز الدخول الخاص بك",
+    "qrHint": "اعرض هذا الرمز عند المدخل: يؤكد وصولك ويعرض مقعدك.",
+    "qrCodeLabel": "الرمز",
+    "qrAlt": "رمز QR لدخول {name}",
+    "checkedInTitle": "تم تأكيد الوصول مسبقاً",
+    "checkedInAt": "تم التسجيل في {time}",
+    "backToInvitation": "العودة إلى الدعوة",
+    "addToCalendar": "عرض الدعوة",
+    "unpublishedTitle": "مخطط الطاولات ليس جاهزاً بعد",
+    "unpublishedBody": "العروسان بصدد إنهاء توزيع المقاعد. سيظهر مقعدك هنا فور اعتماده — سيبقى هذا الرابط صالحاً.",
+    "notAttendingTitle": "يرجى تأكيد حضورك أولاً",
+    "notAttendingBody": "أجب على الدعوة لتصلك مكانك على الطاولة.",
+    "notAttendingCta": "الرد على الدعوة",
+    "unplacedTitle": "مقعدك في الطريق",
+    "unplacedBody": "لم تُخصَّص طاولتك بعد. عد لاحقاً — سيبقى هذا الرابط صالحاً.",
+    "elements": {
+      "dancefloor": "حلبة الرقص",
+      "stage": "المسرح",
+      "dj": "دي جي",
+      "bar": "البار",
+      "buffet": "البوفيه",
+      "cake": "الكعكة",
+      "photobooth": "ركن الصور",
+      "gifts": "الهدايا",
+      "guestbook": "دفتر التهاني",
+      "entrance": "المدخل",
+      "arch": "القوس",
+      "plant": "نباتات"
+    },
+    "floors": {
+      "parquet": "باركيه",
+      "marble": "رخام",
+      "carpet": "سجاد",
+      "grass": "عشب",
+      "concrete": "خرسانة"
+    }
   }
 }

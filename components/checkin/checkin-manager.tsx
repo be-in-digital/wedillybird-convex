@@ -31,6 +31,9 @@ interface Toast {
   guestId?: string;
   plusOnesAllowed: number;
   timestamp: number;
+  /** Placement affiché sous le nom : « Table des Pivoines · place 4 ». */
+  tableName?: string | null;
+  seatNumber?: number | null;
 }
 
 interface GuestForCheckIn {
@@ -41,6 +44,8 @@ interface GuestForCheckIn {
   rsvpStatus: 'pending' | 'attending' | 'declined' | 'maybe';
   qrCodeToken: string;
   checkedInAt?: number;
+  tableName?: string | null;
+  seatNumber?: number | null;
 }
 
 interface Props {
@@ -157,6 +162,8 @@ export function CheckInManager({ eventId, initialGuests }: Props) {
           guestId: result.guest._id,
           plusOnesAllowed: result.guest.plusOnesAllowed,
           timestamp: result.checkedInAt,
+          tableName: result.guest.tableName,
+          seatNumber: result.guest.seatNumber,
         };
         pushToast(toast);
         void markCachedCheckedIn(eventId, token, result.checkedInAt);
@@ -201,6 +208,8 @@ export function CheckInManager({ eventId, initialGuests }: Props) {
         guestName: cached.fullName,
         plusOnesAllowed: cached.plusOnesAllowed,
         timestamp: scannedAt,
+        tableName: cached.tableName,
+        seatNumber: cached.seatNumber,
       });
     },
     [eventId, pushToast, refreshQueueCount, t],
@@ -335,6 +344,20 @@ export function CheckInManager({ eventId, initialGuests }: Props) {
                   {toast.status === 'error' && t('toastError')}
                   {toast.plusOnesAllowed > 0 ? ` · +${toast.plusOnesAllowed}` : ''}
                 </span>
+                {toast.status === 'success' ||
+                toast.status === 'already' ||
+                toast.status === 'offline' ? (
+                  <span
+                    className="font-mono text-xs text-[color:var(--color-ink-700)]"
+                    data-testid="toast-seat"
+                  >
+                    {toast.tableName
+                      ? toast.seatNumber != null
+                        ? t('toastSeat', { table: toast.tableName, seat: toast.seatNumber })
+                        : t('toastTable', { table: toast.tableName })
+                      : t('toastNoSeat')}
+                  </span>
+                ) : null}
               </div>
               {undoable ? (
                 <Button

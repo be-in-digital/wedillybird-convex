@@ -433,6 +433,30 @@ export default defineSchema({
         ),
       }),
     ),
+    /**
+     * Publication du plan de placement côté invité (feature `seatingPlan`).
+     *
+     * Tant que `published !== true`, la query publique `getSeatPassByToken`
+     * renvoie `null` : un plan en cours d'édition n'est JAMAIS visible d'un
+     * invité, même en connaissant son token. L'organisateur (couple ou agence)
+     * bascule ce flag explicitement — c'est la « validation » avant envoi.
+     *
+     * - `numbering` : `'seat'` = chaque personne a un numéro de chaise affiché ;
+     *   `'table'` = on ne communique que le nom de la table. Défaut `'seat'`.
+     * - `showRoomPlan` : joindre le plan de salle (vue du dessus) au pass.
+     *   Défaut `true`, ignoré s'il n'y a pas de `coupleRooms` pour l'event.
+     * - `note` : mot libre de l'organisateur affiché sur le pass.
+     */
+    seatingConfig: v.optional(
+      v.object({
+        published: v.boolean(),
+        publishedAt: v.optional(v.number()),
+        publishedBy: v.optional(v.id('users')),
+        numbering: v.optional(v.union(v.literal('table'), v.literal('seat'))),
+        showRoomPlan: v.optional(v.boolean()),
+        note: v.optional(v.string()),
+      }),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -501,6 +525,25 @@ export default defineSchema({
      * occupent cette table (capacité comptée côté query getSeatingPlan).
      */
     tableId: v.optional(v.id('tables')),
+    /**
+     * Numéro de place (chaise) de l'invité **principal** à sa table, 1-basé et
+     * <= `tables.capacity`. `undefined` = placé à la table sans chaise
+     * nominative (mode « table seule »). Les accompagnants portent le leur sur
+     * `tableAssignments.seatNumber` — même découpage que `tableId`.
+     */
+    seatNumber: v.optional(v.number()),
+    /**
+     * Dernière modification du placement de la **tablée** (invité principal OU
+     * un de ses accompagnants : table ou numéro de place). Comparé à
+     * `seatNotifiedAt` pour savoir qui doit être (re)notifié — un invité déjà
+     * prévenu dont la place a bougé depuis réapparaît dans la file d'envoi.
+     */
+    seatAssignedAt: v.optional(v.number()),
+    /** Dernier envoi réussi du « pass placement » à cet invité. */
+    seatNotifiedAt: v.optional(v.number()),
+    seatNotifiedChannel: v.optional(
+      v.union(v.literal('whatsapp'), v.literal('email'), v.literal('sms')),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -598,6 +641,8 @@ export default defineSchema({
     guestId: v.id('guests'),
     memberIndex: v.number(), // >= 1 (les accompagnants ; le principal est sur guests.tableId)
     tableId: v.id('tables'),
+    /** Numéro de chaise à la table, 1-basé (cf. `guests.seatNumber`). */
+    seatNumber: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

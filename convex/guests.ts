@@ -11,6 +11,8 @@ import type { Doc, Id } from './_generated/dataModel';
 import { generateQrToken } from './lib/qrToken';
 import { assertEventAccess } from './lib/eventAuth';
 import { musicForClient, photoForClient } from './lib/invitationDesign';
+import { eventHasFeature } from './lib/entitlements';
+import { resolveSeatingPublication } from './lib/seatPass';
 
 const QR_MAX_ATTEMPTS = 6;
 
@@ -216,6 +218,14 @@ export const getByToken = query({
         // pour masquer le bouton « Find my photos » quand l'event n'a pas
         // activé la feature.
         faceSearchEnabled: event.faceSearchEnabled === true,
+        /**
+         * Plan de table publié ET inclus dans le forfait → la page invitation
+         * affiche le lien « voir ma place ». Faux tant que l'organisateur n'a
+         * pas validé son plan (cf. `seating.setSeatingPublication`).
+         */
+        seatingPublished:
+          eventHasFeature(event, 'seatingPlan') &&
+          resolveSeatingPublication(event.seatingConfig).published,
       },
     };
   },
@@ -256,6 +266,10 @@ export const listForCheckIn = query({
       .query('guests')
       .withIndex('by_event', (q) => q.eq('eventId', eventId))
       .collect();
+    // Le placement voyage avec la liste : le check-in fonctionne hors ligne
+    // (cache IndexedDB) et l'hôtesse doit pouvoir orienter l'invité même quand
+    // la salle n'a plus de réseau.
+    const tableNames = await tableNameMap(ctx, eventId);
     return rows.map((g) => ({
       _id: g._id,
       fullName: g.fullName,
@@ -264,9 +278,23 @@ export const listForCheckIn = query({
       rsvpStatus: g.rsvpStatus,
       qrCodeToken: g.qrCodeToken,
       checkedInAt: g.checkedInAt,
+      tableName: g.tableId ? (tableNames.get(g.tableId) ?? null) : null,
+      seatNumber: g.tableId ? (g.seatNumber ?? null) : null,
     }));
   },
 });
+
+/** `tables._id` → nom, pour joindre le placement sans N requêtes. */
+async function tableNameMap(
+  ctx: QueryCtx | MutationCtx,
+  eventId: Id<'events'>,
+): Promise<Map<string, string>> {
+  const tables = await ctx.db
+    .query('tables')
+    .withIndex('by_event', (q) => q.eq('eventId', eventId))
+    .collect();
+  return new Map(tables.map((t) => [t._id as string, t.name]));
+}
 
 export const checkInByToken = mutation({
   args: {
@@ -295,6 +323,10 @@ export const checkInByToken = mutation({
       });
     }
 
+    // Placement renvoyé au scan : l'hôtesse lit « Table des Pivoines · place 4 »
+    // sur son écran et oriente l'invité sans chercher dans une liste papier.
+    const table = guest.tableId ? await ctx.db.get(guest.tableId) : null;
+
     return {
       ok: true as const,
       alreadyCheckedIn: Boolean(alreadyCheckedInAt),
@@ -305,6 +337,8 @@ export const checkInByToken = mutation({
         category: guest.category,
         plusOnesAllowed: guest.plusOnesAllowed,
         rsvpStatus: guest.rsvpStatus,
+        tableName: table ? table.name : null,
+        seatNumber: table ? (guest.seatNumber ?? null) : null,
       },
     };
   },

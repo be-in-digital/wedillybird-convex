@@ -10,8 +10,10 @@ const KNOWN_ERRORS = [
   'FEATURE_NOT_IN_PLAN',
   'FORBIDDEN',
   'EVENT_NOT_FOUND',
+  'EVENT_NOT_FOUND_OR_FORBIDDEN',
   'TABLE_NOT_FOUND',
   'GUEST_NOT_FOUND',
+  'SEATING_NOT_PUBLISHED',
 ] as const;
 
 function mapError(err: unknown): { ok: false; error: string } {
@@ -147,4 +149,130 @@ export async function assignSeatAction(
   } catch (err) {
     return mapError(err);
   }
+}
+
+/**
+ * Attribue (ou retire, `seatNumber: null`) le numéro de chaise d'une personne.
+ *
+ * Renvoie le plan rafraîchi : poser quelqu'un sur une chaise occupée échange
+ * les deux personnes côté Convex, donc l'état local du board ne peut pas être
+ * dérivé du seul appel — on repart de la vérité serveur.
+ */
+export async function setSeatNumberAction(
+  eventId: string,
+  guestId: string,
+  memberIndex: number,
+  tableId: string,
+  seatNumber: number | null,
+): Promise<{ ok: true; plan: SeatingPlan } | { ok: false; error: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: 'UNAUTHENTICATED' };
+  try {
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.assignSeat, {
+      eventId,
+      guestId,
+      memberIndex,
+      tableId,
+      seatNumber,
+      requesterId: session.userId,
+    });
+    return { ok: true, plan: await fetchPlan(eventId, session.userId) };
+  } catch (err) {
+    return mapError(err);
+  }
+}
+
+/**
+ * Numérote les chaises. `mode: 'fill'` comble les trous sans écraser les
+ * numéros posés à la main ; `'renumber'` repart de 1.
+ */
+export async function autoNumberSeatsAction(
+  eventId: string,
+  mode?: 'fill' | 'renumber',
+): Promise<{ ok: true; numbered: number; plan: SeatingPlan } | { ok: false; error: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: 'UNAUTHENTICATED' };
+  try {
+    const convex = getConvexServerClient();
+    const res = await convex.mutation(convexApi.autoNumberSeats, {
+      eventId,
+      requesterId: session.userId,
+      ...(mode ? { mode } : {}),
+    });
+    return { ok: true, numbered: res.numbered, plan: await fetchPlan(eventId, session.userId) };
+  } catch (err) {
+    return mapError(err);
+  }
+}
+
+/**
+ * Publie / dépublie le plan pour les invités et enregistre les réglages
+ * d'affichage. C'est la **validation** exigée avant tout envoi : tant qu'elle
+ * n'est pas faite, `getSeatPassByToken` ne rend rien.
+ */
+export async function setSeatingPublicationAction(
+  eventId: string,
+  input: {
+    published: boolean;
+    numbering?: 'table' | 'seat';
+    showRoomPlan?: boolean;
+    note?: string;
+  },
+): Promise<{ ok: true; plan: SeatingPlan } | { ok: false; error: string }> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: 'UNAUTHENTICATED' };
+  try {
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.setSeatingPublication, {
+      eventId,
+      requesterId: session.userId,
+      published: input.published,
+      ...(input.numbering ? { numbering: input.numbering } : {}),
+      ...(input.showRoomPlan !== undefined ? { showRoomPlan: input.showRoomPlan } : {}),
+      ...(input.note !== undefined ? { note: input.note } : {}),
+    });
+    return { ok: true, plan: await fetchPlan(eventId, session.userId) };
+  } catch (err) {
+    return mapError(err);
+  }
+}
+
+/**
+ * Envoie les pass placement aux invités concernés, sur le canal de leur
+ * invitation. Idempotent côté Convex : seuls les invités jamais prévenus (ou
+ * déplacés depuis) sont ciblés, sauf `force`.
+ */
+export async function broadcastSeatPassesAction(
+  eventId: string,
+  force?: boolean,
+): Promise<
+  | { ok: true; sent: number; failed: number; skipped: number; total: number; plan: SeatingPlan }
+  | { ok: false; error: string }
+> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: 'UNAUTHENTICATED' };
+  try {
+    const convex = getConvexServerClient();
+    const res = await convex.action(convexApi.broadcastSeatPasses, {
+      eventId,
+      requesterId: session.userId,
+      ...(force ? { force: true } : {}),
+    });
+    return {
+      ok: true,
+      sent: res.sent,
+      failed: res.failed,
+      skipped: res.skipped,
+      total: res.total,
+      plan: await fetchPlan(eventId, session.userId),
+    };
+  } catch (err) {
+    return mapError(err);
+  }
+}
+
+async function fetchPlan(eventId: string, requesterId: string): Promise<SeatingPlan> {
+  const convex = getConvexServerClient();
+  return (await convex.query(convexApi.getSeatingPlan, { eventId, requesterId })) as SeatingPlan;
 }

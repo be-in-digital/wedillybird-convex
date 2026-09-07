@@ -35,6 +35,7 @@ import {
   autoAssignGuestsAction,
   createTableAction,
   deleteTableAction,
+  setSeatNumberAction,
   updateTableAction,
 } from '@/app/[locale]/(app)/events/[eventId]/seating/actions';
 import {
@@ -45,9 +46,13 @@ import {
   withOccupancy,
   type BoardState,
   type SeatGuest,
+  type SeatingNotifications,
+  type SeatingPlan,
+  type SeatingPublication,
   type SeatTable,
 } from '@/lib/seating/board';
 import { SeatingCanvas, TABLE_DRAG_PREFIX } from '@/components/seating/seating-canvas';
+import { SeatingPublishPanel } from '@/components/seating/seating-publish-panel';
 
 const DEFAULT_CAPACITY = 8;
 const POS_MAX = 4000;
@@ -58,23 +63,16 @@ function clampPos(n: number): number {
 
 interface Props {
   eventId: string;
-  initial: {
-    tables: SeatTable[];
-    unassigned: SeatGuest[];
-    stats: {
-      tableCount: number;
-      totalCapacity: number;
-      seatedSeats: number;
-      unassignedSeats: number;
-      attendingParties: number;
-    };
-  };
+  initial: SeatingPlan;
 }
 
 export function SeatingBoard({ eventId, initial }: Props) {
   const t = useTranslations('Seating');
   const [tables, setTables] = useState<SeatTable[]>(initial.tables);
   const [unassigned, setUnassigned] = useState<SeatGuest[]>(initial.unassigned);
+  const [publication, setPublication] = useState<SeatingPublication>(initial.publication);
+  const [notifications, setNotifications] = useState<SeatingNotifications>(initial.notifications);
+  const [planStats, setPlanStats] = useState(initial.stats);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -155,17 +153,43 @@ export function SeatingBoard({ eventId, initial }: Props) {
     });
   }
 
+  /** Remplace l'état local par la vérité serveur (opérations en masse). */
+  function applyPlan(plan: SeatingPlan) {
+    setTables(plan.tables);
+    setUnassigned(plan.unassigned);
+    setPublication(plan.publication);
+    setNotifications(plan.notifications);
+    setPlanStats(plan.stats);
+  }
+
   async function handleAutoPlace() {
     setBusy(true);
     setError('');
     const res = await autoAssignGuestsAction(eventId);
     setBusy(false);
     if (res.ok) {
-      setTables(res.plan.tables);
-      setUnassigned(res.plan.unassigned);
+      applyPlan(res.plan);
     } else {
       setError(t('error'));
     }
+  }
+
+  /**
+   * Numéro de chaise saisi à la main. On repart systématiquement du plan
+   * serveur : poser quelqu'un sur une chaise occupée échange les deux
+   * personnes, ce qu'un patch local ne saurait reproduire fidèlement.
+   */
+  async function handleSeatNumberChange(unit: SeatGuest, tableId: string, raw: string) {
+    const trimmed = raw.trim();
+    const parsed = trimmed === '' ? null : Number.parseInt(trimmed, 10);
+    const next = parsed !== null && Number.isFinite(parsed) ? parsed : null;
+    if (next === unit.seatNumber) return;
+    setBusy(true);
+    setError('');
+    const res = await setSeatNumberAction(eventId, unit.guestId, unit.memberIndex, tableId, next);
+    setBusy(false);
+    if (res.ok) applyPlan(res.plan);
+    else setError(t('error'));
   }
 
   function handleToggleShape(tableId: string, next: 'round' | 'rect') {
@@ -208,6 +232,8 @@ export function SeatingBoard({ eventId, initial }: Props) {
           assigned: [],
           occupancy: 0,
           overCapacity: false,
+          seatConflicts: [],
+          unnumbered: 0,
         }),
       ]);
     } else {
@@ -339,6 +365,19 @@ export function SeatingBoard({ eventId, initial }: Props) {
           </div>
         ) : null}
 
+        {hasAttending ? (
+          <SeatingPublishPanel
+            eventId={eventId}
+            publication={publication}
+            notifications={notifications}
+            stats={{
+              seatConflicts: planStats.seatConflicts,
+              unnumbered: planStats.unnumbered,
+            }}
+            onPlanRefreshed={applyPlan}
+          />
+        ) : null}
+
         {!hasAttending ? (
           <p className="rounded-2xl border border-dashed border-[color:var(--color-border)] px-4 py-10 text-center text-sm text-[color:var(--color-ink-500)]">
             {t('noAttending')}
@@ -380,6 +419,10 @@ export function SeatingBoard({ eventId, initial }: Props) {
                     activeId={activeId}
                     onDelete={() => handleDeleteTable(table._id)}
                     onCapacityChange={(raw) => handleCapacityChange(table._id, raw)}
+                    onSeatNumberChange={(unit, raw) =>
+                      void handleSeatNumberChange(unit, table._id, raw)
+                    }
+                    numbering={publication.numbering}
                     labels={{
                       occupancy: t('occupancy', {
                         occupied: table.occupancy,
@@ -390,6 +433,7 @@ export function SeatingBoard({ eventId, initial }: Props) {
                       capacity: t('capacityLabel'),
                       empty: t('tableEmpty'),
                       seat: t('seatLabel'),
+                      seatNumber: t('seatColumnLabel'),
                     }}
                   />
                 ))}
@@ -458,12 +502,16 @@ function TableCard({
   activeId,
   onDelete,
   onCapacityChange,
+  onSeatNumberChange,
+  numbering,
   labels,
 }: {
   table: SeatTable;
   activeId: string | null;
   onDelete: () => void;
   onCapacityChange: (raw: string) => void;
+  onSeatNumberChange: (unit: SeatGuest, raw: string) => void;
+  numbering: 'table' | 'seat';
   labels: {
     occupancy: string;
     over: string;
@@ -471,8 +519,12 @@ function TableCard({
     capacity: string;
     empty: string;
     seat: string;
+    seatNumber: string;
   };
 }) {
+  // Chaises attribuées deux fois : signalées sur la puce concernée, pas
+  // seulement dans le compteur global du panneau de publication.
+  const conflicting = new Set(table.seatConflicts.flatMap((c) => c.unitIds));
   const { setNodeRef, isOver } = useDroppable({ id: table._id });
   return (
     <section
@@ -542,7 +594,18 @@ function TableCard({
           </p>
         ) : (
           table.assigned.map((g) => (
-            <GuestChip key={g._id} guest={g} dimmed={activeId === g._id} seatLabel={labels.seat} />
+            <GuestChip
+              key={g._id}
+              guest={g}
+              dimmed={activeId === g._id}
+              seatLabel={labels.seat}
+              seatNumberLabel={labels.seatNumber}
+              capacity={table.capacity}
+              conflicting={conflicting.has(g._id)}
+              onSeatNumberChange={
+                numbering === 'seat' ? (raw) => onSeatNumberChange(g, raw) : undefined
+              }
+            />
           ))
         )}
       </div>
@@ -555,11 +618,20 @@ function GuestChip({
   dimmed,
   overlay,
   seatLabel,
+  seatNumberLabel,
+  capacity,
+  conflicting,
+  onSeatNumberChange,
 }: {
   guest: SeatGuest;
   dimmed?: boolean;
   overlay?: boolean;
   seatLabel: string;
+  /** Fournis uniquement pour une puce posée à une table. */
+  seatNumberLabel?: string;
+  capacity?: number;
+  conflicting?: boolean;
+  onSeatNumberChange?: (raw: string) => void;
 }) {
   const t = useTranslations('Seating');
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -596,6 +668,27 @@ function GuestChip({
         <span className="shrink-0 rounded-full bg-[color:var(--color-surface)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--color-ink-500)]">
           {seatLabel} {guest.seats}
         </span>
+      ) : null}
+      {onSeatNumberChange ? (
+        <input
+          type="number"
+          min={1}
+          max={capacity}
+          defaultValue={guest.seatNumber ?? ''}
+          aria-label={seatNumberLabel}
+          data-testid="seat-number-input"
+          data-unit-id={guest._id}
+          // Sans ça, dnd-kit capte le pointeur et le champ ne prend jamais le
+          // focus : la puce entière est une poignée de drag.
+          onPointerDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          onBlur={(e) => onSeatNumberChange(e.target.value)}
+          className={`w-10 shrink-0 rounded-md border bg-[color:var(--color-surface)] px-1 py-0.5 text-center font-mono text-xs ${
+            conflicting
+              ? 'border-[color:var(--color-danger)] text-[color:var(--color-danger)]'
+              : 'border-[color:var(--color-border)]'
+          }`}
+        />
       ) : null}
     </div>
   );
