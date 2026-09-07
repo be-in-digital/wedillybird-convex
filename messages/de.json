@@ -241,6 +241,16 @@
     "canvas": "Screenshot",
     "video": "Video"
   },
+  "CeremonySchedule": {
+    "section": "Ablauf des Tages",
+    "hint": "Diese Zeiten erscheinen auf der Einladung. Leer lassen, um nichts anzuzeigen.",
+    "timeLabel": "Uhrzeit",
+    "timePlaceholder": "15:00",
+    "titleLabel": "Programmpunkt",
+    "titlePlaceholder": "Trauung",
+    "add": "Programmpunkt hinzufügen",
+    "remove": "Diesen Programmpunkt entfernen"
+  },
   "Common": {
     "confirm": "Bestätigen",
     "appName": "Wedillybird",
@@ -4022,6 +4032,38 @@
       "reconciliation": "Der Stripe-Webhook ist verzögert. Die Zahlung wurde empfangen, das Upgrade wird gleich angewendet. Aktualisiere die Seite.",
       "network": "Netzwerkfehler, erneut versuchen",
       "unknown": "Ein Fehler ist aufgetreten. Bitte erneut versuchen."
+    },
+    "upsell": {
+      "eyebrow": "NACH DER HOCHZEIT",
+      "title": "Behalten Sie Ihre Fotos in hoher Auflösung",
+      "subtitle": "Ihre Galerie bleibt fünf Jahre online, und Sie laden alles in Originalqualität herunter.",
+      "benefitRetention": "Galerie fünf Jahre statt sechs Monate verfügbar",
+      "benefitHd": "Alle Fotos in hoher Auflösung herunterladen",
+      "cta": "HD-Archiv sichern",
+      "redirecting": "Weiterleitung…",
+      "purchased": "HD-Archiv aktiv",
+      "downloadHd": "Fotos in HD herunterladen",
+      "successTitle": "Ihre Fotos gehören Ihnen — für lange Zeit",
+      "successBody": "Das HD-Archiv ist aktiv. Ihre Galerie bleibt fünf Jahre online und Sie können alles in Originalqualität herunterladen.",
+      "processingTitle": "Zahlung wird bestätigt",
+      "processingBody": "Ihre Zahlung ist erfasst. Das Archiv wird gleich aktiviert — Sie können diese Seite schließen.",
+      "reconciliation": "Die Bestätigung dauert länger als erwartet. Ändert sich in einigen Minuten nichts, schreiben Sie uns an contact@wedillybird.com.",
+      "backToEvent": "Zurück zu meiner Hochzeit",
+      "photoBook": {
+        "cta": "Fotobuch bestellen",
+        "dialogTitle": "Ihr Fotobuch",
+        "dialogSubtitle": "Geben Sie die Lieferadresse an. Wir drucken und versenden innerhalb von fünfzehn Tagen.",
+        "recipientName": "Name der Empfängerin / des Empfängers",
+        "addressLine1": "Adresse",
+        "addressLine2": "Adresszusatz",
+        "postalCode": "Postleitzahl",
+        "city": "Ort",
+        "country": "Land",
+        "notes": "Lieferhinweise (optional)",
+        "submit": "Bestellung bestätigen",
+        "submitting": "Wird gesendet…",
+        "cancel": "Abbrechen"
+      }
     }
   },
   "Invoice": {
@@ -5045,6 +5087,14 @@
           "title": "Mein Paket",
           "desc": "Ihr Paket, Ihre Rechnungen und Optionen."
         }
+      },
+      "referral": {
+        "title": "Ein Paar empfehlen",
+        "desc": "Teilen Sie Ihren Link: Sie erhalten ein Guthaben bei deren erstem Kauf.",
+        "credit": "{amount} Guthaben verfügbar",
+        "copy": "Link kopieren",
+        "copied": "Kopiert",
+        "linkAria": "Ihr Empfehlungslink"
       }
     },
     "dashboard": {
@@ -5355,6 +5405,15 @@
           "short": "Dienstleister"
         }
       }
+    },
+    "nav": {
+      "home": "Start",
+      "dashboard": "Meine Hochzeit",
+      "planning": "Planung",
+      "vendors": "Dienstleister",
+      "budget": "Budget",
+      "seating": "Sitzplan",
+      "forfait": "Paket"
     }
   },
   "CouplePortal": {

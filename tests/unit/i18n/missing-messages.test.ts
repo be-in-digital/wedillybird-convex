@@ -21,19 +21,15 @@ const MESSAGES_DIR = path.join(ROOT, 'messages');
 const SHELL = path.join(ROOT, 'components/admin/admin-shell.tsx');
 
 /**
- * Dette connue au 7 septembre 2026 : namespaces demandés par du code existant
- * mais absents des messages. Ces écrans affichent aujourd'hui des clés brutes.
- * La liste est là pour que la dette soit COMPTÉE plutôt qu'oubliée — et pour
- * qu'aucun NOUVEAU namespace ne puisse s'y ajouter en silence. Elle doit
- * rétrécir, jamais grandir.
+ * Dette résiduelle : namespaces demandés par du code existant mais encore
+ * absents des messages. **Vide au 7 septembre 2026** — les cinq entrées
+ * d'origine (horaires de cérémonie, navigation et parrainage de l'espace
+ * couple, upsell post-mariage et son livre photo) ont été comblées.
+ *
+ * Elle doit rétrécir, jamais grandir : y ajouter une entrée revient à décider
+ * qu'un écran montrera ses clés à l'utilisateur.
  */
-const KNOWN_MISSING = new Set([
-  'CeremonySchedule', // éditeur d'horaires de cérémonie (~55 clés)
-  'MonMariage.nav',
-  'MonMariage.home.referral', // carte de parrainage de l'espace couple
-  'Upgrade.upsell',
-  'Upgrade.upsell.photoBook',
-]);
+const KNOWN_MISSING = new Set<string>([]);
 
 function messagesFor(locale: string): Record<string, unknown> {
   return JSON.parse(fs.readFileSync(path.join(MESSAGES_DIR, `${locale}.json`), 'utf-8'));

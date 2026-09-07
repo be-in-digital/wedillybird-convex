@@ -241,6 +241,16 @@
     "canvas": "Screenshot",
     "video": "Video"
   },
+  "CeremonySchedule": {
+    "section": "Programma della giornata",
+    "hint": "Questi orari compaiono sull'invito. Lascia vuoto per non mostrare nulla.",
+    "timeLabel": "Ora",
+    "timePlaceholder": "15:00",
+    "titleLabel": "Momento",
+    "titlePlaceholder": "Cerimonia",
+    "add": "Aggiungi un momento",
+    "remove": "Rimuovi questo momento"
+  },
   "Common": {
     "confirm": "Conferma",
     "appName": "Wedillybird",
@@ -4022,6 +4032,38 @@
       "reconciliation": "Il webhook Stripe è in ritardo. Il pagamento è stato ricevuto ma l'upgrade verrà applicato a breve. Aggiorna la pagina.",
       "network": "Errore di rete, riprova",
       "unknown": "Si è verificato un errore. Riprova."
+    },
+    "upsell": {
+      "eyebrow": "DOPO IL MATRIMONIO",
+      "title": "Conserva le tue foto in alta definizione",
+      "subtitle": "La tua galleria resta online cinque anni e scarichi tutto in qualità originale.",
+      "benefitRetention": "Galleria conservata cinque anni invece di sei mesi",
+      "benefitHd": "Download di tutte le foto in alta definizione",
+      "cta": "Ottieni l'archivio HD",
+      "redirecting": "Reindirizzamento…",
+      "purchased": "Archivio HD attivo",
+      "downloadHd": "Scarica le foto in HD",
+      "successTitle": "Le tue foto sono tue, a lungo",
+      "successBody": "L'archivio in alta definizione è attivo. La tua galleria resta online cinque anni e puoi scaricare tutto in qualità originale.",
+      "processingTitle": "Conferma del pagamento in corso",
+      "processingBody": "Il pagamento è registrato. L'archivio si attiva tra poco — puoi chiudere questa pagina.",
+      "reconciliation": "La conferma sta richiedendo più tempo del previsto. Se non cambia nulla entro qualche minuto, scrivici a contact@wedillybird.com.",
+      "backToEvent": "Torna al mio matrimonio",
+      "photoBook": {
+        "cta": "Ordina l'album fotografico",
+        "dialogTitle": "Il tuo album fotografico",
+        "dialogSubtitle": "Indica l'indirizzo di consegna. Stampiamo e spediamo entro quindici giorni.",
+        "recipientName": "Nome del destinatario",
+        "addressLine1": "Indirizzo",
+        "addressLine2": "Informazioni aggiuntive",
+        "postalCode": "CAP",
+        "city": "Città",
+        "country": "Paese",
+        "notes": "Istruzioni per la consegna (facoltativo)",
+        "submit": "Conferma l'ordine",
+        "submitting": "Invio…",
+        "cancel": "Annulla"
+      }
     }
   },
   "Invoice": {
@@ -5045,6 +5087,14 @@
           "title": "Il mio piano",
           "desc": "Il vostro piano, le fatture e le opzioni."
         }
+      },
+      "referral": {
+        "title": "Invita una coppia",
+        "desc": "Condividi il tuo link: ricevi un credito al loro primo acquisto.",
+        "credit": "{amount} di credito disponibile",
+        "copy": "Copia il link",
+        "copied": "Copiato",
+        "linkAria": "Il tuo link di invito"
       }
     },
     "dashboard": {
@@ -5355,6 +5405,15 @@
           "short": "Fornitori"
         }
       }
+    },
+    "nav": {
+      "home": "Home",
+      "dashboard": "Il mio matrimonio",
+      "planning": "Programma",
+      "vendors": "Fornitori",
+      "budget": "Budget",
+      "seating": "Tavoli",
+      "forfait": "Piano"
     }
   },
   "CouplePortal": {
