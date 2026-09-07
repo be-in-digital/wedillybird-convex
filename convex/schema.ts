@@ -125,6 +125,32 @@ export default defineSchema({
      * à programmer dans un sprint dédié, cf. BACKLOG).
      */
     paygCredits: v.optional(v.number()),
+    /**
+     * Compte offert (partenariat, démo, geste commercial) — AUCUN abonnement
+     * Stripe derrière. Volontairement séparé de `subscription*`, qui reste le
+     * domaine exclusif du webhook Stripe : c'est cette séparation qui garantit
+     * qu'un cadeau ne sera jamais compté comme du revenu (le MRR se calcule sur
+     * `subscriptionStatus`, qu'un cadeau ne pose pas).
+     *
+     * `expiresAt` est ce qui fait que « six mois » veut dire six mois :
+     * `orgHasActiveAccess` le lit à chaque appel. Sans lui, un cadeau posé une
+     * fois ne s'éteindrait jamais, faute d'abonnement Stripe pour le clore.
+     *
+     * Le tier, lui, EST écrit sur `subscriptionTier` : `eventQuotaForTier`
+     * rend `null` (illimité) pour une organisation sans tier, donc un cadeau
+     * sans tier vaudrait des mariages sans plafond.
+     */
+    compedSubscription: v.optional(
+      v.object({
+        tier: v.union(v.literal('starter'), v.literal('business'), v.literal('agency')),
+        grantedBy: v.id('users'),
+        grantedAt: v.number(),
+        expiresAt: v.number(),
+        reason: v.optional(v.string()),
+        /** Affilié à l'origine du cadeau, quand il vient d'un lien partenaire. */
+        affiliateId: v.optional(v.id('affiliates')),
+      }),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -1136,6 +1162,7 @@ export default defineSchema({
       v.literal('template'),
       v.literal('newsletter'),
       v.literal('affiliate'),
+      v.literal('partner_invite'),
     ),
     targetId: v.string(),
     details: v.optional(v.string()),
@@ -1582,6 +1609,44 @@ export default defineSchema({
     .index('by_code', ['code'])
     .index('by_owner', ['ownerUserId'])
     .index('by_kind', ['kind']),
+
+  /**
+   * Liens d'invitation partenaire — un lien qui ouvre un compte agence offert.
+   *
+   * Le back-office pro est verrouillé tant que l'agence n'a pas d'abonnement :
+   * une partenaire qu'on recrute s'inscrirait, nommerait son agence, et se
+   * heurterait à un mur avant d'avoir rien vu. Ce lien lève ce mur, sans lui
+   * demander de carte bancaire ni même de choisir un forfait.
+   *
+   * **Usage unique et périssable, délibérément.** Un lien qui offre six mois
+   * les offre à quiconque l'ouvre : transféré ou publié dans la communauté du
+   * partenaire, il distribuerait des comptes agence. `consumedAt` le ferme
+   * après la première utilisation, `expiresAt` le périme s'il dort, et
+   * `revokedAt` permet de le couper à la main.
+   */
+  partnerInvites: defineTable({
+    /** Jeton opaque tiré de `crypto.getRandomValues` — jamais devinable. */
+    token: v.string(),
+    /** Affilié auquel le compte créé sera rattaché (`affiliates.ownerUserId`). */
+    affiliateId: v.id('affiliates'),
+    /** Destinataire attendu, pour mémoire et pour pré-remplir l'inscription. */
+    inviteeEmail: v.optional(v.string()),
+    inviteeName: v.optional(v.string()),
+    /** Forfait offert. Starter par défaut : de quoi tester, pas d'exploiter. */
+    grantTier: v.union(v.literal('starter'), v.literal('business'), v.literal('agency')),
+    /** Durée du cadeau, en mois calendaires. */
+    grantMonths: v.number(),
+    /** Échéance du LIEN — distincte de la durée du compte qu'il ouvre. */
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+    consumedByUserId: v.optional(v.id('users')),
+    consumedOrganizationId: v.optional(v.id('organizations')),
+    revokedAt: v.optional(v.number()),
+    createdBy: v.id('users'),
+    createdAt: v.number(),
+  })
+    .index('by_token', ['token'])
+    .index('by_affiliate', ['affiliateId']),
 
   /**
    * Ledger d'attribution : une ligne par vente attribuée à un affilié.

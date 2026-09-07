@@ -188,7 +188,31 @@ describe('computePlatformAnalytics — mix & valeur', () => {
   });
 
   it('mix des tiers pro (tous statuts)', () => {
-    expect(a.mix.proTierMix).toEqual({ starter: 2, business: 2, agency: 1 });
+    expect(a.mix.proTierMix).toEqual({ starter: 2, business: 2, agency: 1, comped: 0 });
+  });
+
+  it('un compte OFFERT ne se compte ni dans le mix ni dans le MRR', () => {
+    // Un cadeau porte forcément un `subscriptionTier` — sans lui son quota
+    // d'événements serait illimité — mais ce n'est pas un client. Le laisser
+    // dans le mix ferait lire un partenariat comme une vente, et un revenu
+    // fantôme dans le MRR est l'erreur qu'on ne voit jamais passer.
+    const base = fixture();
+    const withComp = computePlatformAnalytics(
+      {
+        ...base,
+        orgs: [
+          ...base.orgs,
+          {
+            subscriptionTier: 'starter',
+            compedSubscription: { expiresAt: NOW + 30 * 24 * 60 * 60 * 1000 },
+          },
+        ],
+      },
+      NOW,
+    );
+    expect(withComp.mix.proTierMix.starter).toBe(a.mix.proTierMix.starter);
+    expect(withComp.mix.proTierMix.comped).toBe(1);
+    expect(withComp.subscriptions.mrrByTierMinor).toEqual(a.subscriptions.mrrByTierMinor);
   });
 
   it('panier moyen et invités moyens', () => {
