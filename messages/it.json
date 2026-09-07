@@ -1248,7 +1248,10 @@
         "disabled": "La ricerca per volto non è attiva per questo matrimonio."
       },
       "cancel": "Annulla"
-    }
+    },
+    "orgExpiredTitle": "Galleria chiusa",
+    "orgExpiredHint": "La copertura della tua agenzia non è più attiva. Riprendi l'abbonamento per riaprire le gallerie dei tuoi matrimoni.",
+    "orgExpiredCta": "Vai alla fatturazione"
   },
   "Checkin": {
     "title": "Check-in degli invitati",

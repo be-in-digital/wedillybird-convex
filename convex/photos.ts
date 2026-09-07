@@ -10,7 +10,7 @@ import {
 } from './_generated/server';
 import { internal } from './_generated/api';
 import type { Doc, Id } from './_generated/dataModel';
-import { eventHasFeature } from './lib/entitlements';
+import { eventHasFeature, galleryAccessFor } from './lib/entitlements';
 import {
   FACE_SEARCH_MAX_HITS,
   FACE_SEARCH_RATE_SCOPE,
@@ -100,17 +100,23 @@ function assertUploadShape(sizeBytes: number, contentType: string): void {
 }
 
 /**
- * Gate uploads when the event's gallery retention window has expired.
- * `galleryExpiresAt` is set on payment success and pushed by the post-event
- * upsell. If unset, the event hasn't been paid yet — also blocked.
+ * Gate uploads when the event's gallery is not open.
+ *
+ * Deux régimes (cf. `galleryAccessFor`) : un mariage de particulier ouvre sa
+ * galerie à l'achat (`galleryExpiresAt`), un mariage d'agence tant que
+ * l'organisation est couverte. Sans la seconde branche, **aucune** agence ne
+ * pouvait déposer la moindre photo : `galleryExpiresAt` n'est jamais écrit
+ * pour un event d'organisation, donc chaque upload partait en
+ * `GALLERY_NOT_PURCHASED`.
  */
-function assertGalleryOpen(event: Doc<'events'>): void {
-  if (event.galleryExpiresAt === undefined) {
-    throw new Error('GALLERY_NOT_PURCHASED');
-  }
-  if (Date.now() > event.galleryExpiresAt) {
-    throw new Error('GALLERY_EXPIRED');
-  }
+async function assertGalleryOpen(
+  ctx: { db: { get: (id: Id<'organizations'>) => Promise<Doc<'organizations'> | null> } },
+  event: Doc<'events'>,
+): Promise<void> {
+  const org = event.organizationId ? await ctx.db.get(event.organizationId) : null;
+  const access = galleryAccessFor(event, org);
+  if (access === 'locked') throw new Error('GALLERY_NOT_PURCHASED');
+  if (access === 'expired') throw new Error('GALLERY_EXPIRED');
 }
 
 /* -------------------------------------------------------------------------- */
@@ -173,7 +179,7 @@ export const confirmOwnerUpload = mutation({
   handler: async (ctx, args) => {
     const event = await assertEventOwnership(ctx, args.eventId, args.requesterId);
     assertUploadShape(args.sizeBytes, args.contentType);
-    assertGalleryOpen(event);
+    await assertGalleryOpen(ctx, event);
 
     // Toutes les photos (owner ET guest) entrent en `pending` et passent par
     // la modération Rekognition (Lambda S3 → callback Convex). C'est le seul
@@ -208,7 +214,7 @@ export const confirmGuestUpload = mutation({
   handler: async (ctx, args) => {
     const event = await resolveEventForToken(ctx, args.token);
     assertUploadShape(args.sizeBytes, args.contentType);
-    assertGalleryOpen(event);
+    await assertGalleryOpen(ctx, event);
 
     const id = await ctx.db.insert('photos', {
       eventId: event._id,
