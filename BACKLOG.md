@@ -101,7 +101,20 @@ qui empêchaient de tenir une offre partenaire telle qu'elle est pitchée.
   **Paramètres commerciaux à valider par le fondateur** (choisis par défaut,
   modifiables) : versement mensuel sur facture sous 30 j, seuil minimum 50 €,
   préavis de 30 j pour toute modification des conditions.
-  **Assiette tranchée (2026-09-07) : HORS TAXES.** La commission portait sur le
+  **Régime TVA confirmé (2026-09-07) : franchise en base, art. 293 B du CGI.**
+  Aucune TVA n'est collectée : `INCLUSIVE_VAT_RATES` est à zéro pour toutes les
+  devises, la facture porte la mention 293 B au lieu d'une ligne de TVA, et
+  l'assiette de commission égale le montant encaissé. Le mécanisme HT reste en
+  place : le jour d'un assujettissement (sortie de franchise, changement de
+  forme juridique), reposer `EUR: 0.2` dans `lib/payments/vat.ts` suffit — la
+  facture et la commission suivent toutes deux.
+  **Bloqueur restant** : `Invoice.issuerSiret` vaut toujours « SIRET — à
+  compléter » et s'imprime tel quel sur chaque facture. SIREN connu et validé
+  (800650830) mais le NIC manque, donc le SIRET n'est pas déductible. Aucune
+  page de mentions légales n'existe (directeur de publication, hébergeur,
+  adresse du siège à fournir).
+
+  **Assiette (2026-09-07) : HORS TAXES.** La commission portait sur le
   montant encaissé TTC (`amount_total`), donc sur de la TVA reversée à l'État.
   Elle porte désormais sur le HT : `lib/payments/vat.ts` est la source unique de
   la règle, partagée avec la facture (`invoice.tsx`) pour qu'un partenaire qui

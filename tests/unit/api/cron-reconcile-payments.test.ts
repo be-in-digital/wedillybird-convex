@@ -117,11 +117,11 @@ describe('GET /api/cron/reconcile-payments', () => {
       providerSessionId: 'sess_1',
       providerEventId: 'sess_1',
       // Mêmes bases d'affiliation que le webhook : encaissement RÉEL relu chez
-      // Stripe, assiette hors taxes (2900 TTC → 2417 HT en EUR) et code promo
-      // tapé au checkout, pour que ce cron attribue et calcule exactement comme
-      // le webhook s'il gagne la course.
+      // Stripe, assiette hors taxes et code promo tapé au checkout, pour que ce
+      // cron attribue et calcule exactement comme le webhook s'il gagne la
+      // course. En franchise en base, l'assiette égale l'encaissé.
       netMinor: 2900,
-      commissionBaseMinor: 2417,
+      commissionBaseMinor: 2900,
       promotionCode: undefined,
     });
     // Analytics revenu émis pour le paiement récupéré, comme le webhook.

@@ -7,22 +7,31 @@
  * couple doit tomber sur notre chiffre, sinon chaque écart devient un litige.
  *
  * Stripe ne calcule aucune taxe sur ce compte (ni `automatic_tax`, ni
- * `tax_behavior` sur les Prices) : `amount_total` est donc le montant TTC tel
+ * `tax_behavior` sur les Prices) : `amount_total` est le montant réclamé tel
  * qu'affiché, et `total_details.amount_tax` vaut zéro. C'est pourquoi le HT est
  * déduit ici du taux applicable, et non lu depuis Stripe.
  *
- * Règle actuelle :
- *  - **EUR** : prix affichés TTC, TVA française 20 % incluse.
- *  - **USD** : prix affichés HT (cf. `Plans.usTaxNote`) — rien à déduire.
- *  - **XOF / MAD / TND** : TVA non applicable côté Wedillybird
- *    (art. 293 B du CGI), refacturation locale par le client si requise.
+ * Règle actuelle : **aucune TVA n'est facturée, quelle que soit la devise.**
+ * L'entité qui exploite Wedillybird relève de la franchise en base de TVA
+ * (art. 293 B du CGI) : elle ne collecte pas de TVA, donc le montant encaissé
+ * EST le montant hors taxes. Les prix EUR affichés (29 € / 59 €) sont nets, pas
+ * TTC. Les prix USD sont eux aussi affichés HT (cf. `Plans.usTaxNote`).
+ *
+ * ⚠️ **À changer le jour où l'entité devient redevable de la TVA** (sortie de
+ * franchise, changement de forme juridique) : repasser `EUR` à `0.2` suffit —
+ * la facture isolera de nouveau HT + TVA au lieu de la mention 293 B, et
+ * l'assiette de commission suivra automatiquement. C'est la raison d'être de ce
+ * module : une seule constante commande les deux.
  */
 
 import type { Currency } from './plans';
 
-/** Taux de TVA inclus dans le prix affiché, par devise. 0 = prix déjà HT. */
+/**
+ * Taux de TVA inclus dans le prix affiché, par devise. 0 = prix déjà HT.
+ * Tout à zéro tant que Wedillybird est en franchise en base (art. 293 B).
+ */
 export const INCLUSIVE_VAT_RATES: Record<Currency, number> = {
-  EUR: 0.2,
+  EUR: 0,
   USD: 0,
   XOF: 0,
   MAD: 0,
@@ -56,8 +65,11 @@ export function vatBreakdownFor(amountMinor: number, currency: Currency): VatBre
 
 /**
  * Montant hors taxes d'un encaissement — l'assiette sur laquelle se calcule la
- * commission d'affiliation. Commissionner le TTC reviendrait à rémunérer le
- * partenaire sur de la TVA qui n'est pas un revenu (elle est reversée à l'État).
+ * commission d'affiliation. Commissionner un montant TTC reviendrait à
+ * rémunérer le partenaire sur de la TVA, qui n'est pas un revenu (elle est
+ * reversée à l'État). En franchise en base, aucune TVA n'étant collectée, cette
+ * fonction rend le montant inchangé — le mécanisme reste en place pour le jour
+ * où l'entité y sera assujettie.
  */
 export function taxExclusiveMinor(amountMinor: number, currency: Currency): number {
   return vatBreakdownFor(amountMinor, currency).htMinor;

@@ -10,11 +10,11 @@ import { vatBreakdownFor } from './vat';
  * (Essentiel / Premium). Téléchargeable depuis le compte ou depuis l'email
  * post-paiement (l'envoi par mail est géré séparément côté Convex).
  *
- * Notes TVA :
- *  - EUR (FR) : TVA 20 % incluse dans le prix annoncé. La facture l'isole en
- *    HT + TVA pour la conformité comptable.
- *  - XOF / MAD / TND : TVA non applicable côté Wedillybird (refacturation
- *    locale par le client si requise). Affichage TTC seulement.
+ * Notes TVA : aucune TVA n'est facturée, quelle que soit la devise —
+ * Wedillybird relève de la franchise en base (art. 293 B du CGI). La facture
+ * porte donc la mention correspondante au lieu d'une ligne de TVA. Le jour d'un
+ * assujettissement, il suffit de reposer le taux dans `lib/payments/vat.ts` :
+ * la décomposition HT + TVA revient ici automatiquement.
  */
 
 export interface InvoicePayment {

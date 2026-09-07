@@ -48,11 +48,19 @@ describe('CGU affiliation — cohérence avec le code', () => {
 
   it('annonce une assiette HORS TAXES, comme le calcul du serveur', () => {
     // `markSucceeded` reçoit `commissionBaseMinor = taxExclusiveMinor(...)` :
-    // si quelqu'un rebasculait le calcul sur le TTC sans toucher au texte, les
-    // conditions promettraient une assiette que le système n'applique pas.
-    expect(INCLUSIVE_VAT_RATES.EUR).toBe(0.2);
+    // si quelqu'un rebasculait le calcul sur un montant TTC sans toucher au
+    // texte, les conditions promettraient une assiette non appliquée.
     expect(fr.article5Body).toContain('hors taxes');
-    expect(fr.article5Body).toContain('TVA est déduite');
+  });
+
+  it('dit la franchise en base tant qu’aucune TVA n’est réellement facturée', () => {
+    // Le texte et les taux doivent basculer ENSEMBLE : annoncer une déduction
+    // de TVA sans en collecter, ou en collecter sans le dire, fausse dans les
+    // deux sens ce qui est versé au partenaire.
+    const collectsVat = Object.values(INCLUSIVE_VAT_RATES).some((rate) => rate > 0);
+    expect(collectsVat).toBe(false);
+    expect(fr.article5Body).toContain('293 B');
+    expect(fr.article5Body).toContain('égal au montant encaissé');
   });
 
   it('annonce le plafond de cumul remise + commission appliqué au serveur', () => {
