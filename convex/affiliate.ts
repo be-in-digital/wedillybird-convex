@@ -879,14 +879,6 @@ export const markReferralPaid = mutation({
 /* ======================= Espace partenaire (lecture) ======================= */
 
 /**
- * Tableau de bord d'un partenaire : SES codes et SES commissions, rien d'autre.
- *
- * Volontairement scopé à `by_owner` — un partenaire ne voit jamais le ledger
- * global (c'est `listReferrals`, réservé admin). Aucune donnée acheteur n'est
- * exposée (ni nom, ni email, ni event) : le partenaire a besoin du montant et
- * du statut, pas de l'identité de ses filleuls.
- */
-/**
  * L'utilisateur a-t-il un espace partenaire ? Lecture volontairement minuscule
  * (un seul index, aucun ledger) : elle est appelée par la navigation de CHAQUE
  * page de l'app, là où `partnerDashboard` collecterait jusqu'à 500 lignes de
@@ -903,6 +895,14 @@ export const isPartner = query({
   },
 });
 
+/**
+ * Tableau de bord d'un partenaire : SES codes et SES commissions, rien d'autre.
+ *
+ * Volontairement scopé à `by_owner` — un partenaire ne voit jamais le ledger
+ * global (c'est `listReferrals`, réservé admin). Aucune donnée acheteur n'est
+ * exposée (ni nom, ni email, ni event) : le partenaire a besoin du montant et
+ * du statut, pas de l'identité de ses filleuls.
+ */
 export const partnerDashboard = query({
   args: { userId: v.id('users') },
   handler: async (ctx, { userId }) => {

@@ -96,6 +96,14 @@ export default function proxy(request: NextRequest) {
     // l'apex. Sans domaine partagé, le cookie host-only n'était jamais renvoyé
     // à `/api/checkout` — attribution ET remise perdues sans aucun signal.
     const domain = sharedCookieDomain(request.headers.get('host'));
+    if (domain) {
+      // Un `wdb_ref` host-only posé avant l'introduction du domaine partagé
+      // cohabiterait avec le nouveau : le navigateur enverrait les DEUX, et
+      // `cookies().get()` en prendrait un au hasard — l'attribution
+      // basculerait toute seule à l'expiration du plus ancien. On efface donc
+      // l'ancien sur cet hôte avant de poser le partagé.
+      response.cookies.set('wdb_ref', '', { maxAge: 0, path: '/' });
+    }
     response.cookies.set('wdb_ref', ref, {
       maxAge: 30 * 24 * 60 * 60,
       httpOnly: true,

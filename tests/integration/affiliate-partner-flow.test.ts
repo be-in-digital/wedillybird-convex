@@ -25,8 +25,6 @@ import {
   type Harness,
 } from './utils/convex-harness';
 
-const DAY = 24 * 60 * 60 * 1000;
-
 /** Prix Premium EUR, la vente type d'une partenaire « future mariée ». */
 const PREMIUM_MINOR = 5900;
 

@@ -374,7 +374,7 @@ export function AdminAffiliatesBoard({
           </div>
           <div>
             <label className={labelCls}>Récompense</label>
-            <select className={inputCls} value={rewardType} disabled aria-readonly>
+            <select className={inputCls} value={rewardType} disabled>
               <option value="cash">Cash</option>
               <option value="credit">Crédit</option>
             </select>

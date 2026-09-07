@@ -177,6 +177,10 @@ export async function adminRefundPaymentAction(
       adminId,
       paymentId,
       refundAmountMinor: appliedAmount,
+      // Cumul calculé sur l'état lu AVANT l'appel Stripe : entre-temps le
+      // webhook `charge.refunded` a pu écrire le même champ, et additionner
+      // l'incrément par-dessus doublerait le total.
+      totalRefundedMinor: info.refundedAmountMinor + appliedAmount,
       stripeRefundId,
     });
 
@@ -675,6 +679,17 @@ async function createPartnerCouponForAffiliate(
       existingCoupon?.metadata.wedillybird === 'partner_code' &&
       existingCoupon.metadata.wedillybird_affiliate_code === affiliate.code;
     if (!ours) throw new Error('STRIPE_CODE_ALREADY_EXISTS');
+    // Adopter n'a de sens que si le code est ENCORE utilisable et au bon taux.
+    // Sinon on enregistrerait un `stripePromotionCodeId` qui rendrait
+    // `partnerDashboard.shareable` vrai pour un code que le checkout refuse —
+    // et plus rien ne permettrait de le corriger, « Créer le code » retombant
+    // dès lors sur `CODE_ALREADY_CREATED`. On préfère renvoyer l'admin au
+    // Dashboard Stripe, qui est le seul endroit où l'état se répare.
+    const stale =
+      !clash.active ||
+      (clash.expiresAt != null && clash.expiresAt <= Date.now()) ||
+      existingCoupon.percentOff !== plan.percentOff;
+    if (stale) throw new Error('STRIPE_CODE_STALE');
     await getConvexServerClient().mutation(convexApi.setAffiliateStripeCoupon, {
       adminId,
       affiliateId,

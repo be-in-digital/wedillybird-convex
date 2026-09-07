@@ -91,7 +91,10 @@ export async function POST(req: Request): Promise<Response> {
       creditReserved = true;
       discountCouponId = await createOneTimeAmountCoupon(reserved.appliedMinor, routing.currency);
     }
-  } catch {
+  } catch (err) {
+    // Même trace que sur `/api/checkout` : sans elle, l'acheteur paie l'upsell
+    // plein tarif alors qu'il avait du crédit, et rien ne le signale.
+    console.error('[checkout/upsell] crédit non appliqué', err);
     if (creditReserved) {
       try {
         await convex.mutation(convexApi.releaseCreditReservation, { reservationId });

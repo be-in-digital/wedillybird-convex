@@ -124,11 +124,10 @@ export function getReservedSubdomains(): ReadonlySet<string> {
  * sous-domaine n'est jamais renvoyé à l'apex : l'attribution ET la remise
  * étaient perdues sans le moindre signal.
  *
- * `null` — donc host-only — dans les trois cas où un domaine partagé serait
- * faux ou refusé par le navigateur :
- *  - `localhost` / `127.0.0.1` (dev) : pas de domaine parent à partager ;
- *  - `*.vercel.app` : suffixe public, tout `domain` est rejeté ;
- *  - un host inconnu des `ROOT_DOMAINS` : on ne devine pas un domaine parent.
+ * `null` — donc host-only — partout où un domaine partagé serait faux ou
+ * refusé par le navigateur : `*.vercel.app` (suffixe public, tout `domain` y
+ * est rejeté), et tout host étranger aux `ROOT_DOMAINS`, ce qui couvre
+ * `localhost` et `127.0.0.1` en développement.
  */
 export function sharedCookieDomain(host: string | null | undefined): string | null {
   const normalized = normalizeHost(host);

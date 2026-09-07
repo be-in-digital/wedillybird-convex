@@ -108,19 +108,33 @@ describe('création du code partenaire', () => {
   });
 });
 
+/** Le code promo laissé derrière par un échec entre Stripe et Convex. */
+function orphanPromo(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'promo_orphelin',
+    code: 'SARAH12',
+    couponId: 'coup_orphelin',
+    active: true,
+    expiresAt: Date.now() + 300 * 24 * 60 * 60 * 1000,
+    ...overrides,
+  };
+}
+
+function orphanCoupon(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'coup_orphelin',
+    percentOff: 10,
+    metadata: { wedillybird: 'partner_code', wedillybird_affiliate_code: 'SARAH12' },
+    ...overrides,
+  };
+}
+
 describe('rattrapage d’un état à moitié écrit', () => {
   it('adopte NOTRE code promo laissé derrière au lieu de condamner le partenariat', async () => {
     // Coupon + code créés chez Stripe, ids jamais enregistrés côté Convex :
     // « Créer le code » retombait indéfiniment sur STRIPE_CODE_ALREADY_EXISTS.
-    stripe.findPromotionCodeByCode.mockResolvedValue({
-      id: 'promo_orphelin',
-      code: 'SARAH12',
-      couponId: 'coup_orphelin',
-    });
-    stripe.retrieveCoupon.mockResolvedValue({
-      id: 'coup_orphelin',
-      metadata: { wedillybird: 'partner_code', wedillybird_affiliate_code: 'SARAH12' },
-    });
+    stripe.findPromotionCodeByCode.mockResolvedValue(orphanPromo());
+    stripe.retrieveCoupon.mockResolvedValue(orphanCoupon());
 
     expect(await ensureCoupon()).toEqual({ ok: true });
     expect(stripe.createCoupon).not.toHaveBeenCalled();
@@ -144,6 +158,23 @@ describe('rattrapage d’un état à moitié écrit', () => {
     stripe.retrieveCoupon.mockResolvedValue({ id: 'coup_autre', metadata: {} });
 
     expect(await ensureCoupon()).toEqual({ ok: false, error: 'STRIPE_CODE_ALREADY_EXISTS' });
+    expect(convexMutation).not.toHaveBeenCalledWith('setAffiliateStripeCoupon', expect.anything());
+  });
+
+  it('n’adopte pas un code désactivé, expiré, ou dont le taux ne colle plus', async () => {
+    // Adopter un code que le checkout refusera rendrait `shareable` vrai pour
+    // un code mort — et plus rien ne permettrait de le corriger, « Créer le
+    // code » retombant dès lors sur CODE_ALREADY_CREATED. On renvoie l'admin
+    // au Dashboard Stripe, seul endroit où l'état se répare.
+    for (const [label, promo, coupon] of [
+      ['désactivé', orphanPromo({ active: false }), orphanCoupon()],
+      ['expiré', orphanPromo({ expiresAt: Date.now() - 1000 }), orphanCoupon()],
+      ['taux obsolète', orphanPromo(), orphanCoupon({ percentOff: 5 })],
+    ] as const) {
+      stripe.findPromotionCodeByCode.mockResolvedValue(promo);
+      stripe.retrieveCoupon.mockResolvedValue(coupon);
+      expect(await ensureCoupon(), label).toEqual({ ok: false, error: 'STRIPE_CODE_STALE' });
+    }
     expect(convexMutation).not.toHaveBeenCalledWith('setAffiliateStripeCoupon', expect.anything());
   });
 

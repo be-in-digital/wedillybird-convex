@@ -35,8 +35,16 @@ beforeEach(async () => {
   adminId = await seedAdmin(t);
 });
 
-async function partner(code: string, opts: { rateBps?: number; discountBps?: number } = {}) {
-  return t.mutation(api.affiliate.createAffiliate, {
+/**
+ * Un partenaire tel qu'il existe une fois ouvert : code Stripe compris. Sans
+ * lui, son code n'est pas saisissable au checkout — et l'attribution par code
+ * tapé n'a alors aucun sens.
+ */
+async function partner(
+  code: string,
+  opts: { rateBps?: number; discountBps?: number; withStripeCode?: boolean } = {},
+) {
+  const created = await t.mutation(api.affiliate.createAffiliate, {
     adminId,
     code,
     kind: 'partner',
@@ -44,6 +52,15 @@ async function partner(code: string, opts: { rateBps?: number; discountBps?: num
     rateBps: opts.rateBps ?? 1000,
     buyerDiscountBps: opts.discountBps ?? 1000,
   });
+  if (opts.withStripeCode !== false) {
+    await t.mutation(api.affiliate.setAffiliateStripeCoupon, {
+      adminId,
+      affiliateId: created.id,
+      stripeCouponId: `coup_${code}`,
+      stripePromotionCodeId: `promo_${code}`,
+    });
+  }
+  return created;
 }
 
 async function confirm(input: {
@@ -159,6 +176,83 @@ describe('Les deux surfaces d’attribution', () => {
     expect(rows[0]?.code).toBe('SARAH12');
     const payment = await t.run(async (ctx) => ctx.db.get(paymentId));
     expect(payment?.affiliateId).toBe(typed.id);
+  });
+
+  it('un code de campagne qui se normalise sur un code partenaire ne le crédite pas', async () => {
+    // `findActiveAffiliateByCode` normalise en supprimant les caractères non
+    // alphanumériques : « SARAH-12 », code de campagne créé au back-office,
+    // retombait sur l'affiliée SARAH12. Elle encaissait alors une commission
+    // sur une vente qu'elle n'a pas amenée et dont elle n'a pas financé la
+    // remise — et le parrain du cookie perdait la sienne.
+    const cookieAff = await partner('NORAH10');
+    await partner('SARAH12');
+
+    const buyer = await seedUser(t, { email: 'filleule@test.fr' });
+    const eventId = await seedEvent(t, buyer);
+    await seedPendingPayment(t, {
+      userId: buyer,
+      eventId,
+      amountMinor: CATALOG,
+      sessionId: 'cs_campagne',
+      affiliateId: cookieAff.id,
+    });
+
+    await confirm({ sessionId: 'cs_campagne', promotionCode: 'SARAH-12' });
+
+    const rows = await ledger();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.code).toBe('NORAH10');
+  });
+
+  it('un code partenaire sans code promo Stripe ne détourne pas l’attribution', async () => {
+    // Pas de code promo Stripe = code non saisissable au checkout. Une
+    // correspondance de chaîne ne suffit donc pas à revendiquer la vente.
+    const cookieAff = await partner('NORAH10');
+    await partner('SARAH12', { withStripeCode: false });
+
+    const buyer = await seedUser(t, { email: 'filleule@test.fr' });
+    const eventId = await seedEvent(t, buyer);
+    await seedPendingPayment(t, {
+      userId: buyer,
+      eventId,
+      amountMinor: CATALOG,
+      sessionId: 'cs_fantome',
+      affiliateId: cookieAff.id,
+    });
+
+    await confirm({ sessionId: 'cs_fantome', promotionCode: 'SARAH12' });
+    expect((await ledger())[0]?.code).toBe('NORAH10');
+  });
+
+  it('un rejeu avec code promo ne déplace pas l’attribution déjà écrite', async () => {
+    // Le ledger est dédoublonné sur la session, pas le patch du paiement :
+    // sans garde, un second passage (filet de la page de succès, cron de
+    // réconciliation) laissait paiement et ledger crédités à deux affiliés.
+    const cookieAff = await partner('NORAH10');
+    const typed = await partner('SARAH12');
+
+    const buyer = await seedUser(t, { email: 'filleule@test.fr' });
+    const eventId = await seedEvent(t, buyer);
+    const paymentId = await seedPendingPayment(t, {
+      userId: buyer,
+      eventId,
+      amountMinor: CATALOG,
+      sessionId: 'cs_rejeu',
+      affiliateId: cookieAff.id,
+    });
+
+    // 1er passage sans code (Stripe n'a pas su le résoudre) → NORAH10.
+    await confirm({ sessionId: 'cs_rejeu' });
+    expect((await ledger())[0]?.affiliateId).toBe(cookieAff.id);
+
+    // 2e passage AVEC code : le ledger existe déjà, rien ne bouge.
+    await confirm({ sessionId: 'cs_rejeu', promotionCode: 'SARAH12' });
+    const rows = await ledger();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.affiliateId).toBe(cookieAff.id);
+    const payment = await t.run(async (ctx) => ctx.db.get(paymentId));
+    expect(payment?.affiliateId).toBe(cookieAff.id);
+    expect(typed.id).not.toBe(payment?.affiliateId);
   });
 
   it('un code promo inconnu ou d’un affilié désactivé laisse le cookie en place', async () => {
@@ -689,6 +783,135 @@ describe('Remboursement et litige — le webhook reprend la commission', () => {
     const restored = await t.run(async (ctx) => ctx.db.get(creditId));
     expect(restored?.status).toBe('vested');
     expect(restored?.consumedBySession).toBeUndefined();
+  });
+
+  it('un litige suspend la commission SANS marquer le paiement remboursé', async () => {
+    // L'argent est retenu, pas rendu, et le marchand peut gagner. Marquer
+    // `refunded` serait sans retour : l'admin ne pourrait plus rembourser
+    // (`NOT_REFUNDABLE`) et les analytics excluraient la vente à vie.
+    const aff = await partner('SARAH12');
+    const buyer = await seedUser(t, { email: 'f@test.fr' });
+    const eventId = await seedEvent(t, buyer);
+    await seedPendingPayment(t, {
+      userId: buyer,
+      eventId,
+      amountMinor: CATALOG,
+      sessionId: 'cs_litige',
+      affiliateId: aff.id,
+    });
+    await confirm({ sessionId: 'cs_litige', netMinor: CATALOG, commissionBaseMinor: HT_BASE });
+
+    await t.mutation(api.payments.markRefundedByWebhook, {
+      webhookSecret: WEBHOOK_SECRET,
+      provider: 'stripe',
+      providerSessionId: 'cs_litige',
+      providerEventId: 'evt_dispute',
+      refundedAmountMinor: CATALOG,
+      chargedAmountMinor: CATALOG,
+      disputed: true,
+    });
+
+    expect((await ledger())[0]?.status).toBe('reversed');
+    const payment = await t.run(async (ctx) =>
+      ctx.db
+        .query('payments')
+        .withIndex('by_session', (q) =>
+          q.eq('provider', 'stripe').eq('providerSessionId', 'cs_litige'),
+        )
+        .first(),
+    );
+    expect(payment?.status).toBe('succeeded');
+    expect(payment?.refundedAmountMinor).toBeUndefined();
+  });
+
+  it('un remboursement TOTAL d’un achat remisé n’est pas classé partiel', async () => {
+    // Le montant stocké est le prix CATALOGUE (59 €), le débit réel 53,10 €.
+    // Comparer le remboursement au catalogue faisait passer un remboursement
+    // intégral pour partiel, et l'écran admin proposait un reliquat fantôme
+    // que Stripe refuse.
+    const aff = await partner('SARAH12');
+    const buyer = await seedUser(t, { email: 'f@test.fr' });
+    const eventId = await seedEvent(t, buyer);
+    await seedPendingPayment(t, {
+      userId: buyer,
+      eventId,
+      amountMinor: CATALOG,
+      sessionId: 'cs_remise',
+      affiliateId: aff.id,
+    });
+    await confirm({
+      sessionId: 'cs_remise',
+      netMinor: NET_AFTER_DISCOUNT,
+      commissionBaseMinor: HT_BASE,
+    });
+
+    const res = await t.mutation(api.payments.markRefundedByWebhook, {
+      webhookSecret: WEBHOOK_SECRET,
+      provider: 'stripe',
+      providerSessionId: 'cs_remise',
+      providerEventId: 'evt_full',
+      refundedAmountMinor: NET_AFTER_DISCOUNT,
+      chargedAmountMinor: NET_AFTER_DISCOUNT,
+    });
+    expect(res.status).toBe('refunded');
+
+    const payment = await t.run(async (ctx) =>
+      ctx.db
+        .query('payments')
+        .withIndex('by_session', (q) =>
+          q.eq('provider', 'stripe').eq('providerSessionId', 'cs_remise'),
+        )
+        .first(),
+    );
+    // Plus aucun reliquat à proposer au back-office.
+    expect(payment?.amountMinor).toBe(payment?.refundedAmountMinor);
+  });
+
+  it('webhook et back-office n’additionnent pas le même remboursement', async () => {
+    // Les deux écrivent `refundedAmountMinor` et se croisent à chaque
+    // remboursement déclenché de l'admin : le webhook porte le CUMUL Stripe,
+    // l'admin un incrément. Le total partait au double, voire en
+    // `REFUND_EXCEEDS_AMOUNT` alors que l'argent était déjà parti.
+    const aff = await partner('SARAH12');
+    const buyer = await seedUser(t, { email: 'f@test.fr' });
+    const eventId = await seedEvent(t, buyer);
+    await seedPendingPayment(t, {
+      userId: buyer,
+      eventId,
+      amountMinor: CATALOG,
+      sessionId: 'cs_course',
+      affiliateId: aff.id,
+    });
+    await confirm({ sessionId: 'cs_course', netMinor: CATALOG, commissionBaseMinor: HT_BASE });
+    const payment = await t.run(async (ctx) =>
+      ctx.db
+        .query('payments')
+        .withIndex('by_session', (q) =>
+          q.eq('provider', 'stripe').eq('providerSessionId', 'cs_course'),
+        )
+        .first(),
+    );
+
+    // Le webhook gagne la course et écrit le cumul…
+    await t.mutation(api.payments.markRefundedByWebhook, {
+      webhookSecret: WEBHOOK_SECRET,
+      provider: 'stripe',
+      providerSessionId: 'cs_course',
+      providerEventId: 'evt_course',
+      refundedAmountMinor: CATALOG,
+      chargedAmountMinor: CATALOG,
+    });
+    // …puis la mutation admin arrive avec SON cumul, calculé avant Stripe.
+    const marked = await t.mutation(api.admin.markPaymentRefunded, {
+      adminId,
+      paymentId: payment!._id,
+      refundAmountMinor: CATALOG,
+      totalRefundedMinor: CATALOG,
+    });
+    expect(marked).toEqual({ ok: true, status: 'refunded' });
+
+    const after = await t.run(async (ctx) => ctx.db.get(payment!._id));
+    expect(after?.refundedAmountMinor).toBe(CATALOG);
   });
 
   it('refuse un appel sans le secret partagé', async () => {

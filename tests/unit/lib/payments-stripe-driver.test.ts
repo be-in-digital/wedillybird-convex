@@ -6,6 +6,9 @@ const stripeMock = {
     sessions: {
       create: vi.fn(),
       retrieve: vi.fn(),
+      // Le webhook `charge.*` ne porte pas la session : c'est le
+      // `payment_intent` qui fait le lien.
+      list: vi.fn(),
     },
   },
   webhooks: {
@@ -16,6 +19,9 @@ const stripeMock = {
   },
   coupons: {
     create: vi.fn(),
+  },
+  charges: {
+    retrieve: vi.fn(),
   },
 };
 
@@ -36,6 +42,8 @@ beforeEach(() => {
   stripeMock.webhooks.constructEvent.mockReset();
   stripeMock.promotionCodes.retrieve.mockReset();
   stripeMock.coupons.create.mockReset();
+  stripeMock.charges.retrieve.mockReset();
+  stripeMock.checkout.sessions.list.mockReset();
   vi.resetModules();
 });
 
@@ -456,5 +464,84 @@ describe('payments/drivers/stripe — nom de coupon borné à la limite Stripe',
       wedillybird_affiliate_code: 'SARAH12',
       wedillybird_applies_to: 'prod_a,prod_b',
     });
+  });
+});
+
+describe('payments/drivers/stripe — remboursement et litige', () => {
+  const sessionsList = () => stripeMock.checkout.sessions.list;
+
+  function charge(overrides: Record<string, unknown> = {}) {
+    return {
+      amount: 5310,
+      amount_refunded: 5310,
+      currency: 'eur',
+      payment_intent: 'pi_1',
+      ...overrides,
+    };
+  }
+
+  it('remonte le CUMUL remboursé et le montant réellement débité', async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_1',
+      type: 'charge.refunded',
+      data: { object: charge({ amount_refunded: 2000 }) },
+    });
+    sessionsList().mockResolvedValue({ data: [{ id: 'cs_1' }] });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    const event = await stripeDriver.verifyAndParseWebhook('{}', 'sig');
+    expect(event).toMatchObject({
+      providerSessionId: 'cs_1',
+      status: 'refunded',
+      // L'assiette du « total » : sans elle, le remboursement intégral d'un
+      // achat remisé passerait pour partiel face au prix catalogue stocké.
+      chargedAmountMinor: 5310,
+      refundedAmountMinor: 2000,
+    });
+    expect(event.disputed).toBeUndefined();
+    expect(sessionsList()).toHaveBeenCalledWith({ payment_intent: 'pi_1', limit: 1 });
+  });
+
+  it('marque un litige comme tel, sur la charge visée', async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_2',
+      type: 'charge.dispute.created',
+      data: { object: { charge: 'ch_1' } },
+    });
+    stripeMock.charges.retrieve.mockResolvedValue(charge({ amount_refunded: 0 }));
+    sessionsList().mockResolvedValue({ data: [{ id: 'cs_2' }] });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    const event = await stripeDriver.verifyAndParseWebhook('{}', 'sig');
+    expect(event).toMatchObject({ status: 'refunded', disputed: true, refundedAmountMinor: 5310 });
+    expect(stripeMock.charges.retrieve).toHaveBeenCalledWith('ch_1');
+  });
+
+  it('ignore une charge sans session de checkout — abonnement, lien de paiement…', async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_3',
+      type: 'charge.refunded',
+      data: { object: charge() },
+    });
+    sessionsList().mockResolvedValue({ data: [] });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    await expect(stripeDriver.verifyAndParseWebhook('{}', 'sig')).rejects.toThrow(
+      'UNSUPPORTED_EVENT',
+    );
+  });
+
+  it('ignore une charge sans payment_intent', async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue({
+      id: 'evt_4',
+      type: 'charge.refunded',
+      data: { object: charge({ payment_intent: null }) },
+    });
+    const { stripeDriver } = await import('@/lib/payments/drivers/stripe');
+
+    await expect(stripeDriver.verifyAndParseWebhook('{}', 'sig')).rejects.toThrow(
+      'UNSUPPORTED_EVENT',
+    );
+    expect(sessionsList()).not.toHaveBeenCalled();
   });
 });

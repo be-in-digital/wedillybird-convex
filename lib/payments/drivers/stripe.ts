@@ -162,14 +162,17 @@ export const stripeDriver: PaymentDriver = {
       if (!session) throw new Error('UNSUPPORTED_EVENT');
       const currencyRaw = (charge.currency ?? '').toUpperCase();
       if (!isCurrency(currencyRaw)) throw new Error('INVALID_CURRENCY');
+      const disputed = event.type === 'charge.dispute.created';
       return {
         providerSessionId: session.id,
         providerEventId: event.id,
         status: 'refunded',
         amountMinor: charge.amount ?? 0,
         currency: currencyRaw,
-        refundedAmountMinor:
-          event.type === 'charge.refunded' ? (charge.amount_refunded ?? 0) : (charge.amount ?? 0),
+        // Stripe donne le CUMUL remboursé, jamais l'incrément.
+        refundedAmountMinor: disputed ? (charge.amount ?? 0) : (charge.amount_refunded ?? 0),
+        chargedAmountMinor: charge.amount ?? 0,
+        ...(disputed ? { disputed: true } : {}),
       };
     }
     throw new Error('UNSUPPORTED_EVENT');

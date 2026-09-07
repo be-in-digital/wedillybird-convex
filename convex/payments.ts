@@ -15,7 +15,6 @@ import {
   restoreCreditForRefundedSession,
   reverseReferralBySession,
 } from './affiliate';
-import { computeRefundOutcome } from './lib/analytics';
 
 function ownerLocaleToIntlTag(locale: string | undefined): string {
   return toIntlTag(locale);
@@ -239,8 +238,27 @@ export const markSucceeded = mutation({
     let attributedAffiliateId = payment.affiliateId;
     if (promotionCode) {
       try {
-        const aff = await findActiveAffiliateByCode(ctx, promotionCode);
-        if (aff && aff._id !== attributedAffiliateId) {
+        // La ligne de ledger fait foi dès qu'elle existe : `applyReferral` est
+        // dédoublonné sur la session, donc déplacer `payment.affiliateId` sur
+        // un rejeu laisserait le paiement et le ledger crédités à deux
+        // affiliés différents, définitivement.
+        const alreadyLedgered = await ctx.db
+          .query('affiliateReferrals')
+          .withIndex('by_source_session', (q) => q.eq('sourceSessionId', payment.providerSessionId))
+          .first();
+        const aff = alreadyLedgered ? null : await findActiveAffiliateByCode(ctx, promotionCode);
+        // Le code doit être EXACTEMENT celui de l'affilié, et rattaché à un
+        // vrai code promo Stripe. `findActiveAffiliateByCode` normalise en
+        // supprimant les caractères non alphanumériques : sans cette
+        // vérification, un code de campagne créé au back-office (« SARAH-12 »)
+        // se rabattrait sur l'affiliée SARAH12, qui encaisserait une
+        // commission sur une vente qu'elle n'a pas amenée et dont elle n'a pas
+        // financé la remise.
+        const isPartnerOwnCode =
+          aff !== null &&
+          Boolean(aff.stripePromotionCodeId) &&
+          aff.code === promotionCode.trim().toUpperCase();
+        if (isPartnerOwnCode && aff._id !== attributedAffiliateId) {
           attributedAffiliateId = aff._id;
           await ctx.db.patch(payment._id, { affiliateId: aff._id, updatedAt: now });
         }
@@ -358,8 +376,11 @@ function formatAmount(amountMinor: number, currency: string): string {
  * Stripe, ou un chargeback, ne reprenait aucune commission — elle continuait
  * de s'acquérir puis se faisait verser sur une vente rendue.
  *
- * Idempotent : `computeRefundOutcome` cumule, et les deux effets d'affiliation
- * sont eux-mêmes sans effet s'ils ont déjà eu lieu.
+ * `refundedAmountMinor` est le CUMUL du provider, jamais un incrément : on
+ * écrit donc le maximum entre ce cumul et ce qui est déjà stocké. C'est ce qui
+ * rend la mutation idempotente ET compatible avec le chemin admin, qui écrit
+ * le même champ juste après avoir appelé Stripe — les deux se croisent à
+ * chaque remboursement déclenché du back-office.
  */
 export const markRefundedByWebhook = mutation({
   args: {
@@ -367,7 +388,12 @@ export const markRefundedByWebhook = mutation({
     provider: PROVIDER,
     providerSessionId: v.string(),
     providerEventId: v.string(),
+    /** CUMUL remboursé d'après le provider. */
     refundedAmountMinor: v.number(),
+    /** Montant réellement débité — l'assiette qui dit si le remboursement est total. */
+    chargedAmountMinor: v.optional(v.number()),
+    /** Litige : on suspend la commission sans marquer le paiement remboursé. */
+    disputed: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     assertWebhookSecret(args.webhookSecret);
@@ -380,24 +406,34 @@ export const markRefundedByWebhook = mutation({
     if (!payment) throw new Error('PAYMENT_NOT_FOUND');
 
     const now = Date.now();
-    // Stripe envoie le CUMUL remboursé, pas l'incrément : on repart du montant
-    // déjà encaissé pour ne pas additionner deux fois le même remboursement.
-    const { status, totalRefunded } = computeRefundOutcome(
-      payment.amountMinor,
-      0,
-      Math.min(args.refundedAmountMinor, payment.amountMinor),
-    );
-    await ctx.db.patch(payment._id, {
-      status,
-      refundedAmountMinor: totalRefunded,
-      refundedAt: now,
-      providerEventId: args.providerEventId,
-      updatedAt: now,
-    });
+
+    // Un litige n'est PAS un remboursement : l'argent est retenu le temps de
+    // l'instruction, et le marchand peut gagner. Marquer le paiement
+    // `refunded` serait sans retour — `adminRefundPaymentAction` le refuserait
+    // ensuite (`NOT_REFUNDABLE`) et les analytics l'excluraient à vie. On se
+    // limite donc à suspendre la commission, qui se réactive à la main.
+    if (!args.disputed) {
+      const stored = payment.refundedAmountMinor ?? 0;
+      // L'assiette du « total » est le montant DÉBITÉ, pas le prix catalogue
+      // stocké : sans ça, le remboursement intégral d'un achat remisé passait
+      // pour partiel, et l'écran admin proposait de rembourser un reliquat
+      // fantôme que Stripe refuse.
+      const charged = args.chargedAmountMinor ?? payment.amountMinor;
+      const isFull = charged > 0 && args.refundedAmountMinor >= charged;
+      const totalRefunded = isFull
+        ? payment.amountMinor
+        : Math.min(Math.max(stored, args.refundedAmountMinor), payment.amountMinor);
+      await ctx.db.patch(payment._id, {
+        status: isFull ? ('refunded' as const) : ('partially_refunded' as const),
+        refundedAmountMinor: totalRefunded,
+        refundedAt: now,
+        updatedAt: now,
+      });
+    }
 
     // (a) la commission générée par cette vente est annulée, (b) le crédit que
-    // l'acheteur avait dépensé dessus lui est restitué. Best-effort tracé : le
-    // remboursement lui-même prime, mais une reprise ratée doit se voir.
+    // l'acheteur avait dépensé sur cet achat lui est restitué. Best-effort
+    // tracé : la prise en compte prime, mais une reprise ratée doit se voir.
     try {
       await reverseReferralBySession(ctx, payment.providerSessionId);
     } catch (err) {
@@ -408,7 +444,8 @@ export const markRefundedByWebhook = mutation({
     } catch (err) {
       console.error('[payments] restitution de crédit impossible', err);
     }
-    return { ok: true as const, status };
+    const fresh = await ctx.db.get(payment._id);
+    return { ok: true as const, status: fresh?.status ?? payment.status };
   },
 });
 

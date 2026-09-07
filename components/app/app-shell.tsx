@@ -33,21 +33,20 @@ export interface AppShellProps {
 }
 
 export async function AppShell({ children, nav, userName }: AppShellProps) {
-  const tCommon = await getTranslations('Common');
   const session = await getSession();
   // Lecture volontairement minuscule (un index, aucun ledger) — elle est faite
-  // sur chaque page de l'app. Un backend indisponible ne doit pas faire tomber
-  // le shell : sans réponse, on n'affiche simplement pas le lien.
-  let isPartner = false;
-  if (session) {
-    try {
-      isPartner = await getConvexServerClient().query(convexApi.isPartner, {
-        userId: session.userId,
-      });
-    } catch {
-      isPartner = false;
-    }
-  }
+  // sur chaque page rendue par ce shell, d'où le parallèle avec les
+  // traductions plutôt qu'un aller-retour de plus en série. Un backend
+  // indisponible ne doit pas faire tomber le shell : sans réponse, on
+  // n'affiche simplement pas le lien.
+  const [tCommon, isPartner] = await Promise.all([
+    getTranslations('Common'),
+    session
+      ? getConvexServerClient()
+          .query(convexApi.isPartner, { userId: session.userId })
+          .catch(() => false)
+      : Promise.resolve(false),
+  ]);
 
   return (
     <div className="paper-grain flex min-h-screen flex-col bg-[color:var(--color-ivory-50)]">
