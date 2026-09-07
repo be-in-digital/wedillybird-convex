@@ -16,7 +16,10 @@
       "moderation": "Modération",
       "newsletter": "Newsletter",
       "auditLog": "Journal d’audit",
-      "promotions": "Promotions"
+      "promotions": "Promotions",
+      "affiliates": "Affiliation",
+      "bugReports": "Bugs signalés",
+      "photoBooks": "Livres photo"
     },
     "common": {
       "back": "Retour",
@@ -218,6 +221,35 @@
         "empty": "Aucune facture pour cette organisation."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Signaler un bug",
+    "open": "Signaler un bug",
+    "title": "Signaler un bug",
+    "subtitle": "Décrivez ce qui s'est passé. Une capture aide beaucoup.",
+    "descLabel": "Que s'est-il passé ?",
+    "descPlaceholder": "J'ai cliqué sur… et à la place…",
+    "captureLabel": "Capture d'écran (facultatif)",
+    "captureBtn": "Capturer l'écran",
+    "uploadBtn": "Choisir une image",
+    "removeShot": "Retirer la capture",
+    "captureError": "La capture n'a pas pu être prise. Vous pouvez joindre une image à la place.",
+    "contextPage": "Page",
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "thanks": "Merci — c'est bien arrivé. Nous regardons ça.",
+    "canvas": "Capture",
+    "video": "Vidéo"
+  },
+  "CeremonySchedule": {
+    "section": "Déroulé de la journée",
+    "hint": "Ces horaires s'affichent sur l'invitation. Laissez vide pour ne rien afficher.",
+    "timeLabel": "Heure",
+    "timePlaceholder": "15h00",
+    "titleLabel": "Moment",
+    "titlePlaceholder": "Cérémonie",
+    "add": "Ajouter un moment",
+    "remove": "Retirer ce moment"
   },
   "Common": {
     "confirm": "Confirmer",
@@ -4000,6 +4032,38 @@
       "reconciliation": "Le webhook Stripe est en retard. Le paiement a bien été reçu mais l'upgrade va s'appliquer dans quelques instants. Rafraîchissez la page.",
       "network": "Erreur réseau, réessayez",
       "unknown": "Une erreur est survenue. Réessayez."
+    },
+    "upsell": {
+      "eyebrow": "APRÈS LE MARIAGE",
+      "title": "Gardez vos photos en haute définition",
+      "subtitle": "Votre galerie reste en ligne cinq ans, et vous téléchargez tout en qualité originale.",
+      "benefitRetention": "Galerie conservée cinq ans au lieu de six mois",
+      "benefitHd": "Téléchargement de toutes les photos en haute définition",
+      "cta": "Obtenir l'archive HD",
+      "redirecting": "Redirection…",
+      "purchased": "Archive HD activée",
+      "downloadHd": "Télécharger les photos en HD",
+      "successTitle": "Vos photos sont à vous, pour longtemps",
+      "successBody": "L'archive haute définition est active. Votre galerie reste en ligne cinq ans et vous pouvez tout télécharger en qualité originale.",
+      "processingTitle": "Paiement en cours de confirmation",
+      "processingBody": "Votre paiement est enregistré. L'archive s'active dans quelques instants — vous pouvez fermer cette page.",
+      "reconciliation": "La confirmation prend plus de temps que prévu. Si rien ne change d'ici quelques minutes, écrivez-nous à contact@wedillybird.com.",
+      "backToEvent": "Retour à mon mariage",
+      "photoBook": {
+        "cta": "Commander le livre photo",
+        "dialogTitle": "Votre livre photo",
+        "dialogSubtitle": "Indiquez l'adresse de livraison. Nous imprimons et expédions sous quinze jours.",
+        "recipientName": "Nom du destinataire",
+        "addressLine1": "Adresse",
+        "addressLine2": "Complément d'adresse",
+        "postalCode": "Code postal",
+        "city": "Ville",
+        "country": "Pays",
+        "notes": "Instructions de livraison (facultatif)",
+        "submit": "Confirmer la commande",
+        "submitting": "Envoi…",
+        "cancel": "Annuler"
+      }
     }
   },
   "Invoice": {
@@ -5023,6 +5087,14 @@
           "title": "Mon forfait",
           "desc": "Votre forfait, vos factures et options."
         }
+      },
+      "referral": {
+        "title": "Parrainez un couple",
+        "desc": "Partagez votre lien : vous recevez un crédit dès leur premier achat.",
+        "credit": "{amount} de crédit disponible",
+        "copy": "Copier le lien",
+        "copied": "Copié",
+        "linkAria": "Votre lien de parrainage"
       }
     },
     "dashboard": {
@@ -5333,6 +5405,15 @@
           "short": "Prestataires"
         }
       }
+    },
+    "nav": {
+      "home": "Accueil",
+      "dashboard": "Mon mariage",
+      "planning": "Planning",
+      "vendors": "Prestataires",
+      "budget": "Budget",
+      "seating": "Plan de table",
+      "forfait": "Forfait"
     }
   },
   "CouplePortal": {

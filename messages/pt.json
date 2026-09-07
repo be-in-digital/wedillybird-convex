@@ -16,7 +16,10 @@
       "moderation": "Moderação",
       "newsletter": "Newsletter",
       "auditLog": "Registro de auditoria",
-      "promotions": "Promoções"
+      "promotions": "Promoções",
+      "affiliates": "Afiliação",
+      "bugReports": "Erros reportados",
+      "photoBooks": "Álbuns de fotos"
     },
     "common": {
       "back": "Voltar",
@@ -218,6 +221,35 @@
         "empty": "Nenhuma fatura para esta organização."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Reportar um erro",
+    "open": "Reportar um erro",
+    "title": "Reportar um erro",
+    "subtitle": "Conte-nos o que aconteceu. Uma captura ajuda muito.",
+    "descLabel": "O que aconteceu?",
+    "descPlaceholder": "Cliquei em… e em vez disso…",
+    "captureLabel": "Captura de ecrã (opcional)",
+    "captureBtn": "Capturar ecrã",
+    "uploadBtn": "Escolher uma imagem",
+    "removeShot": "Remover a captura",
+    "captureError": "Não foi possível fazer a captura. Pode anexar uma imagem.",
+    "contextPage": "Página",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "thanks": "Obrigado — recebemos. Estamos a analisar.",
+    "canvas": "Captura",
+    "video": "Vídeo"
+  },
+  "CeremonySchedule": {
+    "section": "Programa do dia",
+    "hint": "Estes horários aparecem no convite. Deixe vazio para não mostrar nada.",
+    "timeLabel": "Hora",
+    "timePlaceholder": "15:00",
+    "titleLabel": "Momento",
+    "titlePlaceholder": "Cerimónia",
+    "add": "Adicionar um momento",
+    "remove": "Remover este momento"
   },
   "Common": {
     "confirm": "Confirmar",
@@ -4000,6 +4032,38 @@
       "reconciliation": "O webhook do Stripe está atrasado. O pagamento foi recebido mas o upgrade vai aplicar-se daqui a alguns instantes. Atualiza a página.",
       "network": "Erro de rede, tenta de novo",
       "unknown": "Ocorreu um erro. Tenta de novo."
+    },
+    "upsell": {
+      "eyebrow": "DEPOIS DO CASAMENTO",
+      "title": "Guarde as suas fotos em alta definição",
+      "subtitle": "A sua galeria fica online cinco anos e descarrega tudo com a qualidade original.",
+      "benefitRetention": "Galeria guardada cinco anos em vez de seis meses",
+      "benefitHd": "Descarga de todas as fotos em alta definição",
+      "cta": "Obter o arquivo HD",
+      "redirecting": "A redirecionar…",
+      "purchased": "Arquivo HD ativo",
+      "downloadHd": "Descarregar as fotos em HD",
+      "successTitle": "As suas fotos são suas, por muito tempo",
+      "successBody": "O arquivo em alta definição está ativo. A sua galeria fica online cinco anos e pode descarregar tudo com a qualidade original.",
+      "processingTitle": "A confirmar o pagamento",
+      "processingBody": "O seu pagamento foi registado. O arquivo ativa-se dentro de instantes — pode fechar esta página.",
+      "reconciliation": "A confirmação está a demorar mais do que o previsto. Se nada mudar dentro de alguns minutos, escreva-nos para contact@wedillybird.com.",
+      "backToEvent": "Voltar ao meu casamento",
+      "photoBook": {
+        "cta": "Encomendar o álbum de fotos",
+        "dialogTitle": "O seu álbum de fotos",
+        "dialogSubtitle": "Indique a morada de entrega. Imprimimos e enviamos em quinze dias.",
+        "recipientName": "Nome do destinatário",
+        "addressLine1": "Morada",
+        "addressLine2": "Complemento de morada",
+        "postalCode": "Código postal",
+        "city": "Cidade",
+        "country": "País",
+        "notes": "Instruções de entrega (opcional)",
+        "submit": "Confirmar a encomenda",
+        "submitting": "A enviar…",
+        "cancel": "Cancelar"
+      }
     }
   },
   "Invoice": {
@@ -5023,6 +5087,14 @@
           "title": "O meu plano",
           "desc": "O vosso plano, faturas e opções."
         }
+      },
+      "referral": {
+        "title": "Recomende um casal",
+        "desc": "Partilhe o seu link: recebe um crédito na primeira compra deles.",
+        "credit": "{amount} de crédito disponível",
+        "copy": "Copiar link",
+        "copied": "Copiado",
+        "linkAria": "O seu link de recomendação"
       }
     },
     "dashboard": {
@@ -5333,6 +5405,15 @@
           "short": "Fornecedores"
         }
       }
+    },
+    "nav": {
+      "home": "Início",
+      "dashboard": "O meu casamento",
+      "planning": "Planeamento",
+      "vendors": "Fornecedores",
+      "budget": "Orçamento",
+      "seating": "Plano de mesas",
+      "forfait": "Plano"
     }
   },
   "CouplePortal": {

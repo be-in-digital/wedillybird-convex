@@ -16,7 +16,10 @@
       "moderation": "Moderation",
       "newsletter": "Newsletter",
       "auditLog": "Audit log",
-      "promotions": "Promotions"
+      "promotions": "Promotions",
+      "affiliates": "Affiliates",
+      "bugReports": "Bug reports",
+      "photoBooks": "Photo books"
     },
     "common": {
       "back": "Back",
@@ -218,6 +221,35 @@
         "empty": "No invoice for this organization."
       }
     }
+  },
+  "BugReport": {
+    "cta": "Report a bug",
+    "open": "Report a bug",
+    "title": "Report a bug",
+    "subtitle": "Tell us what happened. A screenshot helps a lot.",
+    "descLabel": "What happened?",
+    "descPlaceholder": "I clicked on… and instead…",
+    "captureLabel": "Screenshot (optional)",
+    "captureBtn": "Capture screen",
+    "uploadBtn": "Choose an image",
+    "removeShot": "Remove screenshot",
+    "captureError": "The screenshot couldn't be taken. You can attach an image instead.",
+    "contextPage": "Page",
+    "submit": "Send",
+    "cancel": "Cancel",
+    "thanks": "Thank you — we got it. We're looking into it.",
+    "canvas": "Screenshot",
+    "video": "Video"
+  },
+  "CeremonySchedule": {
+    "section": "Schedule of the day",
+    "hint": "These times appear on the invitation. Leave empty to show nothing.",
+    "timeLabel": "Time",
+    "timePlaceholder": "3:00 PM",
+    "titleLabel": "Moment",
+    "titlePlaceholder": "Ceremony",
+    "add": "Add a moment",
+    "remove": "Remove this moment"
   },
   "Common": {
     "confirm": "Confirm",
@@ -3996,6 +4028,38 @@
       "reconciliation": "The Stripe webhook is delayed. The payment was received but the upgrade will apply in a few moments. Refresh the page.",
       "network": "Network error, try again",
       "unknown": "Something went wrong. Try again."
+    },
+    "upsell": {
+      "eyebrow": "AFTER THE WEDDING",
+      "title": "Keep your photos in high definition",
+      "subtitle": "Your gallery stays online for five years, and you download everything at original quality.",
+      "benefitRetention": "Gallery kept for five years instead of six months",
+      "benefitHd": "Download every photo in high definition",
+      "cta": "Get the HD archive",
+      "redirecting": "Redirecting…",
+      "purchased": "HD archive active",
+      "downloadHd": "Download photos in HD",
+      "successTitle": "Your photos are yours, for years to come",
+      "successBody": "The high-definition archive is active. Your gallery stays online for five years and you can download everything at original quality.",
+      "processingTitle": "Confirming your payment",
+      "processingBody": "Your payment is recorded. The archive activates in a moment — you can close this page.",
+      "reconciliation": "Confirmation is taking longer than expected. If nothing changes in a few minutes, write to us at contact@wedillybird.com.",
+      "backToEvent": "Back to my wedding",
+      "photoBook": {
+        "cta": "Order the photo book",
+        "dialogTitle": "Your photo book",
+        "dialogSubtitle": "Enter the delivery address. We print and ship within fifteen days.",
+        "recipientName": "Recipient name",
+        "addressLine1": "Address",
+        "addressLine2": "Address line 2",
+        "postalCode": "Postcode",
+        "city": "City",
+        "country": "Country",
+        "notes": "Delivery instructions (optional)",
+        "submit": "Confirm order",
+        "submitting": "Sending…",
+        "cancel": "Cancel"
+      }
     }
   },
   "Invoice": {
@@ -5019,6 +5083,14 @@
           "title": "My plan",
           "desc": "Your plan, invoices and options."
         }
+      },
+      "referral": {
+        "title": "Refer a couple",
+        "desc": "Share your link: you get a credit on their first purchase.",
+        "credit": "{amount} credit available",
+        "copy": "Copy link",
+        "copied": "Copied",
+        "linkAria": "Your referral link"
       }
     },
     "dashboard": {
@@ -5329,6 +5401,15 @@
           "short": "Vendors"
         }
       }
+    },
+    "nav": {
+      "home": "Home",
+      "dashboard": "My wedding",
+      "planning": "Planning",
+      "vendors": "Vendors",
+      "budget": "Budget",
+      "seating": "Seating",
+      "forfait": "Plan"
     }
   },
   "CouplePortal": {
