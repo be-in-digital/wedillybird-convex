@@ -114,6 +114,68 @@ describe('OnboardingWizard', () => {
     expect(formData.get('email')).toBe('alice@example.com');
   });
 
+  describe('rôle déjà établi (admin, partenaire pro)', () => {
+    // Un admin promu par ADMIN_PHONE, ou un partenaire ayant consommé son lien
+    // d'invitation, arrive ici sans `fullName` mais avec un rôle. Lui demander
+    // couple/pro le rétrograderait.
+    it('masque le step rôle et envoie directement depuis le step profil', async () => {
+      completeOnboardingActionMock.mockResolvedValue({ ok: true });
+      const user = userEvent.setup();
+      render(<OnboardingWizard initialPhone="+33612345678" initialRole="admin" />);
+
+      // Un seul step → le CTA du profil est « Terminer », pas « Suivant ».
+      expect(screen.queryByRole('button', { name: 'Onboarding.next' })).toBeNull();
+
+      await user.type(screen.getByLabelText('Onboarding.fullNameLabel'), 'Alice Martin');
+      await user.type(screen.getByLabelText('Onboarding.emailLabel'), 'alice@example.com');
+      await user.click(screen.getByRole('button', { name: 'Onboarding.finish' }));
+
+      expect(screen.queryByRole('radiogroup')).toBeNull();
+      expect(completeOnboardingActionMock).toHaveBeenCalledTimes(1);
+      const formData = completeOnboardingActionMock.mock.calls[0]![0] as FormData;
+      expect(formData.get('fullName')).toBe('Alice Martin');
+      expect(formData.get('email')).toBe('alice@example.com');
+      // Rôle omis → le serveur conserve celui déjà en base.
+      expect(formData.get('role')).toBeNull();
+    });
+
+    it('masque aussi le step rôle pour un partenaire déjà pro', async () => {
+      const user = userEvent.setup();
+      render(<OnboardingWizard initialPhone="+33612345678" initialRole="pro" />);
+
+      await user.type(screen.getByLabelText('Onboarding.fullNameLabel'), 'Sarah Coach');
+      await user.type(screen.getByLabelText('Onboarding.emailLabel'), 'sarah@example.com');
+
+      expect(screen.queryByRole('button', { name: 'Onboarding.next' })).toBeNull();
+      expect(screen.queryByRole('radiogroup')).toBeNull();
+    });
+
+    it('garde le step rôle pour un compte guest ou sans rôle', async () => {
+      const user = userEvent.setup();
+      render(<OnboardingWizard initialPhone="+33612345678" initialRole="guest" />);
+
+      await user.type(screen.getByLabelText('Onboarding.fullNameLabel'), 'Alice Martin');
+      await user.type(screen.getByLabelText('Onboarding.emailLabel'), 'alice@example.com');
+      await user.click(screen.getByRole('button', { name: 'Onboarding.next' }));
+
+      expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+    });
+
+    it("affiche l'erreur de soumission même sans step rôle", async () => {
+      completeOnboardingActionMock.mockResolvedValue({ ok: false, error: 'BOOM' });
+      const user = userEvent.setup();
+      render(<OnboardingWizard initialPhone="+33612345678" initialRole="admin" />);
+
+      await user.type(screen.getByLabelText('Onboarding.fullNameLabel'), 'Alice Martin');
+      await user.type(screen.getByLabelText('Onboarding.emailLabel'), 'alice@example.com');
+      await user.click(screen.getByRole('button', { name: 'Onboarding.finish' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent('Onboarding.errors.submit');
+      });
+    });
+  });
+
   describe('secure step (phone link)', () => {
     let fetchSpy: ReturnType<typeof vi.spyOn>;
 

@@ -219,7 +219,7 @@ export const analytics = {
     metaTrack('CompleteRegistration');
   },
   /** Onboarding terminé (profil complété, rôle choisi). */
-  onboardingCompleted(props: { role: 'couple' | 'pro' }): void {
+  onboardingCompleted(props: { role: 'couple' | 'pro' | 'admin' }): void {
     track(EVENTS.onboardingCompleted, props);
   },
   /** Démarrage du checkout (doublé/fiabilisé côté serveur). */
