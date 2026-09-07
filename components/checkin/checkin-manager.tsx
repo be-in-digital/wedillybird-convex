@@ -99,11 +99,26 @@ export function CheckInManager({ eventId, initialGuests }: Props) {
   }, []);
 
   useEffect(() => {
+    // Le cache hors-ligne est un confort, pas une dépendance : IndexedDB peut
+    // être indisponible (navigation privée, quota atteint, stockage désactivé
+    // par l'utilisateur) et le scan doit continuer de fonctionner en ligne.
+    // Sans `catch`, cet échec remontait en rejet de promesse NON GÉRÉ ; sans
+    // `cancelled`, un démontage pendant l'écriture déclenchait un setState sur
+    // un composant disparu. Le `drainQueue` juste au-dessus applique déjà la
+    // même règle.
+    let cancelled = false;
     (async () => {
-      await cacheGuestsForEvent(eventId, initialGuests);
-      const meta = await getCacheMeta(eventId);
-      if (meta) setLastSyncedAt(meta.lastSyncedAt);
+      try {
+        await cacheGuestsForEvent(eventId, initialGuests);
+        const meta = await getCacheMeta(eventId);
+        if (!cancelled && meta) setLastSyncedAt(meta.lastSyncedAt);
+      } catch {
+        // pas de cache : on reste sur les données rendues par le serveur
+      }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [eventId, initialGuests]);
 
   useEffect(() => {
