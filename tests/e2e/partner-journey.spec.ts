@@ -129,6 +129,79 @@ test.describe('Parcours partenaire', () => {
     await partnerContext.close();
   });
 
+  test('une partenaire « compte personnel » atteint son espace depuis la navigation', async ({
+    page,
+    browser,
+  }) => {
+    // C'est LA correction de la page orpheline : jusqu'ici `/partenaire`
+    // n'était liée de nulle part et ne s'atteignait qu'en tapant l'URL.
+    await signInByEmail(page, ADMIN_EMAIL);
+    const admin = await adminId();
+    const affiliate = await callConvex<{ id: string }>('mutation', 'affiliate:createAffiliate', {
+      adminId: admin,
+      code: 'NORAH10',
+      kind: 'partner',
+      rewardType: 'cash',
+      rateBps: 1000,
+      buyerDiscountBps: 1000,
+      displayName: 'Norah — @norah',
+    });
+    await callConvex('mutation', 'affiliate:setAffiliateStripeCoupon', {
+      adminId: admin,
+      affiliateId: affiliate.id,
+      stripeCouponId: 'coup_test',
+      stripePromotionCodeId: 'promo_test',
+    });
+    const invite = await callConvex<{ token: string }>('mutation', 'partnerInvites:create', {
+      adminId: admin,
+      affiliateId: affiliate.id,
+      kind: 'couple',
+      grantEventTier: 'premium',
+    });
+
+    const norahContext = await browser.newContext();
+    const norah = await norahContext.newPage();
+    await signInByEmail(norah, 'norah@test.fr');
+    await norah.goto(`/rejoindre/${invite.token}`);
+    await norah.getByTestId('partner-invite-submit').click();
+    await norah.waitForURL(/\/(dashboard|onboarding)/);
+
+    // Un compte créé par magic link n'a pas encore de nom : `/dashboard`
+    // renverrait à l'onboarding. On le termine, comme le ferait la partenaire.
+    const norahUser = await callConvex<{ _id: string }>('query', 'auth:_userByEmail', {
+      email: 'norah@test.fr',
+    });
+    await callConvex('mutation', 'users:completeOnboarding', {
+      userId: norahUser._id,
+      fullName: 'Norah',
+      email: 'norah@test.fr',
+    });
+
+    // Le lien doit être là, dans l'en-tête, sans que personne n'ait donné l'URL.
+    await norah.goto('/dashboard');
+    const link = norah.getByTestId('partner-space-link');
+    await expect(link).toBeVisible();
+    await link.click();
+    await norah.waitForURL(/\/partenaire/);
+    await expect(norah.getByText('NORAH10')).toBeVisible();
+
+    await norahContext.close();
+  });
+
+  test('la navigation n’expose pas l’espace partenaire à un simple couple', async ({ page }) => {
+    await signInByEmail(page, 'simple-couple@test.fr');
+    const user = await callConvex<{ _id: string }>('query', 'auth:_userByEmail', {
+      email: 'simple-couple@test.fr',
+    });
+    await callConvex('mutation', 'users:completeOnboarding', {
+      userId: user._id,
+      fullName: 'Camille',
+      email: 'simple-couple@test.fr',
+    });
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('partner-space-link')).toHaveCount(0);
+  });
+
   test('le lien ?ref pose le cookie d’attribution, une seule fois', async ({ page, context }) => {
     await page.goto('/?ref=SARAH12');
     const first = (await context.cookies()).find((c) => c.name === 'wdb_ref');
