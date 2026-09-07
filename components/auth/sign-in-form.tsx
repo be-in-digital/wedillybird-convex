@@ -24,7 +24,7 @@ function mapError(code: string, t: (k: string) => string): string {
   }
 }
 
-export function SignInForm() {
+export function SignInForm({ next = null }: { next?: string | null }) {
   const t = useTranslations('Auth');
   const tRoot = useTranslations();
   const router = useRouter();
@@ -41,7 +41,9 @@ export function SignInForm() {
         const phone = result.phone ?? '';
         router.push({
           pathname: '/verify',
-          query: { phone },
+          // `next` voyage avec le numero : sans lui, la partenaire perd son
+          // lien d'invitation entre la demande de code et la verification.
+          query: next ? { phone, next } : { phone },
         });
         return;
       }

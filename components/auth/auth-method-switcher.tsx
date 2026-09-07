@@ -28,10 +28,13 @@ export function AuthMethodSwitcher({
   intent = 'signin',
   plan,
   billing,
+  next = null,
 }: {
   intent?: 'signin' | 'signup';
   plan?: string;
   billing?: 'monthly' | 'annual';
+  /** Destination post-connexion, deja validee cote serveur. */
+  next?: string | null;
 }) {
   const t = useTranslations('Auth');
   const reduced = useReducedMotion();
@@ -84,7 +87,7 @@ export function AuthMethodSwitcher({
           transition={{ duration: 0.25, ease: 'easeOut' }}
           role="tabpanel"
         >
-          {method === 'whatsapp' ? <SignInForm /> : <MagicLinkForm />}
+          {method === 'whatsapp' ? <SignInForm next={next} /> : <MagicLinkForm next={next} />}
         </motion.div>
       </AnimatePresence>
     </div>

@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { Link, redirect } from '@/i18n/navigation';
 import { AuthCard } from '@/components/auth/auth-card';
+import { safeNextPath } from '@/lib/auth/safe-next';
 import { VerifyForm } from '@/components/auth/verify-form';
 import { isValidE164, maskPhone } from '@/lib/phone';
 
@@ -33,6 +34,9 @@ export default async function VerifyPage({
   const sp = await searchParams;
   const rawPhone = sp.phone;
   const phone = Array.isArray(rawPhone) ? rawPhone[0] : rawPhone;
+  // Revalide a chaque etape plutot que de faire confiance a l'etape d'avant :
+  // cette URL est partageable et editable a la main.
+  const next = safeNextPath(typeof sp.next === 'string' ? sp.next : null);
 
   if (!phone || !isValidE164(phone)) {
     redirect({ href: '/sign-in', locale });
@@ -56,7 +60,7 @@ export default async function VerifyPage({
         </p>
       }
     >
-      <VerifyForm phone={phone!} />
+      <VerifyForm phone={phone!} next={next} />
     </AuthCard>
   );
 }

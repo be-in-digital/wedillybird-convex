@@ -13,6 +13,7 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { clearSessionCookie, getSession, setSessionCookie } from '@/lib/auth/session';
 import { isAgencyRole, resolvePostAuthDestination } from '@/lib/auth/post-auth-destination';
 import { asBudgetCurrency } from '@/lib/currency';
+import { safeNextPath } from '@/lib/auth/safe-next';
 
 type ActionResult =
   | { ok: true; phone?: string; email?: string; isNewUser?: boolean }
@@ -170,10 +171,16 @@ export async function requestMagicLinkAction(formData: FormData): Promise<Action
     undefined;
 
   const locale = await getLocale();
+  // Revalide cote serveur : le formulaire est du code client, la valeur qui
+  // arrive ici n'est jamais une preuve.
+  const next = safeNextPath(
+    typeof formData.get('next') === 'string' ? String(formData.get('next')) : null,
+  );
   try {
     await convex.action(convexApi.requestMagicLink, {
       email: parsed.data.email,
       ...(ipAddress ? { ipAddress } : {}),
+      ...(next ? { next } : {}),
       locale,
     });
     return { ok: true, email: parsed.data.email };

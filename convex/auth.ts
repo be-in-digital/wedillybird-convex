@@ -301,8 +301,10 @@ export const requestMagicLink = action({
      * existe déjà avec une locale persistée, on la priorise.
      */
     locale: v.optional(v.string()),
+    /** Chemin interne a rejoindre apres verification (deja valide cote Next). */
+    next: v.optional(v.string()),
   },
-  handler: async (ctx, { email, ipAddress, locale }) => {
+  handler: async (ctx, { email, ipAddress, locale, next }) => {
     const normalized = normalizeEmail(email);
     if (!isValidEmail(normalized)) {
       throw new Error('INVALID_EMAIL');
@@ -335,6 +337,7 @@ export const requestMagicLink = action({
       token,
       ipAddress,
       locale: existingUser?.locale ?? locale,
+      ...(next ? { next } : {}),
     });
 
     return { email: normalized };
