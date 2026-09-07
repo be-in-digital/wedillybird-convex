@@ -225,22 +225,30 @@ export const markSucceeded = mutation({
     // code au lieu de cliquer le lien) mais un code promo appliqué qui
     // correspond à un affilié actif → on rattache le paiement AVANT de créditer
     // le ledger. Sans ça, tout achat via code tapé perdait sa commission.
+    //
+    // Arbitrage entre les deux surfaces : c'est le CODE TAPÉ qui l'emporte,
+    // parce que c'est lui qui a financé la remise. Le cookie primait, et la
+    // divergence est atteignable : quand l'affilié du cookie n'offre aucune
+    // remise (cas de tout code de parrainage particulier), le checkout laisse
+    // `allow_promotion_codes` ouvert et l'acheteur peut taper le code d'une
+    // partenaire. Celle-ci offrait alors la remise pendant qu'un tiers
+    // encaissait la commission — calculée, en prime, sur le net déjà amputé.
     let attributedAffiliateId = payment.affiliateId;
-    if (!attributedAffiliateId && promotionCode) {
+    if (promotionCode) {
       try {
         const aff = await findActiveAffiliateByCode(ctx, promotionCode);
-        if (aff) {
+        if (aff && aff._id !== attributedAffiliateId) {
           attributedAffiliateId = aff._id;
           await ctx.db.patch(payment._id, { affiliateId: aff._id, updatedAt: now });
         }
-      } catch {
-        // best-effort — l'attribution ne bloque jamais la confirmation.
+      } catch (err) {
+        console.error('[payments] attribution par code promo impossible', err);
       }
     }
 
     if (attributedAffiliateId) {
       try {
-        await applyReferral(ctx, {
+        const referral = await applyReferral(ctx, {
           affiliateId: attributedAffiliateId,
           sourceSessionId: payment.providerSessionId,
           grossMinor: payment.amountMinor,
@@ -251,22 +259,35 @@ export const markSucceeded = mutation({
           purchasedAt: now,
           eventDate: event?.eventDate,
           eventId: payment.eventId,
+          paymentId: payment._id,
           buyerUserId: payment.userId,
           buyerEmail: owner?.email ?? null,
         });
-      } catch {
-        // best-effort — la confirmation du paiement prime.
+        // Les issues non nominales ne sont pas des erreurs, mais elles disent
+        // qu'AUCUNE commission n'a été créditée — sans trace, une attribution
+        // perdue était indétectable.
+        if (referral.outcome === 'inactive' || referral.outcome === 'self_referral') {
+          console.warn(
+            `[payments] commission non créditée (${referral.outcome}) session=${payment.providerSessionId}`,
+          );
+        }
+      } catch (err) {
+        // best-effort — la confirmation du paiement prime, mais elle se trace.
+        console.error('[payments] applyReferral a échoué', err);
       }
     }
     try {
       await ensureReferralAffiliate(ctx, payment.userId);
-    } catch {
-      // best-effort
+    } catch (err) {
+      console.error('[payments] code de parrainage non créé pour l’acheteur', err);
     }
     try {
       await consumeCreditReservation(ctx, payment.creditReservationId, payment.providerSessionId);
-    } catch {
-      // best-effort
+    } catch (err) {
+      // Le crédit reste réservé : le GC le relâcherait dans 24 h alors que le
+      // coupon a déjà été appliqué (crédit dépensé deux fois). Cette trace est
+      // le seul moyen de repérer le cas.
+      console.error('[payments] crédit de parrainage non consommé', err);
     }
 
     if (alreadyApplied) {

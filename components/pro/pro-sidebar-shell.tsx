@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { PartnerSpaceLink } from '@/components/partner/partner-space-link';
 import { signOutAction } from '@/app/[locale]/(auth)/actions';
 import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { StoreNotificationBell } from '@/components/notifications/store-notification-bell';
@@ -363,6 +364,10 @@ export function ProSidebarShell({
                 </div>
               );
             })}
+            {/* Espace partenaire — hors NAV_GROUPS parce qu'il ne concerne que
+                les agences réellement partenaires : le composant s'efface pour
+                tous les autres. Sans cette entrée, la page était orpheline. */}
+            <PartnerSpaceLink variant="sidebar" className={cn(collapsed && 'justify-center')} />
           </nav>
 
           {/* Footer : utilisateur connecté + déconnexion (icône seule, à droite) */}

@@ -614,7 +614,10 @@ export function AdminAffiliatesBoard({
                     {new Date(r.vestsAt).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-4 py-2.5">
-                    {r.status === 'vested' ? (
+                    {/* Seules les commissions CASH se versent. Un crédit se
+                        dépense à un achat ; le « verser » le supprimerait du
+                        solde du parrain sans contrepartie. */}
+                    {r.status === 'vested' && r.rewardType === 'cash' ? (
                       <button
                         type="button"
                         onClick={() => markPaid(r)}

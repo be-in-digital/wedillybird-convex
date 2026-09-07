@@ -325,6 +325,20 @@ export const redeem = mutation({
     const user = await ctx.db.get(userId);
     if (!user) throw new Error('USER_NOT_FOUND');
 
+    // Même invariant que `setAffiliateOwner` : un compte ne porte pas deux
+    // affiliés de même nature. Ce chemin-ci posait `ownerUserId` en direct,
+    // sans le contrôle — accepter un second lien partenaire laissait deux
+    // codes sur une même personne, ce que `admin.listUsers` ne sait afficher
+    // qu'à moitié et que le bouton « détacher » ne défait qu'à moitié.
+    // Le même lien rejoué par le même compte reste accepté (`_id` identique).
+    const ownedByUser = await ctx.db
+      .query('affiliates')
+      .withIndex('by_owner', (q) => q.eq('ownerUserId', userId))
+      .collect();
+    if (ownedByUser.some((a) => a._id !== invite.affiliateId && a.kind === 'partner')) {
+      throw new Error('USER_ALREADY_HAS_AFFILIATE');
+    }
+
     // ---------------------------------------------------------------------
     // Lien « compte personnel » : pas d'agence, pas d'abonnement.
     //
@@ -337,15 +351,21 @@ export const redeem = mutation({
       // Le rôle n'est PAS touché : promouvoir en `pro` ouvrirait un back-office
       // d'agence à quelqu'un qui vient organiser son propre mariage. Et
       // rétrograder un admin ou un pro existant serait pire encore.
-      await ctx.db.patch(userId, {
-        compedEventPlan: {
-          tier: invite.grantEventTier ?? DEFAULT_PARTNER_COMP_EVENT_TIER,
-          grantedBy: invite.createdBy,
-          grantedAt: now,
-          affiliateId: invite.affiliateId,
-          reason: 'partner_invite',
-        },
-      });
+      // Ne jamais écraser une créance déjà posée : elle vaut un forfait, et
+      // l'écraser en silence en ferait disparaître un. Un cadeau déjà présent
+      // est conservé tel quel — le lien reste consommé, le compte est rattaché,
+      // mais on ne promet pas deux fois ce qui ne sera donné qu'une.
+      if (!user.compedEventPlan) {
+        await ctx.db.patch(userId, {
+          compedEventPlan: {
+            tier: invite.grantEventTier ?? DEFAULT_PARTNER_COMP_EVENT_TIER,
+            grantedBy: invite.createdBy,
+            grantedAt: now,
+            affiliateId: invite.affiliateId,
+            reason: 'partner_invite',
+          },
+        });
+      }
 
       const coupleAffiliate = await ctx.db.get(invite.affiliateId);
       if (coupleAffiliate && !coupleAffiliate.ownerUserId) {
@@ -384,6 +404,15 @@ export const redeem = mutation({
       affiliateId: invite.affiliateId,
     };
 
+    // La promotion de rôle fait partie du cadeau, que l'organisation soit
+    // créée ou adoptée. Elle n'était faite que dans la branche « création » :
+    // un propriétaire d'agence resté en rôle `couple` recevait le forfait mais
+    // `resolvePostAuthDestination` continuait de le classer comme particulier,
+    // et le renvoyait au dashboard couple à chaque connexion.
+    if (user.role !== 'pro' && user.role !== 'admin') {
+      await ctx.db.patch(userId, { role: 'pro' as const });
+    }
+
     let organizationId: Id<'organizations'>;
     if (existingOrg) {
       organizationId = existingOrg._id;
@@ -396,12 +425,6 @@ export const redeem = mutation({
         updatedAt: now,
       });
     } else {
-      // `organizations.create` exige le rôle pro ; une partenaire qui s'inscrit
-      // depuis ce lien arrive en `couple` par défaut. La promotion fait partie
-      // du cadeau — sans elle, le lien s'arrêterait sur un `NOT_PRO`.
-      if (user.role !== 'pro' && user.role !== 'admin') {
-        await ctx.db.patch(userId, { role: 'pro' as const });
-      }
       const baseSlug = slugifyOrgName(name) || `agence-${invite.token.slice(0, 6).toLowerCase()}`;
       const slug = await pickUniqueSlug(ctx, 'organizations', 'by_slug', 'slug', baseSlug);
       organizationId = await ctx.db.insert('organizations', {

@@ -279,6 +279,8 @@ export async function applyReferral(
     purchasedAt: number;
     eventDate?: number;
     eventId?: Id<'events'>;
+    /** Paiement source — rend la ligne de ledger rapprochable sans passer par la session. */
+    paymentId?: Id<'payments'>;
     buyerUserId?: Id<'users'>;
     buyerEmail?: string | null;
   },
@@ -320,7 +322,7 @@ export async function applyReferral(
     affiliateId: aff._id,
     code: aff.code,
     sourceSessionId: args.sourceSessionId,
-    paymentId: undefined,
+    paymentId: args.paymentId,
     eventId: args.eventId,
     buyerUserId: args.buyerUserId,
     grossMinor: args.grossMinor,
@@ -828,6 +830,12 @@ export const markReferralPaid = mutation({
     await assertAdmin(ctx, adminId);
     const ref = await ctx.db.get(referralId);
     if (!ref) throw new Error('REFERRAL_NOT_FOUND');
+    // Un crédit ne se VERSE pas : il se dépense à un achat, ce qui le fait
+    // passer `credited` avec la session qui l'a consommé (donc restituable en
+    // cas de remboursement). Le marquer « versé » ici le faisait sortir de
+    // `collectVestedCredit` sans contrepartie ni trace de consommation : le
+    // crédit du parrain s'évaporait, définitivement.
+    if (ref.rewardType !== 'cash') throw new Error('REFERRAL_NOT_PAYABLE');
     if (ref.status !== 'vested') return { outcome: 'noop' as const, status: ref.status };
 
     const now = Date.now();
@@ -864,6 +872,23 @@ export const markReferralPaid = mutation({
  * exposée (ni nom, ni email, ni event) : le partenaire a besoin du montant et
  * du statut, pas de l'identité de ses filleuls.
  */
+/**
+ * L'utilisateur a-t-il un espace partenaire ? Lecture volontairement minuscule
+ * (un seul index, aucun ledger) : elle est appelée par la navigation de CHAQUE
+ * page de l'app, là où `partnerDashboard` collecterait jusqu'à 500 lignes de
+ * commissions par affilié pour n'en tirer qu'un booléen.
+ */
+export const isPartner = query({
+  args: { userId: v.id('users') },
+  handler: async (ctx, { userId }) => {
+    const owned = await ctx.db
+      .query('affiliates')
+      .withIndex('by_owner', (q) => q.eq('ownerUserId', userId))
+      .collect();
+    return owned.some((a) => a.kind === 'partner');
+  },
+});
+
 export const partnerDashboard = query({
   args: { userId: v.id('users') },
   handler: async (ctx, { userId }) => {

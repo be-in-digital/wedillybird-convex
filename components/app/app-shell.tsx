@@ -7,6 +7,7 @@ import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { WedillybirdLogo } from '@/components/brand/wedillybird-logo';
 import { getSession } from '@/lib/auth/session';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { PartnerSpaceLink } from '@/components/partner/partner-space-link';
 
 /**
  * AppShell V4 — header sticky réutilisable pour toutes les pages app
@@ -50,6 +51,9 @@ export async function AppShell({ children, nav, userName }: AppShellProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Ne se rend qu'à un partenaire — sinon `/partenaire` reste une
+                page que personne ne peut atteindre sans taper l'URL. */}
+            <PartnerSpaceLink />
             {session ? <NotificationBell userId={session.userId} /> : null}
             {userName ? (
               <span className="hidden font-mono text-[10px] tracking-[0.24em] text-[color:var(--color-ink-500)] uppercase sm:inline-block">

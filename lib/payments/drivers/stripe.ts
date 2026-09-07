@@ -1259,6 +1259,8 @@ export async function reactivatePlatformSubscription(
 export interface AdminCoupon {
   id: string;
   name: string | null;
+  /** Metadata Stripe — sert à reconnaître nos coupons (ex. `wedillybird`). */
+  metadata: Record<string, string>;
   percentOff: number | null;
   amountOffMinor: number | null;
   currency: string | null;
@@ -1299,6 +1301,7 @@ function mapCoupon(c: Stripe.Coupon): AdminCoupon {
   return {
     id: c.id,
     name: c.name ?? null,
+    metadata: c.metadata ?? {},
     percentOff: c.percent_off ?? null,
     amountOffMinor: c.amount_off ?? null,
     currency: c.currency ? c.currency.toUpperCase() : null,
@@ -1495,6 +1498,18 @@ export async function findPromotionCodeByCode(code: string): Promise<AdminPromot
   const res = await stripe.promotionCodes.list({ code, limit: 1 });
   const found = res.data[0];
   return found ? mapPromotionCode(found) : null;
+}
+
+/** Un coupon par son id, ou `null` s'il n'existe plus (ou a été supprimé). */
+export async function retrieveCoupon(couponId: string): Promise<AdminCoupon | null> {
+  const stripe = getStripe();
+  try {
+    const coupon = await stripe.coupons.retrieve(couponId);
+    if ((coupon as { deleted?: boolean }).deleted) return null;
+    return mapCoupon(coupon as Stripe.Coupon);
+  } catch {
+    return null;
+  }
 }
 
 export async function listCoupons(limit = 100): Promise<AdminCoupon[]> {

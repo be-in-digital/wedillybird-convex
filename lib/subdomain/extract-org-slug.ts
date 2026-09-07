@@ -112,3 +112,30 @@ export function extractOrgSlug(host: string | null | undefined): string | null {
 export function getReservedSubdomains(): ReadonlySet<string> {
   return RESERVED_SUBDOMAINS;
 }
+
+/**
+ * Domaine à poser sur un cookie qui doit SURVIVRE au passage d'un
+ * sous-domaine d'agence vers l'apex — `null` quand il faut laisser le cookie
+ * host-only.
+ *
+ * Le cas qui l'impose : une invitée arrive sur `sarah.wedillybird.com/...?ref=SARAH12`
+ * (le lien qu'une agence partage), puis achète depuis l'app, dont le checkout
+ * (`/api/checkout`) vit sur l'apex. Un cookie host-only posé sur le
+ * sous-domaine n'est jamais renvoyé à l'apex : l'attribution ET la remise
+ * étaient perdues sans le moindre signal.
+ *
+ * `null` — donc host-only — dans les trois cas où un domaine partagé serait
+ * faux ou refusé par le navigateur :
+ *  - `localhost` / `127.0.0.1` (dev) : pas de domaine parent à partager ;
+ *  - `*.vercel.app` : suffixe public, tout `domain` est rejeté ;
+ *  - un host inconnu des `ROOT_DOMAINS` : on ne devine pas un domaine parent.
+ */
+export function sharedCookieDomain(host: string | null | undefined): string | null {
+  const normalized = normalizeHost(host);
+  if (!normalized) return null;
+  if (normalized === 'vercel.app' || normalized.endsWith('.vercel.app')) return null;
+  for (const root of ROOT_DOMAINS) {
+    if (normalized === root || normalized.endsWith(`.${root}`)) return `.${root}`;
+  }
+  return null;
+}

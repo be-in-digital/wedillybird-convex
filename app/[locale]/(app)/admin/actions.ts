@@ -19,6 +19,7 @@ import {
   removeSubscriptionDiscount,
   resolveConsumerPlanProductIds,
   findPromotionCodeByCode,
+  retrieveCoupon,
   type SubscriptionInvoice,
   type AdminCoupon,
   type AdminPromotionCode,
@@ -661,8 +662,27 @@ async function createPartnerCouponForAffiliate(
 
   // Anti-doublon : deux codes promo de même chaîne rendraient l'attribution
   // ambiguë (on ne saurait plus quel affilié créditer).
+  //
+  // Sauf s'il s'agit du NÔTRE, laissé derrière par un échec entre Stripe et
+  // Convex (le coupon et le code existaient, l'enregistrement des ids avait
+  // échoué). Ce cas-là condamnait le partenaire : « Créer le code » retombait
+  // indéfiniment sur ce garde, et seule une suppression manuelle au Dashboard
+  // Stripe en sortait. On l'adopte plutôt, la metadata faisant foi.
   const clash = await findPromotionCodeByCode(affiliate.code);
-  if (clash) throw new Error('STRIPE_CODE_ALREADY_EXISTS');
+  if (clash) {
+    const existingCoupon = clash.couponId ? await retrieveCoupon(clash.couponId) : null;
+    const ours =
+      existingCoupon?.metadata.wedillybird === 'partner_code' &&
+      existingCoupon.metadata.wedillybird_affiliate_code === affiliate.code;
+    if (!ours) throw new Error('STRIPE_CODE_ALREADY_EXISTS');
+    await getConvexServerClient().mutation(convexApi.setAffiliateStripeCoupon, {
+      adminId,
+      affiliateId,
+      stripeCouponId: existingCoupon.id,
+      stripePromotionCodeId: clash.id,
+    });
+    return { shareCode: clash.code };
+  }
 
   const appliesToProducts = await resolveConsumerPlanProductIds();
   if (appliesToProducts.length === 0) throw new Error('NO_CONSUMER_PRODUCTS_RESOLVED');

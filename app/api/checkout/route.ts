@@ -182,6 +182,20 @@ export async function POST(req: Request): Promise<Response> {
       creditReservationId,
     });
   } catch (err) {
+    // Le crédit réservé DOIT être relâché ici aussi. Sans ça, la session Stripe
+    // existe déjà avec son coupon mais aucun `payments` ne la référence :
+    // `markSucceeded` lèvera `PAYMENT_NOT_FOUND`, la réservation restera
+    // orpheline, et le GC la rendra dépensable 24 h plus tard — alors que le
+    // coupon, lui, a bien été consommé. Le crédit serait dépensé deux fois.
+    if (creditReserved) {
+      try {
+        await getConvexServerClient().mutation(convexApi.releaseCreditReservation, {
+          reservationId,
+        });
+      } catch {
+        // le GC cron rattrape.
+      }
+    }
     const message = err instanceof Error ? err.message : 'UNKNOWN';
     if (message === 'FORBIDDEN') {
       return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
