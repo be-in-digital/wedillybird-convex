@@ -25,6 +25,7 @@ import type * as health from "../health.js";
 import type * as http from "../http.js";
 import type * as invitationActions from "../invitationActions.js";
 import type * as invitationAudio from "../invitationAudio.js";
+import type * as lib_adminPromotion from "../lib/adminPromotion.js";
 import type * as lib_affiliate from "../lib/affiliate.js";
 import type * as lib_analytics from "../lib/analytics.js";
 import type * as lib_autoplace from "../lib/autoplace.js";
@@ -103,6 +104,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   invitationActions: typeof invitationActions;
   invitationAudio: typeof invitationAudio;
+  "lib/adminPromotion": typeof lib_adminPromotion;
   "lib/affiliate": typeof lib_affiliate;
   "lib/analytics": typeof lib_analytics;
   "lib/autoplace": typeof lib_autoplace;
