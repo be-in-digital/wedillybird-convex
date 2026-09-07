@@ -565,3 +565,141 @@ describe('Crédit de parrainage — réservation et dépense', () => {
     expect(usd.appliedMinor).toBe(0);
   });
 });
+
+describe('Remboursement et litige — le webhook reprend la commission', () => {
+  async function saleThenRefund(refundedAmountMinor: number) {
+    const aff = await partner('SARAH12');
+    const buyer = await seedUser(t, { email: 'f@test.fr' });
+    const eventId = await seedEvent(t, buyer);
+    await seedPendingPayment(t, {
+      userId: buyer,
+      eventId,
+      amountMinor: CATALOG,
+      sessionId: 'cs_wh',
+      affiliateId: aff.id,
+    });
+    await confirm({ sessionId: 'cs_wh', netMinor: CATALOG, commissionBaseMinor: HT_BASE });
+    return t.mutation(api.payments.markRefundedByWebhook, {
+      webhookSecret: WEBHOOK_SECRET,
+      provider: 'stripe',
+      providerSessionId: 'cs_wh',
+      providerEventId: 'evt_refund',
+      refundedAmountMinor,
+    });
+  }
+
+  it('un remboursement total annule la commission', async () => {
+    // Régression : `reverseReferralBySession` n'était appelé QUE depuis le
+    // back-office. Un remboursement fait au Dashboard Stripe, ou un litige,
+    // laissait la commission s'acquérir puis se faire verser.
+    const res = await saleThenRefund(CATALOG);
+    expect(res.status).toBe('refunded');
+    const [row] = await ledger();
+    expect(row?.status).toBe('reversed');
+  });
+
+  it('un remboursement partiel annule aussi la commission', async () => {
+    const res = await saleThenRefund(1000);
+    expect(res.status).toBe('partially_refunded');
+    const [row] = await ledger();
+    // La vente n'est plus entière : la commission ne peut pas rester due.
+    expect(row?.status).toBe('reversed');
+  });
+
+  it('rejouer le webhook de remboursement ne casse rien', async () => {
+    await saleThenRefund(CATALOG);
+    const again = await t.mutation(api.payments.markRefundedByWebhook, {
+      webhookSecret: WEBHOOK_SECRET,
+      provider: 'stripe',
+      providerSessionId: 'cs_wh',
+      providerEventId: 'evt_refund_2',
+      refundedAmountMinor: CATALOG,
+    });
+    expect(again.status).toBe('refunded');
+    const rows = await ledger();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.status).toBe('reversed');
+  });
+
+  it('restitue le crédit que l’acheteur avait dépensé sur cet achat', async () => {
+    const sponsor = await seedUser(t, { email: 'parrain@test.fr' });
+    const aff = await t.mutation(api.affiliate.createAffiliate, {
+      adminId,
+      code: 'WBPARRAIN',
+      kind: 'referral',
+      rewardType: 'credit',
+      rateBps: 2000,
+      buyerDiscountBps: 0,
+    });
+    await t.mutation(api.affiliate.setAffiliateOwner, {
+      adminId,
+      affiliateId: aff.id,
+      ownerUserId: sponsor,
+    });
+    const now = Date.now();
+    const creditId = await t.run(async (ctx) =>
+      ctx.db.insert('affiliateReferrals', {
+        affiliateId: aff.id,
+        code: 'WBPARRAIN',
+        sourceSessionId: 'cs_origine',
+        grossMinor: CATALOG,
+        netMinor: CATALOG,
+        currency: 'EUR',
+        rewardMinor: 1000,
+        rewardType: 'credit' as const,
+        status: 'vested' as const,
+        vestsAt: now - DAY,
+        createdAt: now - DAY,
+        updatedAt: now - DAY,
+      }),
+    );
+    await t.mutation(api.affiliate.reserveCreditForCheckout, {
+      userId: sponsor,
+      reservationId: 'resa-r',
+      currency: 'EUR',
+      orderMinor: CATALOG,
+    });
+    const eventId = await seedEvent(t, sponsor);
+    await t.run(async (ctx) =>
+      ctx.db.insert('payments', {
+        userId: sponsor,
+        eventId,
+        kind: 'plan' as const,
+        plan: 'premium' as const,
+        currency: 'EUR' as const,
+        amountMinor: CATALOG,
+        provider: 'stripe' as const,
+        providerSessionId: 'cs_credit_refund',
+        creditReservationId: 'resa-r',
+        status: 'pending' as const,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    );
+    await confirm({ sessionId: 'cs_credit_refund' });
+    expect((await t.run(async (ctx) => ctx.db.get(creditId)))?.status).toBe('credited');
+
+    await t.mutation(api.payments.markRefundedByWebhook, {
+      webhookSecret: WEBHOOK_SECRET,
+      provider: 'stripe',
+      providerSessionId: 'cs_credit_refund',
+      providerEventId: 'evt_credit_refund',
+      refundedAmountMinor: CATALOG,
+    });
+    const restored = await t.run(async (ctx) => ctx.db.get(creditId));
+    expect(restored?.status).toBe('vested');
+    expect(restored?.consumedBySession).toBeUndefined();
+  });
+
+  it('refuse un appel sans le secret partagé', async () => {
+    await expect(
+      t.mutation(api.payments.markRefundedByWebhook, {
+        webhookSecret: 'pas-le-bon',
+        provider: 'stripe',
+        providerSessionId: 'cs_wh',
+        providerEventId: 'evt',
+        refundedAmountMinor: 100,
+      }),
+    ).rejects.toThrow('INVALID_WEBHOOK_SECRET');
+  });
+});

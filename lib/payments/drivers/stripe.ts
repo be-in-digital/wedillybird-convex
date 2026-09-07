@@ -146,6 +146,32 @@ export const stripeDriver: PaymentDriver = {
       const session = event.data.object as Stripe.Checkout.Session;
       return parseSession(session, event.id, 'cancelled');
     }
+    // Remboursement et litige : l'argent repart, la commission doit suivre.
+    // Un litige est traité comme un remboursement total — l'issue est
+    // incertaine, mais laisser la commission s'acquérir pendant l'instruction
+    // reviendrait à verser sur une vente contestée.
+    if (event.type === 'charge.refunded' || event.type === 'charge.dispute.created') {
+      const charge =
+        event.type === 'charge.refunded'
+          ? (event.data.object as Stripe.Charge)
+          : await chargeOfDispute(event.data.object as Stripe.Dispute);
+      if (!charge) throw new Error('UNSUPPORTED_EVENT');
+      const session = await sessionOfCharge(charge);
+      // Pas de session de checkout derrière ce paiement (abonnement, lien de
+      // paiement pro…) : ce n'est pas un achat one-shot, on laisse passer.
+      if (!session) throw new Error('UNSUPPORTED_EVENT');
+      const currencyRaw = (charge.currency ?? '').toUpperCase();
+      if (!isCurrency(currencyRaw)) throw new Error('INVALID_CURRENCY');
+      return {
+        providerSessionId: session.id,
+        providerEventId: event.id,
+        status: 'refunded',
+        amountMinor: charge.amount ?? 0,
+        currency: currencyRaw,
+        refundedAmountMinor:
+          event.type === 'charge.refunded' ? (charge.amount_refunded ?? 0) : (charge.amount ?? 0),
+      };
+    }
     throw new Error('UNSUPPORTED_EVENT');
   },
 
@@ -1314,6 +1340,37 @@ function mapCoupon(c: Stripe.Coupon): AdminCoupon {
     createdAt: (c.created ?? 0) * 1000,
     appliesToProducts,
   };
+}
+
+/**
+ * La charge visée par un litige. Stripe la donne soit en id, soit expandée.
+ */
+async function chargeOfDispute(dispute: Stripe.Dispute): Promise<Stripe.Charge | null> {
+  const c = dispute.charge;
+  if (!c) return null;
+  if (typeof c !== 'string') return c;
+  try {
+    return await getStripe().charges.retrieve(c);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * La session de checkout qui a produit cette charge, ou `null`.
+ *
+ * Le webhook `charge.*` ne porte pas la session : c'est le `payment_intent`
+ * qui fait le lien, et nos paiements sont indexés par id de session.
+ */
+async function sessionOfCharge(charge: Stripe.Charge): Promise<Stripe.Checkout.Session | null> {
+  const pi = typeof charge.payment_intent === 'string' ? charge.payment_intent : null;
+  if (!pi) return null;
+  try {
+    const list = await getStripe().checkout.sessions.list({ payment_intent: pi, limit: 1 });
+    return list.data[0] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**

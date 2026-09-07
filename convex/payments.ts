@@ -12,7 +12,10 @@ import {
   consumeCreditReservation,
   findActiveAffiliateByCode,
   releaseCreditReservation,
+  restoreCreditForRefundedSession,
+  reverseReferralBySession,
 } from './affiliate';
+import { computeRefundOutcome } from './lib/analytics';
 
 function ownerLocaleToIntlTag(locale: string | undefined): string {
   return toIntlTag(locale);
@@ -346,6 +349,68 @@ function formatAmount(amountMinor: number, currency: string): string {
   if (currency === 'XOF') return `${amount.toLocaleString('fr-FR')} FCFA`;
   return `${amount.toLocaleString('fr-FR')} ${currency}`;
 }
+
+/**
+ * Remboursement ou litige confirmé par le provider.
+ *
+ * Le back-office savait déjà rembourser (`admin.markPaymentRefunded`), mais
+ * c'était le SEUL chemin : un remboursement fait directement au Dashboard
+ * Stripe, ou un chargeback, ne reprenait aucune commission — elle continuait
+ * de s'acquérir puis se faisait verser sur une vente rendue.
+ *
+ * Idempotent : `computeRefundOutcome` cumule, et les deux effets d'affiliation
+ * sont eux-mêmes sans effet s'ils ont déjà eu lieu.
+ */
+export const markRefundedByWebhook = mutation({
+  args: {
+    webhookSecret: v.string(),
+    provider: PROVIDER,
+    providerSessionId: v.string(),
+    providerEventId: v.string(),
+    refundedAmountMinor: v.number(),
+  },
+  handler: async (ctx, args) => {
+    assertWebhookSecret(args.webhookSecret);
+    const payment = await ctx.db
+      .query('payments')
+      .withIndex('by_session', (q) =>
+        q.eq('provider', args.provider).eq('providerSessionId', args.providerSessionId),
+      )
+      .first();
+    if (!payment) throw new Error('PAYMENT_NOT_FOUND');
+
+    const now = Date.now();
+    // Stripe envoie le CUMUL remboursé, pas l'incrément : on repart du montant
+    // déjà encaissé pour ne pas additionner deux fois le même remboursement.
+    const { status, totalRefunded } = computeRefundOutcome(
+      payment.amountMinor,
+      0,
+      Math.min(args.refundedAmountMinor, payment.amountMinor),
+    );
+    await ctx.db.patch(payment._id, {
+      status,
+      refundedAmountMinor: totalRefunded,
+      refundedAt: now,
+      providerEventId: args.providerEventId,
+      updatedAt: now,
+    });
+
+    // (a) la commission générée par cette vente est annulée, (b) le crédit que
+    // l'acheteur avait dépensé dessus lui est restitué. Best-effort tracé : le
+    // remboursement lui-même prime, mais une reprise ratée doit se voir.
+    try {
+      await reverseReferralBySession(ctx, payment.providerSessionId);
+    } catch (err) {
+      console.error('[payments] reversal de commission impossible', err);
+    }
+    try {
+      await restoreCreditForRefundedSession(ctx, payment.providerSessionId);
+    } catch (err) {
+      console.error('[payments] restitution de crédit impossible', err);
+    }
+    return { ok: true as const, status };
+  },
+});
 
 export const markFailed = mutation({
   args: {

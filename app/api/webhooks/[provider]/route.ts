@@ -332,6 +332,20 @@ export async function POST(
 
       return NextResponse.json({ ok: true, alreadyApplied: result.alreadyApplied });
     }
+    if (event.status === 'refunded') {
+      // L'argent repart : la commission d'affiliation est annulée et le crédit
+      // dépensé sur cet achat est restitué. Sans ce chemin, seul un clic
+      // « rembourser » au back-office le faisait — un remboursement passé par
+      // le Dashboard Stripe, ou un litige, laissait la commission se verser.
+      const refunded = await convex.mutation(convexApi.markPaymentRefundedByWebhook, {
+        webhookSecret,
+        provider,
+        providerSessionId: event.providerSessionId,
+        providerEventId: event.providerEventId,
+        refundedAmountMinor: event.refundedAmountMinor ?? event.amountMinor,
+      });
+      return NextResponse.json({ ok: true, status: refunded.status });
+    }
     const result = await convex.mutation(convexApi.markPaymentFailed, {
       webhookSecret,
       provider,
