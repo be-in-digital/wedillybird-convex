@@ -34,7 +34,7 @@ function mapError(code: string, t: (k: string) => string): string {
  * de confirmation Motion. Pas de redirection — l'utilisateur revient sur
  * cette page après avoir cliqué dans son email.
  */
-export function MagicLinkForm() {
+export function MagicLinkForm({ next = null }: { next?: string | null }) {
   const t = useTranslations('Auth');
   const tRoot = useTranslations();
   const [pending, startTransition] = useTransition();
@@ -46,6 +46,10 @@ export function MagicLinkForm() {
     setError(null);
     setFieldErrors({});
     startTransition(async () => {
+      // Le lien recu par e-mail doit ramener la partenaire sur son invitation,
+      // pas sur l'onboarding generique : `next` part avec la demande et sera
+      // recolle a l'URL de verification.
+      if (next) formData.set('next', next);
       const result = await requestMagicLinkAction(formData);
       if (result.ok) {
         setSentTo(result.email ?? '');

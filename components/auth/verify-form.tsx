@@ -11,6 +11,8 @@ import { requestOtpAction, verifyOtpAction } from '@/app/[locale]/(auth)/actions
 
 interface VerifyFormProps {
   phone: string;
+  /** Destination post-connexion deja validee par la page. */
+  next?: string | null;
 }
 
 const RESEND_SECONDS = 30;
@@ -36,7 +38,7 @@ function mapError(code: string, t: (k: string) => string): string {
   }
 }
 
-export function VerifyForm({ phone }: VerifyFormProps) {
+export function VerifyForm({ phone, next = null }: VerifyFormProps) {
   const t = useTranslations('Auth');
   const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -68,14 +70,17 @@ export function VerifyForm({ phone }: VerifyFormProps) {
           if (result.isNewUser) {
             analytics.signupCompleted({ method: 'whatsapp' });
           }
-          router.push('/onboarding');
+          // Retour sur la destination demandee — sans quoi une partenaire
+          // venue de `/rejoindre/<token>` perd son invitation ici meme, et se
+          // retrouvera a devoir choisir un forfait payant.
+          router.push((next ?? '/onboarding') as never);
           return;
         }
         setError(mapError(result.error, t));
         setCode('');
       });
     },
-    [phone, router, t],
+    [phone, next, router, t],
   );
 
   function handleSubmit(formData: FormData) {

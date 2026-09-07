@@ -74,20 +74,25 @@ function detectInitialTimezone(): string {
 
 interface Props {
   /**
-   * Rôle de l'utilisateur courant. `couple` voit l'étape "Choisir le forfait"
-   * (Essentiel/Premium one-shot). `pro` saute cette étape — la facturation
-   * pro est gérée séparément via `/pro/billing` (subscription mensuelle).
+   * L'événement va-t-il appartenir à une **organisation** ?
+   *
+   * C'est ce critère, et non le rôle, qui décide de l'étape « Choisir le
+   * forfait » : `createEventAction` rattache l'event dès que
+   * `myOrganization` répond, et `decidePublishGate` ne réclame jamais de
+   * `planTier` à un event porteur d'`organizationId`. Décider sur le rôle
+   * laissait un écart — un `pro` sans organisation sautait l'étape puis se
+   * heurtait au mur du forfait à la publication.
    */
-  userRole?: 'couple' | 'pro' | 'admin' | 'guest';
+  hasOrganization?: boolean;
 }
 
-export function EventCreateWizard({ userRole = 'couple' }: Props) {
+export function EventCreateWizard({ hasOrganization = false }: Props) {
   const t = useTranslations('EventCreate');
   const tCommon = useTranslations('Common');
   const tPlans = useTranslations('Plans');
   const tEvents = useTranslations('Events');
   const tPrivacy = useTranslations('FaceSearchPrivacy');
-  const showPlanStep = userRole === 'couple';
+  const showPlanStep = !hasOrganization;
   const totalSteps = showPlanStep ? 5 : 4;
   const [step, setStep] = useState<StepIndex>(0);
   const [form, setForm] = useState<FormState>({
