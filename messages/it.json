@@ -1068,7 +1068,8 @@
     "previewInvitation": "Anteprima dell'invito",
     "customizeMessage": "Personalizza il messaggio",
     "editDetails": "Modifica i dettagli",
-    "guestsEyebrow": "I tuoi invitati"
+    "guestsEyebrow": "I tuoi invitati",
+    "planByOrganization": "Incluso nell'abbonamento dell'agenzia"
   },
   "Guests": {
     "title": "Lista inviti",
