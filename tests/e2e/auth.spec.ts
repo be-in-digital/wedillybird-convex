@@ -58,11 +58,21 @@ test.describe('Auth — verify page', () => {
   test('allows pasting the code into the first cell', async ({ page }) => {
     await page.goto('/verify?phone=%2B33612345678');
     const cells = page.getByRole('textbox');
-    await cells.first().focus();
+
+    // Attendre l'hydratation AVANT de taper, sinon le test ment.
+    //
+    // Les cases sont contrôlées par React et l'avance de focus vit dans
+    // `onChange`. Taper avant l'hydratation écrit dans le DOM natif — la
+    // valeur s'affiche, `toHaveValue` passe — mais aucun handler React ne
+    // tourne : le focus ne bouge jamais, et l'échec ressemble à un bug
+    // d'auto-avance alors que le composant n'a simplement jamais été monté.
+    // C'est ce qui rendait ce test rouge sur les runners lents (webkit).
+    //
+    // L'auto-focus de la première case est un effet CLIENT : l'attendre est
+    // donc la preuve que React a pris la main.
+    await expect(cells.first()).toBeFocused({ timeout: 10_000 });
+
     await page.keyboard.insertText('1');
-    // Vérifie d'abord que le caractère est enregistré (cross-browser fiable),
-    // puis le focus auto-advance avec timeout étendu (webkit plus lent que
-    // chromium sur les transitions de focus React).
     await expect(cells.first()).toHaveValue('1');
     await expect(cells.nth(1)).toBeFocused({ timeout: 10_000 });
   });
