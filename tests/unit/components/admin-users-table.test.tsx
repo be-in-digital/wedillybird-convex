@@ -19,11 +19,19 @@ vi.mock('@/components/ui/confirm-dialog', () => ({
   useConfirm: () => ({ confirm: vi.fn(), confirmDialog: null }),
 }));
 
+// La modale de suppression est montée (fermée) sur chaque ligne : elle tire
+// `useRouter` pour rafraîchir après un effacement.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 vi.mock('@/app/[locale]/(app)/admin/actions', () => ({
   adminSuspendUserAction: vi.fn(),
   adminUnsuspendUserAction: vi.fn(),
   adminChangeUserRoleAction: vi.fn(),
   adminSetAffiliateOwnerAction: vi.fn(),
+  adminDeleteUserAction: vi.fn(),
+  adminUserDeletionPreviewAction: vi.fn(),
 }));
 
 import { AdminUsersTable } from '@/components/admin/admin-users-table';

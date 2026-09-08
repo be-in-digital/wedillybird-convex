@@ -73,7 +73,9 @@
       "change_role": "Cambio di ruolo",
       "update_event_status": "Cambio stato evento",
       "delete_event": "Eliminazione evento",
-      "moderate_photo": "Moderazione foto"
+      "moderate_photo": "Moderazione foto",
+      "delete_user": "Eliminazione account",
+      "delete_affiliate": "Eliminazione affiliato"
     },
     "auditLog": {
       "colDate": "Data",
@@ -103,7 +105,24 @@
       "confirmDetachPartner": "Scollegare questo codice partner da questo account?",
       "unsuspend": "Riattiva",
       "confirmUnsuspend": "Riattivare {name}?",
-      "suspended": "Sospeso"
+      "suspended": "Sospeso",
+      "deleteTitle": "Eliminare {name}?",
+      "deleteBody": "Eliminazione definitiva: l'account e tutto ciò che possiede spariscono. Non si torna indietro.",
+      "deleteLoading": "Inventario dell'account…",
+      "deleteOrganizations": "Organizzazioni",
+      "deleteEvents": "Matrimoni",
+      "deleteGuests": "Invitati",
+      "deletePhotos": "Foto",
+      "deletePayments": "Pagamenti",
+      "deleteReassigned": "{count, plural, one {# matrimonio sarà riassegnato alla sua agenzia.} other {# matrimoni saranno riassegnati alla loro agenzia.}}",
+      "deleteDetached": "Codici partner scollegati, ma conservati: {codes}",
+      "deleteConfirmLabel": "Riscrivi «{label}» per confermare",
+      "deleteCta": "Elimina definitivamente",
+      "deleteDeleting": "Eliminazione…",
+      "deleteBlockedAdmin": "Un account amministratore non si elimina. Togli prima il ruolo admin.",
+      "deleteBlockedBilled": "Abbonamento Stripe ancora attivo ({orgs}). Annullalo da Abbonamenti prima di eliminare.",
+      "deleteBlockedTeam": "Questa organizzazione ha un team ({orgs}). Trasferisci la proprietà prima di eliminare.",
+      "deleteError": "Eliminazione impossibile: {code}"
     },
     "events": {
       "searchPlaceholder": "Cerca un evento…",

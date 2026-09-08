@@ -73,7 +73,9 @@
       "change_role": "Rollenänderung",
       "update_event_status": "Änderung des Event-Status",
       "delete_event": "Event-Löschung",
-      "moderate_photo": "Foto-Moderation"
+      "moderate_photo": "Foto-Moderation",
+      "delete_user": "Kontolöschung",
+      "delete_affiliate": "Affiliate-Löschung"
     },
     "auditLog": {
       "colDate": "Datum",
@@ -103,7 +105,24 @@
       "confirmDetachPartner": "Diesen Partnercode von diesem Konto trennen?",
       "unsuspend": "Reaktivieren",
       "confirmUnsuspend": "{name} reaktivieren?",
-      "suspended": "Gesperrt"
+      "suspended": "Gesperrt",
+      "deleteTitle": "{name} löschen?",
+      "deleteBody": "Endgültige Löschung: das Konto und alles, was ihm gehört, verschwinden. Es gibt kein Zurück.",
+      "deleteLoading": "Konto wird erfasst…",
+      "deleteOrganizations": "Organisationen",
+      "deleteEvents": "Hochzeiten",
+      "deleteGuests": "Gäste",
+      "deletePhotos": "Fotos",
+      "deletePayments": "Zahlungen",
+      "deleteReassigned": "{count, plural, one {# Hochzeit wird ihrer Agentur zugeordnet.} other {# Hochzeiten werden ihrer Agentur zugeordnet.}}",
+      "deleteDetached": "Partnercodes abgelöst, aber erhalten: {codes}",
+      "deleteConfirmLabel": "Tippe „{label}“ erneut ein, um zu bestätigen",
+      "deleteCta": "Endgültig löschen",
+      "deleteDeleting": "Wird gelöscht…",
+      "deleteBlockedAdmin": "Ein Administratorkonto lässt sich nicht löschen. Entziehe zuerst die Admin-Rolle.",
+      "deleteBlockedBilled": "Stripe-Abo noch aktiv ({orgs}). Kündige es unter Abos, bevor du löschst.",
+      "deleteBlockedTeam": "Diese Organisation hat ein Team ({orgs}). Übertrage zuerst die Inhaberschaft.",
+      "deleteError": "Löschen nicht möglich: {code}"
     },
     "events": {
       "searchPlaceholder": "Ein Event suchen…",

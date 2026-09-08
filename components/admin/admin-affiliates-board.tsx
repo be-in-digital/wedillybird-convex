@@ -3,9 +3,11 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Handshake, Loader2, Plus } from 'lucide-react';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import {
   adminCreateAffiliateAction,
   adminCreatePartnerInviteAction,
+  adminDeleteAffiliateAction,
   adminEnsureAffiliateCouponAction,
   adminMarkReferralPaidAction,
   adminRevokePartnerInviteAction,
@@ -135,6 +137,7 @@ export function AdminAffiliatesBoard({
   invites?: PartnerInvite[];
 }) {
   const router = useRouter();
+  const { confirm, confirmDialog } = useConfirm();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   /** Adresse effectivement servie par le dernier envoi, pour confirmation. */
@@ -198,6 +201,44 @@ export function AdminAffiliatesBoard({
       await adminSetAffiliateStatusAction(a.id, a.status === 'active' ? 'disabled' : 'active');
       router.refresh();
     });
+  }
+
+  /**
+   * Efface un affilié — le seul moyen de rendre son `code`, qui est unique.
+   * Convex refuse dès qu'une commission existe : le message le dit, plutôt
+   * que d'échouer en silence sur un tableau qui ne bouge pas.
+   */
+  function remove(a: Affiliate) {
+    setError(null);
+    void (async () => {
+      const ok = await confirm({
+        title: `Supprimer l'affilié ${a.code} ?`,
+        description:
+          "Le code redevient libre, son lien d'invitation est coupé et sa remise Stripe désactivée. Irréversible. Un affilié qui a déjà généré une commission ne peut pas être supprimé — désactivez-le.",
+        confirmLabel: 'Supprimer',
+        destructive: true,
+      });
+      if (!ok) return;
+      startTransition(async () => {
+        const res = await adminDeleteAffiliateAction(a.id);
+        if (!res.ok) {
+          setError(
+            res.error === 'AFFILIATE_HAS_REFERRALS'
+              ? `${a.code} a déjà des commissions au ledger : il se désactive, il ne se supprime pas.`
+              : res.error,
+          );
+          return;
+        }
+        // Supprimé côté Convex mais coupon Stripe encore debout : le code
+        // resterait saisissable au checkout alors que plus rien ne l'attribue.
+        if (res.stripeError) {
+          setError(
+            `Affilié supprimé, mais code promo Stripe NON désactivé (${res.stripeError}). Coupez-le depuis Stripe.`,
+          );
+        }
+        router.refresh();
+      });
+    })();
   }
 
   /**
@@ -554,14 +595,25 @@ export function AdminAffiliatesBoard({
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => toggle(a)}
-                      disabled={pending}
-                      className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
-                    >
-                      {a.status === 'active' ? 'Désactiver' : 'Réactiver'}
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggle(a)}
+                        disabled={pending}
+                        className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+                      >
+                        {a.status === 'active' ? 'Désactiver' : 'Réactiver'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove(a)}
+                        disabled={pending}
+                        data-testid="admin-delete-affiliate"
+                        className="rounded-md px-2 py-1 text-xs text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10 disabled:opacity-50"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -651,6 +703,7 @@ export function AdminAffiliatesBoard({
           </table>
         </div>
       </section>
+      {confirmDialog}
     </div>
   );
 }
