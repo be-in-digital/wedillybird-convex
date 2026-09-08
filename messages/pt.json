@@ -73,7 +73,9 @@
       "change_role": "Mudança de função",
       "update_event_status": "Mudança de status do evento",
       "delete_event": "Exclusão de evento",
-      "moderate_photo": "Moderação de foto"
+      "moderate_photo": "Moderação de foto",
+      "delete_user": "Exclusão de conta",
+      "delete_affiliate": "Exclusão de afiliado"
     },
     "auditLog": {
       "colDate": "Data",
@@ -103,7 +105,24 @@
       "confirmDetachPartner": "Desassociar este código de parceiro desta conta?",
       "unsuspend": "Reativar",
       "confirmUnsuspend": "Reativar {name}?",
-      "suspended": "Suspenso"
+      "suspended": "Suspenso",
+      "deleteTitle": "Excluir {name}?",
+      "deleteBody": "Exclusão definitiva: a conta e tudo o que lhe pertence desaparecem. Não há volta.",
+      "deleteLoading": "Inventário da conta…",
+      "deleteOrganizations": "Organizações",
+      "deleteEvents": "Casamentos",
+      "deleteGuests": "Convidados",
+      "deletePhotos": "Fotos",
+      "deletePayments": "Pagamentos",
+      "deleteReassigned": "{count, plural, one {# casamento será reatribuído à sua agência.} other {# casamentos serão reatribuídos à sua agência.}}",
+      "deleteDetached": "Códigos de parceiro desvinculados, mas mantidos: {codes}",
+      "deleteConfirmLabel": "Digite novamente «{label}» para confirmar",
+      "deleteCta": "Excluir definitivamente",
+      "deleteDeleting": "Excluindo…",
+      "deleteBlockedAdmin": "Uma conta de administrador não pode ser excluída. Remova antes o papel de admin.",
+      "deleteBlockedBilled": "Assinatura Stripe ainda ativa ({orgs}). Cancele em Assinaturas antes de excluir.",
+      "deleteBlockedTeam": "Esta organização tem uma equipe ({orgs}). Transfira a propriedade antes de excluir.",
+      "deleteError": "Não foi possível excluir: {code}"
     },
     "events": {
       "searchPlaceholder": "Buscar um evento…",

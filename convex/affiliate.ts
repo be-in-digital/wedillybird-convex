@@ -179,6 +179,68 @@ export const setAffiliateStatus = mutation({
 });
 
 /**
+ * Efface définitivement un affilié (admin).
+ *
+ * Il manquait la sortie : un code ouvert pour tester restait à vie dans le
+ * tableau, et son `code` — unique — restait pris. « Désactiver » suspend
+ * l'attribution, il n'a jamais rendu le code.
+ *
+ * **Le ledger est intouchable.** Dès qu'une ligne de commission existe pour
+ * cet affilié — même annulée, même déjà versée — la suppression est refusée :
+ * une écriture comptable ne s'efface pas avec la fiche qui l'a produite. Le
+ * back-office a `setAffiliateStatus` pour ces cas-là.
+ *
+ * Les liens d'invitation, eux, tombent avec l'affilié : un lien qui rattache
+ * à un affilié disparu n'ouvre plus rien.
+ */
+export const deleteAffiliate = mutation({
+  args: { adminId: v.id('users'), affiliateId: v.id('affiliates') },
+  handler: async (ctx, { adminId, affiliateId }) => {
+    await assertAdmin(ctx, adminId);
+    const affiliate = await ctx.db.get(affiliateId);
+    if (!affiliate) throw new Error('AFFILIATE_NOT_FOUND');
+
+    const referral = await ctx.db
+      .query('affiliateReferrals')
+      .withIndex('by_affiliate', (q) => q.eq('affiliateId', affiliateId))
+      .first();
+    if (referral) throw new Error('AFFILIATE_HAS_REFERRALS');
+
+    const invites = await ctx.db
+      .query('partnerInvites')
+      .withIndex('by_affiliate', (q) => q.eq('affiliateId', affiliateId))
+      .collect();
+    for (const invite of invites) await ctx.db.delete(invite._id);
+
+    await ctx.db.delete(affiliateId);
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'delete_affiliate',
+      targetType: 'affiliate',
+      targetId: affiliateId,
+      details: JSON.stringify({
+        code: affiliate.code,
+        kind: affiliate.kind,
+        displayName: affiliate.displayName ?? null,
+        ownerEmail: affiliate.ownerEmail ?? null,
+        invitesDeleted: invites.length,
+        // Repris par la server action pour couper la remise côté Stripe :
+        // un code promo encore actif resterait saisissable au checkout.
+        stripeCouponId: affiliate.stripeCouponId ?? null,
+        stripePromotionCodeId: affiliate.stripePromotionCodeId ?? null,
+      }),
+      createdAt: Date.now(),
+    });
+    return {
+      ok: true as const,
+      code: affiliate.code,
+      stripeCouponId: affiliate.stripeCouponId ?? null,
+      stripePromotionCodeId: affiliate.stripePromotionCodeId ?? null,
+    };
+  },
+});
+
+/**
  * Rattache le coupon + code promo Stripe créés pour un affilié.
  *
  * L'appel Stripe vit côté app (Convex ne peut pas sortir sur le réseau depuis

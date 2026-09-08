@@ -1,10 +1,11 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { computePlatformAnalytics, computeRefundOutcome } from './lib/analytics';
 import { reverseReferralBySession, restoreCreditForRefundedSession } from './affiliate';
 import { DEFAULT_COMPED_EVENT_PLAN, galleryExpiresAtFor } from './lib/eventPlan';
 import { isSuspended } from './lib/accountStatus';
+import { newPurge, purgeSummary, purgeUser } from './lib/purge';
 
 async function assertAdmin(
   ctx: { db: { get: (id: Id<'users'>) => Promise<{ role: string } | null> } },
@@ -682,6 +683,206 @@ export const changeUserRole = mutation({
       createdAt: Date.now(),
     });
     return { ok: true };
+  },
+});
+
+/* -------------------------------------------------------------------------- */
+/*  Suppression définitive d'un compte                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Ce que l'admin doit retaper pour confirmer. L'e-mail, sinon le téléphone,
+ * sinon le nom : toujours quelque chose de VISIBLE dans le tableau, jamais un
+ * id que personne ne lit.
+ */
+function accountLabel(user: Doc<'users'>): string {
+  return user.email ?? user.phone ?? user.fullName ?? user._id;
+}
+
+/** Un abonnement Stripe qui court encore : le supprimer laisserait facturer. */
+function hasLiveSubscription(org: Doc<'organizations'>): boolean {
+  if (!org.stripeSubscriptionId) return false;
+  return (
+    org.subscriptionStatus === 'trialing' ||
+    org.subscriptionStatus === 'active' ||
+    org.subscriptionStatus === 'past_due' ||
+    org.subscriptionStatus === 'unpaid'
+  );
+}
+
+/**
+ * Ce que la suppression d'un compte emporterait — lu AVANT de décider.
+ *
+ * Une suppression en cascade sans inventaire, c'est un bouton qu'on n'ose
+ * jamais cliquer. L'écran affiche donc ce qui va tomber (mariages, invités,
+ * photos, paiements) et ce qui l'en empêche, avant de demander confirmation.
+ */
+export const userDeletionPreview = query({
+  args: { adminId: v.id('users'), targetUserId: v.id('users') },
+  handler: async (ctx, { adminId, targetUserId }) => {
+    await assertAdmin(ctx, adminId);
+    const target = await ctx.db.get(targetUserId);
+    if (!target) return null;
+
+    const ownedOrgs = await ctx.db
+      .query('organizations')
+      .withIndex('by_owner', (q) => q.eq('ownerId', targetUserId))
+      .collect();
+
+    // Une agence à plusieurs n'appartient pas qu'à son propriétaire : la
+    // supprimer avec lui effacerait le travail de son équipe. L'admin
+    // transfère la propriété d'abord (`transferOwnership`).
+    const teamOrgs: string[] = [];
+    const billedOrgs: string[] = [];
+    for (const org of ownedOrgs) {
+      if (hasLiveSubscription(org)) billedOrgs.push(org.name);
+      const members = await ctx.db
+        .query('organizationMemberships')
+        .withIndex('by_organization', (q) => q.eq('organizationId', org._id))
+        .collect();
+      if (members.some((m) => m.status === 'active' && m.userId && m.userId !== targetUserId)) {
+        teamOrgs.push(org.name);
+      }
+    }
+
+    const ownedEvents = await ctx.db
+      .query('events')
+      .withIndex('by_owner', (q) => q.eq('ownerId', targetUserId))
+      .collect();
+    const orgIds = new Set(ownedOrgs.map((o) => o._id));
+    // Un mariage porté par l'organisation d'autrui suit l'agence, pas la
+    // personne : il sera réattribué, il n'a rien à faire dans le décompte.
+    const purgedEvents = ownedEvents.filter(
+      (e) => !e.organizationId || orgIds.has(e.organizationId),
+    );
+    const orgEvents = (
+      await Promise.all(
+        ownedOrgs.map((o) =>
+          ctx.db
+            .query('events')
+            .withIndex('by_organization', (q) => q.eq('organizationId', o._id))
+            .collect(),
+        ),
+      )
+    ).flat();
+    const eventIds = new Set([...purgedEvents, ...orgEvents].map((e) => e._id));
+
+    let guests = 0;
+    let photos = 0;
+    for (const eventId of eventIds) {
+      guests += (
+        await ctx.db
+          .query('guests')
+          .withIndex('by_event', (q) => q.eq('eventId', eventId))
+          .collect()
+      ).length;
+      photos += (
+        await ctx.db
+          .query('photos')
+          .withIndex('by_event', (q) => q.eq('eventId', eventId))
+          .collect()
+      ).length;
+    }
+
+    const payments = await ctx.db
+      .query('payments')
+      .withIndex('by_user', (q) => q.eq('userId', targetUserId))
+      .collect();
+    const succeeded = payments.filter((p) => p.status === 'succeeded');
+    const affiliates = await ctx.db
+      .query('affiliates')
+      .withIndex('by_owner', (q) => q.eq('ownerUserId', targetUserId))
+      .collect();
+
+    return {
+      label: accountLabel(target),
+      fullName: target.fullName ?? null,
+      email: target.email ?? null,
+      phone: target.phone ?? null,
+      role: target.role,
+      counts: {
+        organizations: ownedOrgs.length,
+        events: eventIds.size,
+        reassignedEvents: ownedEvents.length - purgedEvents.length,
+        guests,
+        photos,
+        payments: payments.length,
+        succeededPayments: succeeded.length,
+      },
+      /** Codes d'affiliation qui seront DÉTACHÉS (jamais supprimés). */
+      detachedAffiliateCodes: affiliates.map((a) => a.code),
+      /** Non vide ⇒ `deleteUser` refusera. */
+      blockers: {
+        isAdmin: target.role === 'admin',
+        billedOrgs,
+        teamOrgs,
+      },
+    };
+  },
+});
+
+/**
+ * Efface un compte et tout ce qu'il possède — irréversible.
+ *
+ * `confirmLabel` doit reproduire `accountLabel` : le tableau des utilisateurs
+ * est dense, et une suppression en cascade déclenchée par un clic à côté n'a
+ * pas de retour en arrière. Même verrou que `organizations.deleteOrganization`.
+ *
+ * Deux refus, tous deux réparables par l'admin lui-même :
+ *  - un abonnement Stripe encore actif (à annuler d'abord — sinon on efface le
+ *    client sans arrêter la facturation) ;
+ *  - une agence qui a une équipe (propriété à transférer d'abord — sinon on
+ *    efface le travail de gens qu'on ne supprimait pas).
+ */
+export const deleteUser = mutation({
+  args: {
+    adminId: v.id('users'),
+    targetUserId: v.id('users'),
+    confirmLabel: v.string(),
+  },
+  handler: async (ctx, { adminId, targetUserId, confirmLabel }) => {
+    await assertAdmin(ctx, adminId);
+    const target = await ctx.db.get(targetUserId);
+    if (!target) throw new Error('USER_NOT_FOUND');
+    // Un admin ne se supprime pas, et n'en supprime pas un autre : le rôle se
+    // retire (`changeUserRole`) avant que le compte devienne effaçable.
+    if (target.role === 'admin') throw new Error('CANNOT_DELETE_ADMIN');
+    if (confirmLabel.trim() !== accountLabel(target)) throw new Error('CONFIRM_MISMATCH');
+
+    const ownedOrgs = await ctx.db
+      .query('organizations')
+      .withIndex('by_owner', (q) => q.eq('ownerId', targetUserId))
+      .collect();
+    for (const org of ownedOrgs) {
+      if (hasLiveSubscription(org)) throw new Error('ORG_SUBSCRIPTION_ACTIVE');
+      const members = await ctx.db
+        .query('organizationMemberships')
+        .withIndex('by_organization', (q) => q.eq('organizationId', org._id))
+        .collect();
+      if (members.some((m) => m.status === 'active' && m.userId && m.userId !== targetUserId)) {
+        throw new Error('ORG_HAS_MEMBERS');
+      }
+    }
+
+    const purge = newPurge();
+    await purgeUser(ctx, purge, targetUserId);
+
+    // L'inventaire EST la trace : le compte n'existe plus, seul le journal
+    // dira ce qui a été détruit et pour quel volume.
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'delete_user',
+      targetType: 'user',
+      targetId: targetUserId,
+      details: JSON.stringify({
+        label: accountLabel(target),
+        fullName: target.fullName ?? null,
+        role: target.role,
+        ...purgeSummary(purge),
+      }),
+      createdAt: Date.now(),
+    });
+    return { ok: true as const, ...purgeSummary(purge) };
   },
 });
 

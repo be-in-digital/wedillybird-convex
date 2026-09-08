@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useServerAction } from '@/components/admin/use-admin-action';
+import { AdminDeleteUserDialog } from '@/components/admin/admin-delete-user-dialog';
 import {
   adminSuspendUserAction,
   adminUnsuspendUserAction,
@@ -172,7 +173,9 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
   const { execute: changeRole, loading: changing } = useServerAction(adminChangeUserRoleAction);
   const { execute: setOwner, loading: attaching } = useServerAction(adminSetAffiliateOwnerAction);
   const { confirm, confirmDialog } = useConfirm();
+  const [deleting, setDeleting] = useState(false);
   const suspended = user.suspendedAt != null;
+  const label = user.fullName ?? user.email ?? user.phone ?? user._id;
 
   return (
     <>
@@ -254,9 +257,7 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
                 onClick={async () => {
                   if (
                     await confirm({
-                      title: t('users.confirmUnsuspend', {
-                        name: user.fullName ?? user.email ?? user._id,
-                      }),
+                      title: t('users.confirmUnsuspend', { name: label }),
                     })
                   ) {
                     unsuspend(user._id);
@@ -272,9 +273,7 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
                 onClick={async () => {
                   if (
                     await confirm({
-                      title: t('users.confirmSuspend', {
-                        name: user.fullName ?? user.email ?? user._id,
-                      }),
+                      title: t('users.confirmSuspend', { name: label }),
                       destructive: true,
                     })
                   ) {
@@ -314,10 +313,27 @@ function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) 
                 </SelectContent>
               </Select>
             ) : null}
+            {/* Suspendre neutralise, supprimer efface. Un compte ouvert pour
+                tester n'a aucune raison de rester : c'est la seule sortie. */}
+            {user.role !== 'admin' ? (
+              <button
+                onClick={() => setDeleting(true)}
+                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10"
+                data-testid="admin-delete-user"
+              >
+                {t('common.delete')}
+              </button>
+            ) : null}
           </div>
         </td>
       </tr>
       {confirmDialog}
+      <AdminDeleteUserDialog
+        userId={user._id}
+        displayName={label}
+        open={deleting}
+        onOpenChange={setDeleting}
+      />
     </>
   );
 }

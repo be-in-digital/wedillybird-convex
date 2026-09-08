@@ -73,7 +73,9 @@
       "change_role": "تغيير الدور",
       "update_event_status": "تغيير حالة الفعالية",
       "delete_event": "حذف فعالية",
-      "moderate_photo": "الإشراف على صورة"
+      "moderate_photo": "الإشراف على صورة",
+      "delete_user": "حذف حساب",
+      "delete_affiliate": "حذف شريك تسويق"
     },
     "auditLog": {
       "colDate": "التاريخ",
@@ -103,7 +105,24 @@
       "confirmDetachPartner": "هل تريد فكّ ربط رمز الشريك عن هذا الحساب؟",
       "unsuspend": "إعادة التفعيل",
       "confirmUnsuspend": "إعادة تفعيل {name}؟",
-      "suspended": "موقوف"
+      "suspended": "موقوف",
+      "deleteTitle": "حذف {name}؟",
+      "deleteBody": "حذف نهائي: يختفي الحساب وكل ما يملكه. لا رجعة في ذلك.",
+      "deleteLoading": "جارٍ جرد الحساب…",
+      "deleteOrganizations": "المؤسسات",
+      "deleteEvents": "حفلات الزفاف",
+      "deleteGuests": "المدعوون",
+      "deletePhotos": "الصور",
+      "deletePayments": "المدفوعات",
+      "deleteReassigned": "{count, plural, zero {# حفل زفاف سيُنقل إلى وكالته.} one {حفل زفاف واحد سيُنقل إلى وكالته.} two {حفلا زفاف سيُنقلان إلى وكالتهما.} few {# حفلات زفاف ستُنقل إلى وكالاتها.} many {# حفل زفاف ستُنقل إلى وكالاتها.} other {# حفل زفاف ستُنقل إلى وكالاتها.}}",
+      "deleteDetached": "رموز الشركاء فُصلت لكنها محفوظة: {codes}",
+      "deleteConfirmLabel": "أعد كتابة «{label}» للتأكيد",
+      "deleteCta": "حذف نهائي",
+      "deleteDeleting": "جارٍ الحذف…",
+      "deleteBlockedAdmin": "لا يمكن حذف حساب مسؤول. أزل دور المسؤول أولاً.",
+      "deleteBlockedBilled": "اشتراك Stripe ما زال نشطًا ({orgs}). ألغِه من الاشتراكات قبل الحذف.",
+      "deleteBlockedTeam": "لهذه المؤسسة فريق ({orgs}). انقل ملكيتها قبل الحذف.",
+      "deleteError": "تعذّر الحذف: {code}"
     },
     "events": {
       "searchPlaceholder": "ابحث عن فعالية…",

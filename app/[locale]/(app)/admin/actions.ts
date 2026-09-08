@@ -47,6 +47,30 @@ function msg(e: unknown): string {
   return e instanceof Error ? e.message : 'UNKNOWN';
 }
 
+/**
+ * Codes métier des suppressions, extraits du message emballé par Convex.
+ *
+ * `throw new Error('CONFIRM_MISMATCH')` arrive côté app sous la forme
+ * `[Request ID: …] Server Error … Uncaught Error: CONFIRM_MISMATCH at …` : une
+ * comparaison stricte ne matcherait jamais, et l'écran afficherait « erreur
+ * inconnue » à la place de la seule chose utile (ce qu'il faut corriger).
+ */
+const DELETION_ERROR_CODES = [
+  'CANNOT_DELETE_ADMIN',
+  'CONFIRM_MISMATCH',
+  'ORG_SUBSCRIPTION_ACTIVE',
+  'ORG_HAS_MEMBERS',
+  'USER_NOT_FOUND',
+  'AFFILIATE_HAS_REFERRALS',
+  'AFFILIATE_NOT_FOUND',
+  'FORBIDDEN',
+] as const;
+
+function deletionErrorCode(e: unknown): string {
+  const message = e instanceof Error ? e.message : '';
+  return DELETION_ERROR_CODES.find((code) => message.includes(code)) ?? msg(e);
+}
+
 export async function adminUnsuspendUserAction(targetUserId: string): Promise<ActionResult> {
   try {
     const adminId = await requireAdmin();
@@ -83,6 +107,67 @@ export async function adminChangeUserRoleAction(
     return { ok: true };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : 'UNKNOWN' };
+  }
+}
+
+export type UserDeletionPreview = {
+  label: string;
+  fullName: string | null;
+  email: string | null;
+  phone: string | null;
+  role: 'couple' | 'pro' | 'guest' | 'admin';
+  counts: {
+    organizations: number;
+    events: number;
+    reassignedEvents: number;
+    guests: number;
+    photos: number;
+    payments: number;
+    succeededPayments: number;
+  };
+  detachedAffiliateCodes: string[];
+  blockers: { isAdmin: boolean; billedOrgs: string[]; teamOrgs: string[] };
+};
+
+/** Inventaire de ce qu'une suppression emporterait — lu à l'ouverture de la modale. */
+export async function adminUserDeletionPreviewAction(
+  targetUserId: string,
+): Promise<{ ok: true; preview: UserDeletionPreview } | { ok: false; error: string }> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    const preview = await convex.query(convexApi.adminUserDeletionPreview, {
+      adminId,
+      targetUserId,
+    });
+    if (!preview) return { ok: false, error: 'USER_NOT_FOUND' };
+    return { ok: true, preview };
+  } catch (e: unknown) {
+    return { ok: false, error: deletionErrorCode(e) };
+  }
+}
+
+/**
+ * Supprime définitivement un compte et tout ce qu'il possède.
+ *
+ * `confirmLabel` est retapé par l'admin et revalidé côté Convex : le contrôle
+ * ne peut pas vivre dans l'écran seul, une suppression en cascade n'ayant pas
+ * de retour en arrière.
+ */
+export async function adminDeleteUserAction(
+  targetUserId: string,
+  confirmLabel: string,
+): Promise<ActionResult> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.adminDeleteUser, { adminId, targetUserId, confirmLabel });
+    revalidatePath('/admin/users');
+    revalidatePath('/admin/events');
+    revalidatePath('/admin/affiliates');
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: deletionErrorCode(e) };
   }
 }
 
@@ -948,6 +1033,44 @@ export async function adminSetAffiliateStatusAction(
     return { ok: true };
   } catch (e: unknown) {
     return { ok: false, error: msg(e) };
+  }
+}
+
+/**
+ * Efface définitivement un affilié — le code redevient libre.
+ *
+ * Convex refuse dès qu'une commission existe (le ledger est comptable), donc
+ * l'appel part EN PREMIER : nettoyer Stripe d'abord reviendrait à couper la
+ * remise d'un partenaire actif sur une suppression qui sera refusée.
+ *
+ * Stripe suit ensuite, en best-effort : code promo désactivé puis coupon
+ * supprimé. Un échec n'annule pas la suppression — il est remonté, parce qu'un
+ * code promo resté actif reste saisissable au checkout alors que plus rien ne
+ * l'attribue.
+ */
+export async function adminDeleteAffiliateAction(
+  affiliateId: string,
+): Promise<ActionResult & { stripeError?: string }> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    const deleted = await convex.mutation(convexApi.deleteAffiliate, { adminId, affiliateId });
+
+    let stripeError: string | undefined;
+    try {
+      if (deleted.stripePromotionCodeId) {
+        await setPromotionCodeActive(deleted.stripePromotionCodeId, false);
+      }
+      if (deleted.stripeCouponId) await deleteCoupon(deleted.stripeCouponId);
+    } catch (e: unknown) {
+      stripeError = msg(e);
+    }
+
+    revalidatePath('/admin/affiliates');
+    revalidatePath('/admin/users');
+    return stripeError ? { ok: true, stripeError } : { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: deletionErrorCode(e) };
   }
 }
 
