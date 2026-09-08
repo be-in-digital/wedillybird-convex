@@ -47,7 +47,7 @@ Toute proposition de modification UI doit respecter cette direction ou rouvrir l
 - **Commits Conventional Commits** stricts. Jamais de mention Claude/AI dans les commits, PRs, ou code.
 - **FR uniquement** pour les strings UI (next-intl, locale unique).
 - **Convex en dev** : `unset CONVEX_DEPLOYMENT CONVEX_URL CONVEX_SITE_URL && export CONVEX_DEPLOYMENT="dev:capable-crocodile-720" && pnpx convex dev --once`. Ne jamais `pnpx convex deploy` (= prod).
-- **Tests vitest** dans `tests/unit/...`. Tout commit doit garder la suite verte.
+- **Tests vitest** dans `tests/unit/...` (unitaires) et `tests/integration/...` (exécutent les vraies fonctions Convex en mémoire via `convex-test`). Tout commit doit garder la suite verte.
 - **typedRoutes Next 16** actif : pour redirect vers URL externe utiliser `redirect(url as never)` ou wrapper.
 - **Pas de Context React** : Zustand pour state global.
 - **tsconfig root** exclut `convex/` et `infra/` (chacun a son propre tsconfig).

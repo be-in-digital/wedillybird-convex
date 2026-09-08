@@ -62,6 +62,7 @@ export function PartnerInviteForm({ token, defaultName, months, kind = 'pro' }: 
         'org_already_subscribed',
         'invalid_name',
         'user_not_found',
+        'user_already_has_affiliate',
       ];
       setError(
         known.includes(key) ? t(`errors.${key}` as 'errors.unauthorized') : t('errors.unknown'),

@@ -123,6 +123,7 @@ const rawConvexApi = {
   findPaymentBySession: api.payments.findBySession,
   markPaymentSucceeded: api.payments.markSucceeded,
   markPaymentFailed: api.payments.markFailed,
+  markPaymentRefundedByWebhook: api.payments.markRefundedByWebhook,
   listPaymentsByEvent: api.payments.listByEvent,
   // ---- Observabilité T2 (health-check, cron réconciliation, monitor entitlement) ----
   verifyWebhookSecretHealth: api.health.verifyWebhookSecret,
@@ -330,6 +331,7 @@ const rawConvexApi = {
   referralForUser: api.affiliate.referralForUser,
   ensureReferralCode: api.affiliate.ensureReferralCode,
   markReferralPaid: api.affiliate.markReferralPaid,
+  isPartner: api.affiliate.isPartner,
   partnerDashboard: api.affiliate.partnerDashboard,
   createPartnerInvite: api.partnerInvites.create,
   revokePartnerInvite: api.partnerInvites.revoke,

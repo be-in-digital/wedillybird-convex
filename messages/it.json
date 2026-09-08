@@ -5786,6 +5786,7 @@
   "Partner": {
     "eyebrow": "Programma partner",
     "title": "Il tuo spazio partner",
+    "navLink": "Area partner",
     "subtitle": "Condividi il tuo link, segui le vendite che genera e quanto ti spetta.",
     "linkTitle": "Il tuo link da condividere",
     "copy": "Copia",
@@ -5847,6 +5848,7 @@
       "org_already_subscribed": "La tua agenzia ha già un abbonamento attivo. Scrivici e ce ne occupiamo.",
       "invalid_name": "Indica il nome della tua agenzia.",
       "user_not_found": "Account non trovato. Accedi di nuovo.",
+      "user_already_has_affiliate": "Questo account è già collegato a un altro codice partner. Contattaci.",
       "unknown": "Per ora non riusciamo ad aprire il tuo spazio."
     },
     "metaTitle": "Il tuo invito partner — Wedillybird",

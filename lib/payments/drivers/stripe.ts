@@ -16,6 +16,7 @@ import {
   type SubscriptionTier,
 } from '../subscriptions';
 import type { ConnectedBalance, ConnectedPayment, ConnectedPayout } from '../../pro/payments';
+import { clampCouponName } from '../coupon-name';
 
 let cached: Stripe | null = null;
 
@@ -144,6 +145,35 @@ export const stripeDriver: PaymentDriver = {
     if (event.type === 'checkout.session.expired') {
       const session = event.data.object as Stripe.Checkout.Session;
       return parseSession(session, event.id, 'cancelled');
+    }
+    // Remboursement et litige : l'argent repart, la commission doit suivre.
+    // Un litige est traité comme un remboursement total — l'issue est
+    // incertaine, mais laisser la commission s'acquérir pendant l'instruction
+    // reviendrait à verser sur une vente contestée.
+    if (event.type === 'charge.refunded' || event.type === 'charge.dispute.created') {
+      const charge =
+        event.type === 'charge.refunded'
+          ? (event.data.object as Stripe.Charge)
+          : await chargeOfDispute(event.data.object as Stripe.Dispute);
+      if (!charge) throw new Error('UNSUPPORTED_EVENT');
+      const session = await sessionOfCharge(charge);
+      // Pas de session de checkout derrière ce paiement (abonnement, lien de
+      // paiement pro…) : ce n'est pas un achat one-shot, on laisse passer.
+      if (!session) throw new Error('UNSUPPORTED_EVENT');
+      const currencyRaw = (charge.currency ?? '').toUpperCase();
+      if (!isCurrency(currencyRaw)) throw new Error('INVALID_CURRENCY');
+      const disputed = event.type === 'charge.dispute.created';
+      return {
+        providerSessionId: session.id,
+        providerEventId: event.id,
+        status: 'refunded',
+        amountMinor: charge.amount ?? 0,
+        currency: currencyRaw,
+        // Stripe donne le CUMUL remboursé, jamais l'incrément.
+        refundedAmountMinor: disputed ? (charge.amount ?? 0) : (charge.amount_refunded ?? 0),
+        chargedAmountMinor: charge.amount ?? 0,
+        ...(disputed ? { disputed: true } : {}),
+      };
     }
     throw new Error('UNSUPPORTED_EVENT');
   },
@@ -1258,6 +1288,8 @@ export async function reactivatePlatformSubscription(
 export interface AdminCoupon {
   id: string;
   name: string | null;
+  /** Metadata Stripe — sert à reconnaître nos coupons (ex. `wedillybird`). */
+  metadata: Record<string, string>;
   percentOff: number | null;
   amountOffMinor: number | null;
   currency: string | null;
@@ -1298,6 +1330,7 @@ function mapCoupon(c: Stripe.Coupon): AdminCoupon {
   return {
     id: c.id,
     name: c.name ?? null,
+    metadata: c.metadata ?? {},
     percentOff: c.percent_off ?? null,
     amountOffMinor: c.amount_off ?? null,
     currency: c.currency ? c.currency.toUpperCase() : null,
@@ -1310,6 +1343,37 @@ function mapCoupon(c: Stripe.Coupon): AdminCoupon {
     createdAt: (c.created ?? 0) * 1000,
     appliesToProducts,
   };
+}
+
+/**
+ * La charge visée par un litige. Stripe la donne soit en id, soit expandée.
+ */
+async function chargeOfDispute(dispute: Stripe.Dispute): Promise<Stripe.Charge | null> {
+  const c = dispute.charge;
+  if (!c) return null;
+  if (typeof c !== 'string') return c;
+  try {
+    return await getStripe().charges.retrieve(c);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * La session de checkout qui a produit cette charge, ou `null`.
+ *
+ * Le webhook `charge.*` ne porte pas la session : c'est le `payment_intent`
+ * qui fait le lien, et nos paiements sont indexés par id de session.
+ */
+async function sessionOfCharge(charge: Stripe.Charge): Promise<Stripe.Checkout.Session | null> {
+  const pi = typeof charge.payment_intent === 'string' ? charge.payment_intent : null;
+  if (!pi) return null;
+  try {
+    const list = await getStripe().checkout.sessions.list({ payment_intent: pi, limit: 1 });
+    return list.data[0] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1338,7 +1402,7 @@ export async function createOneTimeAmountCoupon(
     duration: 'once',
     max_redemptions: 1,
     redeem_by: Math.floor((Date.now() + 24 * 60 * 60 * 1000) / 1000),
-    name: COUPON_LABEL[kind],
+    name: clampCouponName(COUPON_LABEL[kind]),
     metadata: { wedillybird: kind },
   });
   return coupon.id;
@@ -1350,7 +1414,10 @@ const COUPON_LABEL: Record<
 > = {
   referral_credit: 'Crédit de parrainage Wedillybird',
   affiliate_discount: 'Remise partenaire Wedillybird',
-  referral_credit_and_discount: 'Remise partenaire + crédit de parrainage Wedillybird',
+  // Sans « Wedillybird » : le libellé complet faisait 52 caractères, au-delà
+  // de la limite Stripe de 40 — la création du coupon partait en 400 et le
+  // checkout perdait EN SILENCE la remise (cf. le catch de /api/checkout).
+  referral_credit_and_discount: 'Remise partenaire + crédit parrainage',
 };
 
 /**
@@ -1373,6 +1440,8 @@ export async function createCoupon(input: {
    * n'autorise pas la modif d'`applies_to`).
    */
   appliesToProducts?: string[];
+  /** Metadata libre, fusionnée avec celle posée par `appliesToProducts`. */
+  metadata?: Record<string, string>;
 }): Promise<AdminCoupon> {
   const stripe = getStripe();
   if ((input.percentOff == null) === (input.amountOffMinor == null)) {
@@ -1384,8 +1453,19 @@ export async function createCoupon(input: {
     throw new Error('COUPON_REPEATING_NEEDS_MONTHS');
   }
 
+  // Trace la restriction produit en metadata : l'API dahlia ne renvoie plus
+  // `applies_to` en lecture, donc mapCoupon la relit ici pour l'affichage (le
+  // filtrage produit lui-même reste appliqué par Stripe).
+  const products = input.appliesToProducts ?? [];
+  const metadata: Record<string, string> = {
+    ...(input.metadata ?? {}),
+    ...(products.length > 0 ? { wedillybird_applies_to: products.join(',') } : {}),
+  };
+
   const params: Stripe.CouponCreateParams = {
-    name: input.name,
+    // Stripe refuse (400) un `name` de plus de 40 caractères au lieu de le
+    // tronquer : sans cette borne, un nom un peu long fait perdre le coupon.
+    name: clampCouponName(input.name),
     duration: input.duration,
     ...(input.percentOff != null ? { percent_off: input.percentOff } : {}),
     ...(input.amountOffMinor != null
@@ -1394,15 +1474,8 @@ export async function createCoupon(input: {
     ...(input.duration === 'repeating' ? { duration_in_months: input.durationInMonths } : {}),
     ...(input.maxRedemptions != null ? { max_redemptions: input.maxRedemptions } : {}),
     ...(input.redeemBy != null ? { redeem_by: Math.floor(input.redeemBy / 1000) } : {}),
-    ...(input.appliesToProducts && input.appliesToProducts.length > 0
-      ? {
-          applies_to: { products: input.appliesToProducts },
-          // Trace la restriction en metadata : l'API dahlia ne renvoie plus
-          // `applies_to` en lecture, donc mapCoupon la relit ici pour l'affichage
-          // (le filtrage produit lui-même reste appliqué par Stripe).
-          metadata: { wedillybird_applies_to: input.appliesToProducts.join(',') },
-        }
-      : {}),
+    ...(products.length > 0 ? { applies_to: { products } } : {}),
+    ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
   };
   const coupon = await stripe.coupons.create(params);
   return mapCoupon(coupon);
@@ -1485,6 +1558,18 @@ export async function findPromotionCodeByCode(code: string): Promise<AdminPromot
   const res = await stripe.promotionCodes.list({ code, limit: 1 });
   const found = res.data[0];
   return found ? mapPromotionCode(found) : null;
+}
+
+/** Un coupon par son id, ou `null` s'il n'existe plus (ou a été supprimé). */
+export async function retrieveCoupon(couponId: string): Promise<AdminCoupon | null> {
+  const stripe = getStripe();
+  try {
+    const coupon = await stripe.coupons.retrieve(couponId);
+    if ((coupon as { deleted?: boolean }).deleted) return null;
+    return mapCoupon(coupon as Stripe.Coupon);
+  } catch {
+    return null;
+  }
 }
 
 export async function listCoupons(limit = 100): Promise<AdminCoupon[]> {

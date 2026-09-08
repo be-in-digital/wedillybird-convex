@@ -17,6 +17,12 @@
  * Les appels Stripe vivent dans les server actions admin.
  */
 
+import {
+  STRIPE_COUPON_NAME_MAX_LENGTH,
+  couponNameLength,
+  truncateCouponSegment,
+} from './coupon-name';
+
 /**
  * Durée de validité d'un code partenaire. Un an : assez long pour une
  * collaboration qui s'installe, assez court pour ne pas laisser traîner un code
@@ -26,13 +32,29 @@ export const PARTNER_CODE_VALIDITY_DAYS = 365;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/** Séparateur du nom de coupon — compact, lisible dans la liste Stripe. */
+const SEP = ' · ';
+
+/**
+ * En dessous de ce nombre de caractères, un fragment de nom d'affichage
+ * n'apprend plus rien (« Sar… ») : on préfère l'omettre et laisser le code
+ * parler seul.
+ */
+const MIN_DISPLAY_NAME_CHARS = 6;
+
 export interface PartnerCouponPlan {
-  /** Nom lisible du coupon côté Dashboard Stripe. */
+  /** Nom lisible du coupon côté Dashboard Stripe (≤ 40 car., limite Stripe). */
   name: string;
   /** Remise en pourcentage (Stripe accepte jusqu'à 2 décimales, > 0 et ≤ 100). */
   percentOff: number;
   /** Fin de validité du coupon ET du code promo (ms epoch). */
   redeemBy: number;
+  /**
+   * Marqueur machine du coupon. Le nom étant budgété au caractère près, c'est
+   * la metadata — et non un préfixe « Partenaire » — qui rend ces coupons
+   * filtrables dans le Dashboard et rattachables à leur affilié.
+   */
+  metadata: Record<string, string>;
 }
 
 /**
@@ -51,6 +73,42 @@ export function shouldCreatePartnerCoupon(buyerDiscountBps: number): boolean {
 }
 
 /**
+ * Nom du coupon partenaire, garanti dans la limite Stripe de 40 caractères.
+ *
+ * Un nom trop long n'était pas tronqué par Stripe mais REFUSÉ (400) : l'affilié
+ * se retrouvait créé sans code partageable. Le budget est donc dépensé par
+ * ordre de valeur d'identification :
+ *
+ *  1. le **code** — c'est lui qui relie le coupon à l'affilié (`markSucceeded`
+ *     remonte du code promo vers `affiliates.code`), il n'est jamais sacrifié ;
+ *  2. le **taux**, qui dit ce que le coupon fait ;
+ *  3. le **nom d'affichage**, confort de lecture : rogné, puis omis s'il ne
+ *     reste pas de place pour un fragment parlant.
+ *
+ * Le nom d'affichage est aussi omis quand il redit le code (cas par défaut,
+ * `displayName` vide) — « SARAH · -10 % · SARAH » n'apprend rien à personne.
+ */
+function partnerCouponName(input: {
+  code: string;
+  percentOff: number;
+  displayName?: string | null;
+}): string {
+  const head = `${input.code}${SEP}-${input.percentOff} %`;
+  const label = input.displayName?.trim() ?? '';
+
+  // Le code seul peut déjà dépasser (jusqu'à 24 car. + taux) : on borne.
+  if (!label || label.toUpperCase() === input.code.toUpperCase()) {
+    return truncateCouponSegment(head, STRIPE_COUPON_NAME_MAX_LENGTH);
+  }
+
+  const budget = STRIPE_COUPON_NAME_MAX_LENGTH - couponNameLength(head) - couponNameLength(SEP);
+  if (budget < MIN_DISPLAY_NAME_CHARS) {
+    return truncateCouponSegment(head, STRIPE_COUPON_NAME_MAX_LENGTH);
+  }
+  return `${head}${SEP}${truncateCouponSegment(label, budget)}`;
+}
+
+/**
  * Paramètres du coupon à créer pour un affilié, ou `null` si aucun code
  * partageable n'a lieu d'être. `now` est injecté pour rester déterministe.
  *
@@ -65,10 +123,14 @@ export function partnerCouponPlan(input: {
 }): PartnerCouponPlan | null {
   if (!shouldCreatePartnerCoupon(input.buyerDiscountBps)) return null;
   const percentOff = input.buyerDiscountBps / 100;
-  const label = input.displayName?.trim() || input.code;
   return {
-    name: `Partenaire ${label} — ${input.code} (-${percentOff} %)`,
+    name: partnerCouponName({
+      code: input.code,
+      percentOff,
+      displayName: input.displayName,
+    }),
     percentOff,
     redeemBy: input.now + PARTNER_CODE_VALIDITY_DAYS * MS_PER_DAY,
+    metadata: { wedillybird: 'partner_code', wedillybird_affiliate_code: input.code },
   };
 }

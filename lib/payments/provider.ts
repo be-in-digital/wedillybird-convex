@@ -32,7 +32,14 @@ export interface CheckoutSession {
 export interface VerifiedWebhookEvent {
   providerSessionId: string;
   providerEventId: string;
-  status: 'succeeded' | 'failed' | 'cancelled';
+  /**
+   * `refunded` couvre le remboursement ET le litige : dans les deux cas
+   * l'argent repart, donc la commission d'affiliation doit être annulée et le
+   * crédit dépensé restitué. Sans ce statut, un remboursement fait depuis le
+   * Dashboard Stripe (ou un chargeback) ne déclenchait AUCUN reversal — seul
+   * un clic « rembourser » dans le back-office le faisait.
+   */
+  status: 'succeeded' | 'failed' | 'cancelled' | 'refunded';
   /** Montant RÉELLEMENT encaissé (après coupon / code promo), en centimes. */
   amountMinor: number;
   currency: Currency;
@@ -46,6 +53,22 @@ export interface VerifiedWebhookEvent {
    * commission était perdue en silence.
    */
   promotionCode?: string;
+  /** Montant remboursé CUMULÉ d'après le provider, pour `status: 'refunded'`. */
+  refundedAmountMinor?: number;
+  /**
+   * Montant réellement débité à l'origine — l'assiette qui dit si un
+   * remboursement est total. Le montant stocké côté `payments` est le prix
+   * CATALOGUE : comparer le remboursement à celui-ci ferait passer pour
+   * partiel le remboursement intégral d'un achat remisé.
+   */
+  chargedAmountMinor?: number;
+  /**
+   * Litige plutôt que remboursement. L'argent est retenu, pas rendu, et
+   * l'issue peut être favorable : on annule la commission (elle ne doit pas
+   * s'acquérir pendant l'instruction) mais on NE marque PAS le paiement
+   * remboursé, ce dont on ne saurait pas revenir.
+   */
+  disputed?: boolean;
 }
 
 export interface SessionStatus {

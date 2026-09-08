@@ -5782,6 +5782,7 @@
   "Partner": {
     "eyebrow": "Partner programme",
     "title": "Your partner space",
+    "navLink": "Partner space",
     "subtitle": "Share your link, follow the sales it generates and what you are owed.",
     "linkTitle": "Your sharing link",
     "copy": "Copy",
@@ -5843,6 +5844,7 @@
       "org_already_subscribed": "Your agency already has an active subscription. Get in touch and we'll sort it out.",
       "invalid_name": "Enter your agency name.",
       "user_not_found": "Account not found. Please sign in again.",
+      "user_already_has_affiliate": "This account is already linked to another partner code. Please contact us.",
       "unknown": "We couldn't open your workspace right now."
     },
     "metaTitle": "Your partner invitation — Wedillybird",

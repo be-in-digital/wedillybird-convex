@@ -154,7 +154,10 @@ export function AdminAffiliatesBoard({
 
   function onKindChange(next: 'referral' | 'partner') {
     setKind(next);
-    // Défaut cohérent : parrainage = crédit (100 % auto), partenaire = cash.
+    // La récompense DÉCOULE de la nature : parrainage = crédit (100 % auto),
+    // partenaire = cash. Le serveur refuse tout autre couple
+    // (`REWARD_TYPE_MISMATCH`) ; le champ est donc affiché mais non modifiable,
+    // plutôt que de laisser composer un affilié que la création rejettera.
     setRewardType(next === 'referral' ? 'credit' : 'cash');
   }
 
@@ -355,6 +358,7 @@ export function AdminAffiliatesBoard({
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="NORAH10"
+              data-testid="affiliate-code"
             />
           </div>
           <div>
@@ -370,11 +374,7 @@ export function AdminAffiliatesBoard({
           </div>
           <div>
             <label className={labelCls}>Récompense</label>
-            <select
-              className={inputCls}
-              value={rewardType}
-              onChange={(e) => setRewardType(e.target.value as 'credit' | 'cash')}
-            >
+            <select className={inputCls} value={rewardType} disabled>
               <option value="cash">Cash</option>
               <option value="credit">Crédit</option>
             </select>
@@ -388,6 +388,7 @@ export function AdminAffiliatesBoard({
               className={inputCls}
               value={ratePct}
               onChange={(e) => setRatePct(Number(e.target.value))}
+              data-testid="affiliate-rate"
             />
           </div>
           <div>
@@ -399,6 +400,7 @@ export function AdminAffiliatesBoard({
               className={inputCls}
               value={discountPct}
               onChange={(e) => setDiscountPct(Number(e.target.value))}
+              data-testid="affiliate-discount"
             />
           </div>
           <div className="col-span-2 sm:col-span-1">
@@ -408,6 +410,7 @@ export function AdminAffiliatesBoard({
               value={ownerEmail}
               onChange={(e) => setOwnerEmail(e.target.value)}
               placeholder="norah@…"
+              data-testid="affiliate-owner-email"
             />
           </div>
           <div className="col-span-2 sm:col-span-2">
@@ -417,6 +420,7 @@ export function AdminAffiliatesBoard({
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Norah — @norah"
+              data-testid="affiliate-display-name"
             />
           </div>
         </div>
@@ -424,6 +428,7 @@ export function AdminAffiliatesBoard({
           <button
             type="button"
             onClick={create}
+            data-testid="affiliate-create"
             disabled={pending || !codeValid || overCap}
             className="inline-flex items-center gap-2 rounded-md bg-[color:var(--color-primary)] px-4 py-2 text-sm font-medium text-[color:var(--color-primary-foreground)] disabled:opacity-50"
           >
@@ -563,7 +568,7 @@ export function AdminAffiliatesBoard({
               {affiliates.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-4 py-8 text-center text-sm text-[color:var(--color-ink-500)]"
                   >
                     Aucun affilié. Créez-en un ci-dessus (invitation-only).
@@ -614,7 +619,10 @@ export function AdminAffiliatesBoard({
                     {new Date(r.vestsAt).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-4 py-2.5">
-                    {r.status === 'vested' ? (
+                    {/* Seules les commissions CASH se versent. Un crédit se
+                        dépense à un achat ; le « verser » le supprimerait du
+                        solde du parrain sans contrepartie. */}
+                    {r.status === 'vested' && r.rewardType === 'cash' ? (
                       <button
                         type="button"
                         onClick={() => markPaid(r)}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getActiveSession } from '@/lib/auth/session';
+import { assertSameOrigin } from '@/lib/auth/csrf';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { getUpsellPrice } from '@/lib/payments/plans';
 import { detectCountryFromHeaders, routePayment } from '@/lib/payments/country';
@@ -25,6 +26,12 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request): Promise<Response> {
+  // Même garde que `/api/checkout` : sans elle, un POST cross-site déclenchait
+  // `reserveCreditForCheckout` et gelait le crédit de parrainage de la victime
+  // pendant 24 h (jusqu'au GC), sans qu'elle ait rien demandé.
+  const csrf = assertSameOrigin(req);
+  if (csrf) return csrf;
+
   const session = await getActiveSession();
   if (!session) {
     return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
@@ -84,7 +91,10 @@ export async function POST(req: Request): Promise<Response> {
       creditReserved = true;
       discountCouponId = await createOneTimeAmountCoupon(reserved.appliedMinor, routing.currency);
     }
-  } catch {
+  } catch (err) {
+    // Même trace que sur `/api/checkout` : sans elle, l'acheteur paie l'upsell
+    // plein tarif alors qu'il avait du crédit, et rien ne le signale.
+    console.error('[checkout/upsell] crédit non appliqué', err);
     if (creditReserved) {
       try {
         await convex.mutation(convexApi.releaseCreditReservation, { reservationId });

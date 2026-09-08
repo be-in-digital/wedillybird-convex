@@ -5786,6 +5786,7 @@
   "Partner": {
     "eyebrow": "Partnerprogramm",
     "title": "Ihr Partnerbereich",
+    "navLink": "Partnerbereich",
     "subtitle": "Teilen Sie Ihren Link, verfolgen Sie die daraus entstehenden Verkäufe und Ihr Guthaben.",
     "linkTitle": "Ihr Link zum Teilen",
     "copy": "Kopieren",
@@ -5847,6 +5848,7 @@
       "org_already_subscribed": "Ihre Agentur hat bereits ein laufendes Abonnement. Melden Sie sich, wir kümmern uns darum.",
       "invalid_name": "Geben Sie den Namen Ihrer Agentur an.",
       "user_not_found": "Konto nicht gefunden. Bitte erneut anmelden.",
+      "user_already_has_affiliate": "Dieses Konto ist bereits mit einem anderen Partnercode verknüpft. Bitte kontaktiere uns.",
       "unknown": "Ihr Bereich lässt sich derzeit nicht eröffnen."
     },
     "metaTitle": "Ihre Partner-Einladung — Wedillybird",

@@ -332,18 +332,29 @@ export const markPaymentRefunded = mutation({
     adminId: v.id('users'),
     paymentId: v.id('payments'),
     refundAmountMinor: v.number(),
+    /**
+     * CUMUL attendu après ce remboursement, calculé par l'appelant AVANT
+     * l'appel Stripe. Sans lui, on additionnerait l'incrément à un champ que
+     * le webhook `charge.refunded` vient peut-être déjà de porter au cumul —
+     * les deux écrivains se croisent à chaque remboursement du back-office, et
+     * le total partait au double (voire en `REFUND_EXCEEDS_AMOUNT` alors que
+     * l'argent était bel et bien parti).
+     */
+    totalRefundedMinor: v.optional(v.number()),
     stripeRefundId: v.optional(v.string()),
   },
-  handler: async (ctx, { adminId, paymentId, refundAmountMinor, stripeRefundId }) => {
+  handler: async (
+    ctx,
+    { adminId, paymentId, refundAmountMinor, totalRefundedMinor, stripeRefundId },
+  ) => {
     await assertAdmin(ctx, adminId);
     const p = await ctx.db.get(paymentId);
     if (!p) throw new Error('PAYMENT_NOT_FOUND');
 
-    const { status, totalRefunded } = computeRefundOutcome(
-      p.amountMinor,
-      p.refundedAmountMinor ?? 0,
-      refundAmountMinor,
-    );
+    const { status, totalRefunded } =
+      totalRefundedMinor !== undefined
+        ? computeRefundOutcome(p.amountMinor, 0, Math.min(totalRefundedMinor, p.amountMinor))
+        : computeRefundOutcome(p.amountMinor, p.refundedAmountMinor ?? 0, refundAmountMinor);
     await ctx.db.patch(paymentId, {
       status,
       refundedAmountMinor: totalRefunded,

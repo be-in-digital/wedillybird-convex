@@ -33,10 +33,15 @@ crons.cron(
   {},
 );
 
-// Daily at 03:00 UTC: vest affiliate/referral rewards whose hold has elapsed
-// (pending → vested once the event date / J+7 floor is passed). Idempotent;
-// no-op when there's nothing due.
-crons.cron('vest affiliate rewards', '0 3 * * *', internal.affiliate.vestDueReferrals, {});
+// Hourly: vest affiliate/referral rewards whose hold has elapsed (pending →
+// vested once the event date / J+7 floor is passed). Idempotent; no-op when
+// there's nothing due.
+//
+// Hourly rather than daily because the batch is capped at 200 rows per run and
+// `vestsAt` is the WEDDING DATE: a seasonal Saturday can bring far more than
+// 200 rewards due at once, and a daily run would have pushed the remainder
+// back a full day per 200-row slice. Same cadence as the reservation GC below.
+crons.cron('vest affiliate rewards', '0 * * * *', internal.affiliate.vestDueReferrals, {});
 
 // Hourly: release orphan referral-credit reservations (checkout started but
 // never confirmed, older than the coupon's 24h redeem window) so the credit
