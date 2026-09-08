@@ -65,7 +65,17 @@ export function InvitationCard3D() {
   }, [mouseX, mouseY]);
 
   return (
-    <div ref={ref} className="relative mx-auto w-full max-w-md" style={{ perspective: '1400px' }}>
+    <div
+      ref={ref}
+      className="relative mx-auto w-full"
+      style={{
+        perspective: '1400px',
+        // 28rem max, mais jamais plus haut que le viewport moins l'en-tête et
+        // les marges (ratio 5:7) : sur un laptop 1280×720, une carte de 627 px
+        // repoussait le CTA du hero sous la ligne de flottaison.
+        maxWidth: 'min(28rem, calc((100svh - 14rem) * 0.714))',
+      }}
+    >
       {/* Halo blush flou derrière la carte */}
       <div
         aria-hidden

@@ -11,7 +11,6 @@ import { LandingManifesto } from '@/components/landing/manifesto';
 import { LandingFeaturesGrid } from '@/components/landing/features-grid';
 import { LandingChannels } from '@/components/landing/channels';
 import { LandingCinematicInvitation } from '@/components/landing/cinematic-invitation';
-import { LandingTestimonials } from '@/components/landing/testimonials';
 import { LandingPricingCards } from '@/components/landing/pricing-cards';
 import { MobileMenu } from '@/components/landing/mobile-menu';
 import { LandingFaqAccordion } from '@/components/landing/faq-accordion';
@@ -68,28 +67,31 @@ export async function generateMetadata({
 }
 
 /**
- * Landing page V4 — direction "mariage éditorial Awwwards-grade".
+ * Landing page V5 — direction "mariage éditorial Awwwards-grade".
  *
- * Refonte post-audit (V3 jugée 64/100). Sections coupées : Comparison, Stats,
- * HowItWorks, InspirationGallery — leur essence absorbée dans Manifesto V4.
+ * V4 = refonte post-audit design (V3 jugée 64/100). V5 = audit trafic &
+ * conversion de sept. 2026 (`docs/landing-audit-2026-09.md`) : promesse
+ * concrète et CTA au-dessus du pli, démo publique `/demo`, et retrait de toute
+ * preuve sociale non mesurée (stats du manifeste, section Témoignages avec
+ * trois voix fictives, « 1 240 mariages » / « 4,9 / 5 »).
  *
- * Structure narrative en 7 chapitres :
- *  01. Hero (carte d'invitation 3D + photo couple Provence)
- *  02. Manifesto enrichi (lede + diptyque + pull-quote + 3 stats)
+ * Structure narrative :
+ *  01. Hero (promesse + carte d'invitation 3D + photo couple Provence)
+ *  02. Manifesto (lede + diptyque + pull-quote)
  *  03. 4 piliers (asymétrie : Invitations large + 3 cards)
+ *  03b. Canaux (SMS US/CA, WhatsApp ailleurs)
  *  04. Cinématique invitation (texture papier + sceau fendu + cursor cire)
- *  05. Témoignages (3 voix avec photos Unsplash)
  *  06. Pricing (geoIP auto, sparkle gold Premium hover)
- *  07. FAQ (8 questions accordion)
+ *  07. FAQ (7 questions accordion)
+ *  Épilogue. CTA final + Footer riche
  *
  * Note : la landing est mono-audience "couple". L'offre Pro (features +
  * pricing agence) vit sur /pros, retirée du scroll couple pour ne pas diluer
  * le message ni brouiller le signal d'audience côté acquisition.
- *  Épilogue. CTA final + Footer riche
  *
- * Smooth scroll Lenis sur toute la landing (synced avec GSAP ScrollTrigger).
+ * Smooth scroll Lenis sur toute la landing.
  *
- * SEO : JSON-LD FAQPage côté server (8 Q/R, mêmes clés que l'accordion client).
+ * SEO : JSON-LD FAQPage côté server (mêmes clés que l'accordion client).
  */
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -178,7 +180,6 @@ function LandingShell({
         <LandingFeaturesGrid />
         <LandingChannels />
         <LandingCinematicInvitation />
-        <LandingTestimonials />
         <LandingPricingCards defaultCurrency={defaultCurrency} />
         <LandingFaqAccordion />
         <LandingCtaFinal />

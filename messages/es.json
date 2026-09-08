@@ -396,7 +396,7 @@
       "retentionTitle": "Plazo de conservación",
       "retentionBody": "Datos de la cuenta: duración de la suscripción + 3 años. Datos de pago: plazo legal (10 años para la facturación). Logs técnicos: 12 meses como máximo. Datos biométricos faciales (búsqueda facial, si está activada): hasta que expire la galería o se desactive la función, lo que ocurra primero — véase «Datos biométricos» más abajo.",
       "subprocessorsTitle": "Subencargados",
-      "subprocessorsBody": "Convex (base de datos, EE. UU.), Vercel (alojamiento, EE. UU./UE), Stripe (pago, UE/EE. UU.), Meta WhatsApp Cloud API (envío de mensajes, UE/EE. UU.), Amazon Rekognition Faces (indexación biométrica de rostros para la función opcional de búsqueda facial, activa solo en las bodas donde la pareja la ha activado explícitamente — ver «Datos biométricos» más abajo, UE). Datos minimizados, sin reventa ni compartición con fines de marketing con terceros. Todos están vinculados por cláusulas contractuales tipo o mecanismos equivalentes.",
+      "subprocessorsBody": "Convex (base de datos, EE. UU.), Vercel (alojamiento, EE. UU./UE), Stripe (pago, UE/EE. UU.), Meta WhatsApp Cloud API (envío de mensajes, UE/EE. UU.), Amazon Rekognition Faces (indexación biométrica de rostros para la función opcional de búsqueda facial, activa solo en las bodas donde la pareja la ha activado explícitamente — ver «Datos biométricos» más abajo, UE). Datos minimizados, sin reventa ni compartición con fines de marketing con terceros. Todos están vinculados por cláusulas contractuales tipo o mecanismos equivalentes. PostHog (medición de audiencia del sitio, EE. UU.) y Meta (píxel publicitario, EE. UU.) solo reciben datos si aceptaste la medición de audiencia en el banner de cookies.",
       "biometricsTitle": "Datos biométricos (búsqueda facial)",
       "biometricsBody": "La búsqueda facial es una función opcional y activada por decisión propia: desactivada por defecto, solo procesa los rostros de los invitados en las bodas donde la pareja la ha activado explícitamente, tras leer este aviso. Base legal: consentimiento explícito, otorgado por la pareja en nombre de la boda (véanse los Términos y Condiciones). Datos tratados: geometría facial extraída de las fotos aprobadas de la galería (Amazon Rekognition), utilizada únicamente para comparar el selfie de un invitado con la galería — el selfie en sí nunca se almacena. Conservación: hasta que expire la galería o se desactive la función, lo que ocurra primero; eliminación automática en un plazo de 24 horas mediante una purga diaria, o antes si se solicita. Esta función no está disponible para bodas celebradas en Illinois, Texas o Washington.",
       "rightsTitle": "Tus derechos",
@@ -407,16 +407,16 @@
     },
     "cookies": {
       "title": "Política de cookies",
-      "lastUpdated": "Última actualización: 25 de abril de 2026",
+      "lastUpdated": "Última actualización: 9 de septiembre de 2026",
       "whatTitle": "¿Qué es una cookie?",
       "whatBody": "Una cookie es un pequeño archivo de texto que un sitio web almacena en tu dispositivo. Wedillybird utiliza cookies esenciales para el funcionamiento del Servicio.",
       "typesTitle": "Cookies utilizadas",
-      "typesBody": "Cookie de sesión (autenticación, firmada con HMAC, expira tras 30 días de inactividad). Almacenamiento local IndexedDB (caché offline para el check-in). No se instala ninguna cookie publicitaria ni de seguimiento de terceros.",
+      "typesBody": "Cookie de sesión (autenticación, firmada HMAC, caduca tras 30 días de inactividad). Almacenamiento local IndexedDB (caché offline para el check-in). Solo con tu consentimiento: cookies de medición de audiencia PostHog (estadísticas de visita, grabación de sesión anonimizada) y píxel de Meta (medición de la eficacia de nuestros anuncios). Sin consentimiento, no se deposita ninguna de estas cookies.",
       "controlTitle": "Controlar las cookies",
       "controlBody": "Puedes eliminar las cookies desde la configuración de tu navegador. Desactivar la cookie de sesión te desconectará del Servicio.",
       "thirdPartiesTitle": "Cookies de terceros",
-      "thirdPartiesBody": "Stripe instala sus propias cookies en sus páginas de pago (fuera del dominio Wedillybird) para prevenir el fraude. Consulta su política de privacidad.",
-      "description": "Cookies esenciales para el funcionamiento de Wedillybird: sesión HMAC, caché offline para el check-in. Sin cookies publicitarias ni rastreadores de terceros."
+      "thirdPartiesBody": "Stripe deposita sus propias cookies en sus páginas de pago (fuera del dominio Wedillybird) para prevenir el fraude. PostHog (Estados Unidos) y Meta (Estados Unidos) solo reciben datos si aceptaste la medición de audiencia en el banner. Puedes retirar tu consentimiento en cualquier momento borrando las cookies de tu navegador: el banner volverá a mostrarse.",
+      "description": "Cookies esenciales para el funcionamiento de Wedillybird (sesión, caché offline del check-in) y, solo con tu consentimiento, medición de audiencia PostHog y píxel de Meta."
     },
     "affiliation": {
       "title": "Condiciones del programa de socios",
@@ -600,18 +600,18 @@
   "Landing": {
     "hero": {
       "chapter": "CAPÍTULO 01 — LA INVITACIÓN",
-      "title": "Una boda se vive en la conversación.",
-      "titleAccent": "Hazla existir ahí.",
-      "subtitle": "Tus invitados ya están en WhatsApp. Wedillybird lo orquesta todo allí — la invitación, el RSVP, el día D y los recuerdos. Con discreción, hasta la próxima boda.",
+      "title": "Tus invitaciones de boda,",
+      "titleAccent": "enviadas por WhatsApp.",
+      "subtitle": "Un enlace por invitado, RSVP en 30 segundos, check-in el día de la boda y galería compartida. Nada que instalar para tus invitados, ninguna suscripción para ti.",
       "ctaPrimary": "Preparar mi boda",
-      "ctaSecondary": "Ver los planes",
+      "ctaSecondary": "Ver una invitación",
       "trust": {
-        "stat": "1 240 bodas celebradas",
-        "rating": "4,9 / 5 satisfacción de las parejas",
-        "regions": "Disponible internacionalmente"
+        "noSubscription": "Pago único, sin suscripción",
+        "refund": "Reembolso en 7 días",
+        "dataEu": "Datos alojados en Europa"
       },
       "card": {
-        "label": "INVITACIÓN · 8 DE JUNIO DE 2026",
+        "label": "INVITACIÓN · 12 DE JUNIO DE 2027",
         "couple": "Camille y Hugo",
         "venue": "Domaine des Lilas",
         "rsvpHint": "RSVP abierto en WhatsApp"
@@ -647,28 +647,7 @@
         "label": "Ahora",
         "body": "Un único enlace personalizado por invitado, abierto nada más recibirlo, RSVP confirmado en 30 segundos. Ves llegar las respuestas, sin enviar recordatorios. El día D, el check-in offline aguanta incluso cuando el WiFi del castillo se cae."
       },
-      "pullquote": "Seis meses después de la boda, tus invitados siguen mirando las fotos. Eso es lo que te da Wedillybird — no una app, sino un momento que perdura.",
-      "stats": {
-        "openRate": {
-          "value": 98,
-          "suffix": "%",
-          "label": "de las invitaciones abiertas",
-          "context": "frente al 22 % por email clásico"
-        },
-        "rsvpSpeed": {
-          "value": 73,
-          "suffix": "%",
-          "label": "de RSVP en 24 horas",
-          "context": "media en las 30 primeras invitaciones"
-        },
-        "memory": {
-          "value": 5,
-          "suffix": " años",
-          "label": "de recuerdos conservados",
-          "context": "con la opción Premium + Mejora postboda"
-        }
-      },
-      "source": "Medido en las 1 240 primeras bodas celebradas con Wedillybird, 2026."
+      "pullquote": "Seis meses después de la boda, tus invitados siguen mirando las fotos. Eso es lo que te da Wedillybird — no una app, sino un momento que perdura."
     },
     "features": {
       "chapter": "CAPÍTULO 03 — LOS PILARES",
@@ -714,7 +693,7 @@
       "visuals": {
         "invitationSent": "Invitación enviada ·",
         "invitationKicker": "INVITACIÓN",
-        "invitationDate": "8 JUNIO 2026",
+        "invitationDate": "12 JUNIO 2027",
         "rsvpConfirmed": "% CONFIRMADOS",
         "checkinGuestId": "INVITADO-AB42",
         "checkinOffline": "SIN CONEXIÓN OK",
@@ -734,35 +713,7 @@
       "stepFlourish": "Vuestros nombres aparecen",
       "srLabel": "Animación de un sobre de boda que se abre para revelar una tarjeta de invitación",
       "cardKicker": "NOS CASAMOS",
-      "cardDate": "8 DE JUNIO DE 2026"
-    },
-    "testimonials": {
-      "chapter": "CAPÍTULO 05 — LAS VOCES",
-      "eyebrow": "Han dicho sí",
-      "title": "Parejas y planners que han ganado en serenidad.",
-      "items": {
-        "couple-fr": {
-          "quote": "Invitamos a 180 personas con cuatro toques. El check-in offline salvó la entrada cuando el WiFi del recinto se cayó — nadie esperó más de cinco segundos.",
-          "name": "Camille y Hugo",
-          "location": "Boda al aire libre · junio de 2026",
-          "initials": "CH",
-          "alt": "Retrato de Camille y Hugo sonrientes"
-        },
-        "couple-sn": {
-          "quote": "Éramos más de 600 invitados durante tres días. Wedillybird aguantó allí donde Excel y nuestros grupos de WhatsApp se rompían. La galería compartida hizo volver los recuerdos otra vez tres meses después.",
-          "name": "Awa y Mamadou",
-          "location": "Boda 600+ invitados · noviembre de 2025",
-          "initials": "AM",
-          "alt": "Awa y Mamadou con vestimenta tradicional"
-        },
-        "planner-pro": {
-          "quote": "Gestiono ocho bodas esta temporada con mi marca en cada página de invitación. Mis parejas ven a mi agencia, no a una herramienta de terceros — es exactamente lo que faltaba en el mercado.",
-          "name": "Studio Lumière",
-          "location": "Wedding planner",
-          "initials": "SL",
-          "alt": "Wedding planner ante una boda al aire libre"
-        }
-      }
+      "cardDate": "12 DE JUNIO DE 2027"
     },
     "pricing": {
       "chapter": "CAPÍTULO 06 — LOS PLANES",
@@ -818,11 +769,11 @@
         },
         "olderGuests": {
           "q": "¿Mis invitados mayores o poco habituados a lo digital sabrán arreglárselas?",
-          "a": "Sí. La página de invitación se abre en el navegador de WhatsApp con un toque — sin app, sin cuenta que crear. El RSVP se hace con 3 botones. Más del 92 % de los abuelos probados confirmaron sin ayuda."
+          "a": "Sí. La página de invitación se abre en el navegador de WhatsApp con un toque — sin app, sin cuenta que crear, sin contraseña. El RSVP se hace con 3 botones, como responder a un mensaje."
         },
         "guestLimit": {
           "q": "¿Cuántos invitados como máximo?",
-          "a": "Sin límite técnico. Los planes Esencial y Premium incluyen hasta 500 invitaciones por boda. Más allá (bodas de 600+ invitados), contáctanos y lo adaptamos."
+          "a": "El plan Esencial incluye hasta 100 invitaciones por boda, el Premium hasta 250. Más allá (bodas grandes, 300 invitados o más), contáctanos: lo adaptamos."
         },
         "cancellation": {
           "q": "¿Y si tenemos que cancelar o aplazar la boda?",
@@ -851,7 +802,7 @@
       "title": "El gran día se merece más que un PDF.",
       "subtitle": "Crea tu primera invitación en tres minutos. Sin tarjeta bancaria para explorar, reembolso en 7 días si cambias de opinión.",
       "cta": "Preparar mi boda",
-      "trust": "1 240 bodas celebradas · 4,9 / 5 satisfacción de las parejas"
+      "trust": "Pago único · Reembolso en 7 días · Aplazamiento gratuito en caso de cancelación"
     },
     "footer": {
       "tagline": "WhatsApp-first wedding concierge. Pensado para bodas en todo el mundo.",
@@ -868,23 +819,19 @@
           "links": {
             "features": "Funcionalidades",
             "pricing": "Tarifas",
-            "demo": "Demo en directo",
+            "demo": "Ver una invitación de demostración",
             "templates": "Plantillas de invitación"
           }
         },
         "pros": {
           "title": "Para los pros",
           "links": {
-            "planners": "Wedding planners",
-            "venues": "Lugares de celebración",
-            "agencies": "Agencias",
-            "api": "API e integraciones"
+            "planners": "Wedding planners"
           }
         },
         "resources": {
           "title": "Recursos",
           "links": {
-            "blog": "Diario de boda",
             "guide": "Guía de la boda",
             "faq": "FAQ",
             "support": "Soporte",
@@ -951,7 +898,6 @@
     },
     "sectionNav": {
       "features": "Funciones",
-      "testimonials": "Testimonios",
       "pricing": "Precios",
       "pricingPros": "Para profesionales",
       "faq": "Preguntas"
@@ -4545,7 +4491,7 @@
     },
     "legalCookies": {
       "title": "Política de cookies — Wedillybird",
-      "description": "Cookies esenciales para el funcionamiento de Wedillybird: sesión HMAC, caché offline para el check-in. Sin cookies publicitarias ni rastreadores de terceros."
+      "description": "Cookies esenciales para el funcionamiento de Wedillybird (sesión, caché offline del check-in) y, solo con tu consentimiento, medición de audiencia PostHog y píxel de Meta."
     },
     "legalAffiliation": {
       "title": "Condiciones del programa de socios — Wedillybird",
@@ -4557,10 +4503,10 @@
     }
   },
   "CookieConsent": {
-    "title": "Respeto a su privacidad",
-    "bodyBefore": "Utilizamos cookies estrictamente necesarias para el funcionamiento y la seguridad del sitio. Conforme a la normativa (RGPD), y como se detalla en nuestra ",
-    "policyLink": "política",
-    "bodyAfter": ", no se utiliza ninguna cookie de seguimiento de terceros sin su conocimiento.",
+    "title": "Cookies y medición de audiencia",
+    "bodyBefore": "Las cookies esenciales (sesión, seguridad) están siempre activas. Con tu consentimiento, medimos la audiencia del sitio con PostHog y la eficacia de nuestros anuncios con el píxel de Meta. Detalles en nuestra ",
+    "policyLink": "política de cookies",
+    "bodyAfter": ". Puedes cambiar de opinión en cualquier momento.",
     "accept": "Aceptar",
     "decline": "Continuar sin aceptar"
   },
@@ -4657,7 +4603,7 @@
       "back": "Volver",
       "title": "Galería de plantillas",
       "subtitle": "Descubre nuestra colección de modelos de invitación por WhatsApp. Elige el que encaje a la perfección con el ambiente de tu boda.",
-      "cta": "Crear mi invitación gratis",
+      "cta": "Crear mi invitación",
       "tpl1": {
         "name": "La Elegancia Minimalista",
         "description": "Líneas depuradas, una tipografía chic, perfecta para una boda moderna.",
@@ -4692,36 +4638,6 @@
         "description": "Contraste intenso y elegancia absoluta para una recepción de prestigio.",
         "tag1": "Premium",
         "tag2": "Chic"
-      }
-    },
-    "blog": {
-      "back": "Volver al inicio",
-      "title": "El Diario de Boda",
-      "subtitle": "Inspiración, consejos prácticos y testimonios para acompañarte en la organización del día más bonito de tu vida.",
-      "readArticle": "Leer el artículo",
-      "article1": {
-        "title": "Las grandes tendencias de boda en 2026",
-        "excerpt": "Descubre los colores, temas y formatos de celebración que marcarán las próximas temporadas de boda.",
-        "date": "15 de mayo de 2026",
-        "category": "Inspiración"
-      },
-      "article2": {
-        "title": "¿Cómo acertar con las invitaciones por WhatsApp?",
-        "excerpt": "Se acabaron las invitaciones de papel que se pierden. Así se crea una invitación digital elegante y eficaz.",
-        "date": "2 de mayo de 2026",
-        "category": "Organización"
-      },
-      "article3": {
-        "title": "Top 10 de los lugares de celebración en Senegal",
-        "excerpt": "De Dakar a Saly, nuestra selección exclusiva de los mejores lugares para una boda inolvidable.",
-        "date": "28 de abril de 2026",
-        "category": "Lugares"
-      },
-      "article4": {
-        "title": "Gestionar el presupuesto de tu boda sin estrés",
-        "excerpt": "Nuestros consejos de expertos para repartir tus gastos con inteligencia y evitar sorpresas desagradables.",
-        "date": "10 de abril de 2026",
-        "category": "Presupuesto"
       }
     },
     "pros": {
@@ -5877,5 +5793,16 @@
     "subtitleCouple": "Abre tu cuenta: tu boda pasa a Premium, gratis — invitaciones, RSVP y galería compartida incluidos.",
     "submitCouple": "Abrir mi cuenta (Premium gratis)",
     "codeHintCouple": "Tu código de partner {code} está activo: compártelo con tu comunidad para cobrar tu comisión."
+  },
+  "Demo": {
+    "metaTitle": "Demo — una invitación de boda Wedillybird",
+    "metaDescription": "Abre una invitación Wedillybird tal como la recibirán tus invitados: sobre, animación de apertura, cuenta atrás y RSVP en 30 segundos. Pareja ficticia, sin registro.",
+    "banner": "Invitación de demostración · pareja ficticia",
+    "back": "Volver al sitio",
+    "replay": "Repetir la apertura",
+    "cta": "Crear la mía",
+    "guestName": "Lucía",
+    "venueName": "Domaine des Lilas",
+    "venueAddress": "Route de Gordes, 84220 Provenza, Francia"
   }
 }

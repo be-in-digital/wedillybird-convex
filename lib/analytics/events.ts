@@ -35,6 +35,10 @@ export const EVENTS = {
   paymentReconciliationFailed: 'payment_reconciliation_failed',
   paymentReconciliationStuck: 'payment_reconciliation_stuck',
   entitlementWithoutPayment: 'entitlement_without_payment',
+  // --- Démo publique `/demo` : RSVP simulé (jamais un vrai RSVP, donc
+  // volontairement distinct de `rsvp_submitted` pour ne pas polluer la
+  // boucle virale). Signal d'engagement avec la preuve produit.
+  demoRsvpSubmitted: 'demo_rsvp_submitted',
   // --- Boucle virale : pages d'invitation publiques (invités) ---
   invitationViewed: 'invitation_viewed',
   rsvpSubmitted: 'rsvp_submitted',

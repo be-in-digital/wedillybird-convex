@@ -229,7 +229,9 @@ export function LandingPricingCards({ defaultCurrency }: Props) {
                 </ul>
 
                 <Link
-                  href="/sign-up"
+                  // Le forfait choisi suit le visiteur jusqu'au tunnel
+                  // (`/sign-up?plan=…` → event signup_started enrichi).
+                  href={{ pathname: '/sign-up', query: { plan: tier } }}
                   // Tracking : sélection de forfait particulier + clic CTA.
                   onClick={() => {
                     analytics.pricingPlanSelected({ tier, audience: 'consumer' });

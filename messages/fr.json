@@ -396,7 +396,7 @@
       "retentionTitle": "Durée de conservation",
       "retentionBody": "Données du compte : durée de l'abonnement + 3 ans. Données de paiement : durée légale (10 ans pour la facturation). Logs techniques : 12 mois maximum. Données biométriques du visage (reco-faciale, si activée) : jusqu'à l'expiration de la galerie ou la désactivation de la fonctionnalité, selon le premier des deux — voir « Données biométriques » ci-dessous.",
       "subprocessorsTitle": "Sous-traitants",
-      "subprocessorsBody": "Convex (base de données, US), Vercel (hébergement, US/EU), Stripe (paiement, EU/US), Meta WhatsApp Cloud API (envoi messages, EU/US), Amazon Rekognition Faces (indexation biométrique des visages pour la fonctionnalité optionnelle de recherche photo, active uniquement pour les mariages où le couple l'a explicitement activée — voir « Données biométriques » ci-dessous, EU). Données minimisées, aucune revente ni partage marketing avec des tiers. Tous engagés par des clauses contractuelles types ou des mécanismes équivalents.",
+      "subprocessorsBody": "Convex (base de données, US), Vercel (hébergement, US/EU), Stripe (paiement, EU/US), Meta WhatsApp Cloud API (envoi messages, EU/US), Amazon Rekognition Faces (indexation biométrique des visages pour la fonctionnalité optionnelle de recherche photo, active uniquement pour les mariages où le couple l'a explicitement activée — voir « Données biométriques » ci-dessous, EU). Données minimisées, aucune revente ni partage marketing avec des tiers. Tous engagés par des clauses contractuelles types ou des mécanismes équivalents. PostHog (mesure d'audience du site, US) et Meta (pixel publicitaire, US) ne reçoivent de données que si vous avez accepté la mesure d'audience via la bannière cookies.",
       "biometricsTitle": "Données biométriques (reco-faciale)",
       "biometricsBody": "La reco-faciale est une fonctionnalité optionnelle, activée à la demande : désactivée par défaut, elle ne traite les visages des invités que pour les mariages où le couple l'a explicitement activée, après avoir pris connaissance de cette notice. Base légale : consentement explicite, donné par le couple au nom du mariage (voir CGU). Données traitées : géométrie faciale extraite des photos approuvées de la galerie (Amazon Rekognition), utilisée uniquement pour rapprocher le selfie d'un invité de la galerie — le selfie lui-même n'est jamais stocké. Durée de conservation : jusqu'à l'expiration de la galerie ou la désactivation de la fonctionnalité, selon le premier des deux ; suppression automatique sous 24h via une purge quotidienne, ou plus tôt sur demande. Cette fonctionnalité n'est pas proposée pour les mariages en Illinois, au Texas ou dans l'État de Washington.",
       "rightsTitle": "Vos droits",
@@ -407,16 +407,16 @@
     },
     "cookies": {
       "title": "Politique de cookies",
-      "lastUpdated": "Dernière mise à jour : 25 avril 2026",
+      "lastUpdated": "Dernière mise à jour : 9 septembre 2026",
       "whatTitle": "Qu'est-ce qu'un cookie ?",
       "whatBody": "Un cookie est un petit fichier texte stocké sur votre appareil par un site web. Wedillybird utilise des cookies essentiels au fonctionnement du Service.",
       "typesTitle": "Cookies utilisés",
-      "typesBody": "Cookie de session (authentification, signé HMAC, expire après 30 jours d'inactivité). Stockage local IndexedDB (cache offline pour le check-in). Aucun cookie publicitaire ou de tracking tiers n'est déposé.",
+      "typesBody": "Cookie de session (authentification, signé HMAC, expire après 30 jours d'inactivité). Stockage local IndexedDB (cache offline pour le check-in). Avec votre consentement uniquement : cookies de mesure d'audience PostHog (statistiques de visite, enregistrement anonymisé de session) et pixel Meta (mesure de l'efficacité de nos publicités). Sans consentement, aucun de ces cookies n'est déposé.",
       "controlTitle": "Contrôler les cookies",
       "controlBody": "Vous pouvez supprimer les cookies via les paramètres de votre navigateur. La désactivation du cookie de session vous déconnectera du Service.",
       "thirdPartiesTitle": "Cookies tiers",
-      "thirdPartiesBody": "Stripe dépose ses propres cookies sur ses pages de paiement (hors domaine Wedillybird) pour prévenir la fraude. Consultez sa politique de confidentialité.",
-      "description": "Cookies essentiels au fonctionnement de Wedillybird : session HMAC, cache offline check-in. Aucun cookie publicitaire ni tracker tiers."
+      "thirdPartiesBody": "Stripe dépose ses propres cookies sur ses pages de paiement (hors domaine Wedillybird) pour prévenir la fraude. PostHog (États-Unis) et Meta (États-Unis) ne reçoivent de données que si vous avez accepté la mesure d'audience via la bannière. Vous pouvez retirer votre consentement à tout moment en supprimant les cookies de votre navigateur : la bannière vous sera proposée à nouveau.",
+      "description": "Cookies essentiels au fonctionnement de Wedillybird (session, cache offline du check-in) et, uniquement avec votre accord, mesure d'audience PostHog et pixel Meta."
     },
     "affiliation": {
       "title": "Conditions du programme partenaire",
@@ -600,18 +600,18 @@
   "Landing": {
     "hero": {
       "chapter": "CHAPITRE 01 — L'INVITATION",
-      "title": "Le mariage se vit dans la conversation.",
-      "titleAccent": "Faites-le exister là.",
-      "subtitle": "Vos invités sont déjà sur WhatsApp. Wedillybird y orchestre tout — l'invitation, le RSVP, le jour J et les souvenirs. Discrètement, jusqu'au prochain mariage.",
+      "title": "Vos invitations de mariage,",
+      "titleAccent": "envoyées sur WhatsApp.",
+      "subtitle": "Un lien par invité, RSVP en 30 secondes, check-in le jour J et galerie partagée. Rien à installer pour vos invités, aucun abonnement pour vous.",
       "ctaPrimary": "Préparer mon mariage",
-      "ctaSecondary": "Voir les formules",
+      "ctaSecondary": "Voir une invitation",
       "trust": {
-        "stat": "1 240 mariages célébrés",
-        "rating": "4,9 / 5 satisfaction couples",
-        "regions": "Disponible à l'international"
+        "noSubscription": "Paiement unique, sans abonnement",
+        "refund": "Remboursé sous 7 jours",
+        "dataEu": "Données hébergées en Europe"
       },
       "card": {
-        "label": "INVITATION · 8 JUIN 2026",
+        "label": "INVITATION · 12 JUIN 2027",
         "couple": "Camille & Hugo",
         "venue": "Domaine des Lilas",
         "rsvpHint": "RSVP ouvert sur WhatsApp"
@@ -647,28 +647,7 @@
         "label": "Désormais",
         "body": "Un seul lien personnalisé par invité, ouvert dès réception, RSVP confirmé en 30 secondes. Vous voyez les réponses arriver, sans rien relancer. Le jour J, le check-in offline tient même quand le WiFi du château lâche."
       },
-      "pullquote": "Six mois après le mariage, vos invités regardent encore les photos. C'est ça que Wedillybird vous donne — pas une appli, un moment qui dure.",
-      "stats": {
-        "openRate": {
-          "value": 98,
-          "suffix": "%",
-          "label": "des invitations ouvertes",
-          "context": "vs 22 % par mail classique"
-        },
-        "rsvpSpeed": {
-          "value": 73,
-          "suffix": "%",
-          "label": "de RSVP en 24 heures",
-          "context": "moyenne sur les 30 premières invitations"
-        },
-        "memory": {
-          "value": 5,
-          "suffix": " ans",
-          "label": "de souvenirs conservés",
-          "context": "avec l'option Premium + Upsell post-mariage"
-        }
-      },
-      "source": "Mesuré sur les 1 240 premiers mariages célébrés avec Wedillybird, 2026."
+      "pullquote": "Six mois après le mariage, vos invités regardent encore les photos. C'est ça que Wedillybird vous donne — pas une appli, un moment qui dure."
     },
     "features": {
       "chapter": "CHAPITRE 03 — LES PILIERS",
@@ -714,7 +693,7 @@
       "visuals": {
         "invitationSent": "Invitation envoyée ·",
         "invitationKicker": "INVITATION",
-        "invitationDate": "8 JUIN 2026",
+        "invitationDate": "12 JUIN 2027",
         "rsvpConfirmed": "% CONFIRMÉS",
         "checkinGuestId": "INVITÉ-AB42",
         "checkinOffline": "HORS LIGNE OK",
@@ -734,35 +713,7 @@
       "stepFlourish": "Vos prénoms apparaissent",
       "srLabel": "Animation d'une enveloppe de mariage qui s'ouvre pour révéler une carte d'invitation",
       "cardKicker": "NOUS NOUS MARIONS",
-      "cardDate": "8 JUIN 2026"
-    },
-    "testimonials": {
-      "chapter": "CHAPITRE 05 — LES VOIX",
-      "eyebrow": "Ils ont dit oui",
-      "title": "Des couples et des planners qui ont gagné en sérénité.",
-      "items": {
-        "couple-fr": {
-          "quote": "On a invité 180 personnes en quatre tapotements. Le check-in offline a sauvé l'entrée quand le WiFi du domaine a lâché — personne n'a attendu plus de cinq secondes.",
-          "name": "Camille & Hugo",
-          "location": "Mariage en plein air · juin 2026",
-          "initials": "CH",
-          "alt": "Portrait de Camille et Hugo souriants"
-        },
-        "couple-sn": {
-          "quote": "On était plus de 600 invités sur trois jours. Wedillybird a tenu là où Excel et nos groupes WhatsApp craquaient. La galerie partagée a fait revenir les souvenirs encore une fois trois mois après.",
-          "name": "Awa & Mamadou",
-          "location": "Mariage 600+ invités · novembre 2025",
-          "initials": "AM",
-          "alt": "Awa et Mamadou en tenue traditionnelle"
-        },
-        "planner-pro": {
-          "quote": "Je gère huit mariages cette saison avec mon branding sur chaque page invité. Mes couples voient mon agence, pas un outil tiers — c'est exactement ce qu'il manquait sur le marché.",
-          "name": "Studio Lumière",
-          "location": "Wedding planner",
-          "initials": "SL",
-          "alt": "Wedding planner devant un mariage en extérieur"
-        }
-      }
+      "cardDate": "12 JUIN 2027"
     },
     "pricing": {
       "chapter": "CHAPITRE 06 — LES FORMULES",
@@ -818,11 +769,11 @@
         },
         "olderGuests": {
           "q": "Mes invités âgés ou peu à l'aise avec le numérique vont-ils s'en sortir ?",
-          "a": "Oui. La page d'invitation s'ouvre dans le navigateur de WhatsApp en un tap — pas d'appli, pas de compte à créer. Le RSVP se fait en 3 boutons. Plus de 92 % des grands-parents testés ont confirmé sans aide."
+          "a": "Oui. La page d'invitation s'ouvre dans le navigateur de WhatsApp en un tap — pas d'appli, pas de compte à créer, pas de mot de passe. Le RSVP se fait en 3 boutons, comme répondre à un message."
         },
         "guestLimit": {
           "q": "Combien d'invités maximum ?",
-          "a": "Aucune limite technique. Le forfait Essentiel et Premium incluent jusqu'à 500 invitations par mariage. Au-delà (mariages 600+ invités), contactez-nous, on adapte."
+          "a": "Le forfait Essentiel inclut jusqu'à 100 invitations par mariage, le Premium jusqu'à 250. Au-delà (grands mariages, 300 invités et plus), contactez-nous : on adapte."
         },
         "cancellation": {
           "q": "Et si on doit annuler ou reporter le mariage ?",
@@ -851,7 +802,7 @@
       "title": "Le grand jour mérite mieux qu'un PDF.",
       "subtitle": "Créez votre première invitation en trois minutes. Sans carte bancaire pour explorer, remboursé sous 7 jours si vous changez d'avis.",
       "cta": "Préparer mon mariage",
-      "trust": "1 240 mariages célébrés · 4,9 / 5 satisfaction couples"
+      "trust": "Paiement unique · Remboursé sous 7 jours · Report gratuit en cas d'annulation"
     },
     "footer": {
       "tagline": "WhatsApp-first wedding concierge. Pensé pour les mariages du monde entier.",
@@ -868,23 +819,19 @@
           "links": {
             "features": "Fonctionnalités",
             "pricing": "Tarifs",
-            "demo": "Démo en direct",
+            "demo": "Voir une invitation démo",
             "templates": "Templates d'invitation"
           }
         },
         "pros": {
           "title": "Pour les pros",
           "links": {
-            "planners": "Wedding planners",
-            "venues": "Lieux de réception",
-            "agencies": "Agences",
-            "api": "API & intégrations"
+            "planners": "Wedding planners"
           }
         },
         "resources": {
           "title": "Ressources",
           "links": {
-            "blog": "Journal de mariage",
             "guide": "Guide du mariage",
             "faq": "FAQ",
             "support": "Support",
@@ -951,7 +898,6 @@
     },
     "sectionNav": {
       "features": "Fonctionnalités",
-      "testimonials": "Témoignages",
       "pricing": "Tarifs",
       "pricingPros": "Pour les pros",
       "faq": "Questions"
@@ -4545,7 +4491,7 @@
     },
     "legalCookies": {
       "title": "Politique de cookies — Wedillybird",
-      "description": "Cookies essentiels au fonctionnement de Wedillybird : session HMAC, cache offline check-in. Aucun cookie publicitaire ni tracker tiers."
+      "description": "Cookies essentiels au fonctionnement de Wedillybird (session, cache offline du check-in) et, uniquement avec votre accord, mesure d'audience PostHog et pixel Meta."
     },
     "legalAffiliation": {
       "title": "Conditions du programme partenaire — Wedillybird",
@@ -4557,10 +4503,10 @@
     }
   },
   "CookieConsent": {
-    "title": "Respect de votre vie privée",
-    "bodyBefore": "Nous utilisons des cookies strictement nécessaires pour le fonctionnement et la sécurité du site. Conformément à la réglementation (RGPD), et comme détaillé dans notre ",
-    "policyLink": "politique",
-    "bodyAfter": ", aucun cookie de pistage tiers n'est utilisé à votre insu.",
+    "title": "Cookies et mesure d'audience",
+    "bodyBefore": "Les cookies essentiels (session, sécurité) sont toujours actifs. Avec votre accord, nous mesurons l'audience du site avec PostHog et l'efficacité de nos publicités avec le pixel Meta. Détails dans notre ",
+    "policyLink": "politique de cookies",
+    "bodyAfter": ". Vous pouvez changer d'avis à tout moment.",
     "accept": "Accepter",
     "decline": "Continuer sans accepter"
   },
@@ -4657,7 +4603,7 @@
       "back": "Retour",
       "title": "Galerie de Templates",
       "subtitle": "Découvrez notre collection de modèles d'invitations WhatsApp. Choisissez celui qui correspond parfaitement à l'ambiance de votre mariage.",
-      "cta": "Créer mon invitation gratuitement",
+      "cta": "Créer mon invitation",
       "tpl1": {
         "name": "L'Élégance Minimaliste",
         "description": "Des lignes épurées, une typographie chic, parfait pour un mariage moderne.",
@@ -4692,36 +4638,6 @@
         "description": "Contraste fort et élégance absolue pour une réception prestigieuse.",
         "tag1": "Premium",
         "tag2": "Chic"
-      }
-    },
-    "blog": {
-      "back": "Retour à l'accueil",
-      "title": "Le Journal de Mariage",
-      "subtitle": "Inspirations, conseils pratiques et témoignages pour vous accompagner dans l'organisation du plus beau jour de votre vie.",
-      "readArticle": "Lire l'article",
-      "article1": {
-        "title": "Les grandes tendances mariage en 2026",
-        "excerpt": "Découvrez les couleurs, thèmes et formats de réception qui vont marquer les saisons de mariage à venir.",
-        "date": "15 Mai 2026",
-        "category": "Inspirations"
-      },
-      "article2": {
-        "title": "Comment réussir ses invitations via WhatsApp ?",
-        "excerpt": "Fini les faire-parts papier qui se perdent. Voici comment créer une invitation digitale élégante et efficace.",
-        "date": "02 Mai 2026",
-        "category": "Organisation"
-      },
-      "article3": {
-        "title": "Top 10 des lieux de réception au Sénégal",
-        "excerpt": "De Dakar à Saly, notre sélection exclusive des meilleurs lieux pour un mariage inoubliable.",
-        "date": "28 Avril 2026",
-        "category": "Lieux"
-      },
-      "article4": {
-        "title": "Gérer le budget de son mariage sans stress",
-        "excerpt": "Nos conseils d'experts pour répartir vos dépenses intelligemment et éviter les mauvaises surprises.",
-        "date": "10 Avril 2026",
-        "category": "Budget"
       }
     },
     "pros": {
@@ -5877,5 +5793,16 @@
     "subtitleCouple": "Ouvrez votre compte : votre mariage passe en Premium, offert — invitations, RSVP et galerie partagée compris.",
     "submitCouple": "Ouvrir mon compte (Premium offert)",
     "codeHintCouple": "Votre code partenaire {code} est actif : partagez-le à votre communauté pour percevoir votre commission."
+  },
+  "Demo": {
+    "metaTitle": "Démo — une invitation de mariage Wedillybird",
+    "metaDescription": "Ouvrez une invitation Wedillybird comme vos invités la recevront : enveloppe, cinématique, compte à rebours et réponse RSVP en 30 secondes. Couple fictif, aucune inscription.",
+    "banner": "Invitation de démonstration · couple fictif",
+    "back": "Retour au site",
+    "replay": "Rejouer l'ouverture",
+    "cta": "Créer la mienne",
+    "guestName": "Camille",
+    "venueName": "Domaine des Lilas",
+    "venueAddress": "Route de Gordes, 84220 Provence"
   }
 }

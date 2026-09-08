@@ -13,6 +13,11 @@ interface InvitationContentProps {
   accentColor: string;
   /** Afficher le footer marque Wedillybird (page publique) — masqué en marque blanche. */
   showFooter?: boolean;
+  /**
+   * Page `/demo` : RSVP simulé (aucune écriture) et pas de lien galerie —
+   * il n'existe pas de galerie fictive et un lien mort casserait la démo.
+   */
+  demo?: boolean;
   guest: {
     fullName: string;
     plusOnesAllowed: number;
@@ -46,6 +51,7 @@ export async function InvitationContent({
   locale,
   accentColor,
   showFooter = false,
+  demo = false,
   guest,
   event,
 }: InvitationContentProps) {
@@ -182,6 +188,7 @@ export async function InvitationContent({
               plusOnesAllowed={guest.plusOnesAllowed}
               accentColor={accentColor}
               config={event.rsvpConfig}
+              mode={demo ? 'demo' : 'live'}
               initial={{
                 rsvpStatus: guest.rsvpStatus,
                 plusOnesNames: guest.plusOnesNames,
@@ -193,31 +200,33 @@ export async function InvitationContent({
           </section>
         </Reveal>
 
-        {/* Lien galerie */}
-        <Reveal>
-          <Link
-            href={`/i/${token}/gallery`}
-            className="focus-ring group flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--color-border)] bg-white px-6 py-5 transition-all hover:border-[color:var(--color-border-strong)] hover:shadow-[var(--shadow-soft)]"
-          >
-            <span className="flex items-center gap-3">
-              <IconChip>
-                <Camera className="h-4 w-4" strokeWidth={1.75} />
-              </IconChip>
-              <span className="flex flex-col">
-                <span className="text-base font-medium text-[color:var(--color-ink-900)]">
-                  {t('openGallery')}
-                </span>
-                <span className={EYEBROW}>{t('galleryHint')}</span>
-              </span>
-            </span>
-            <span
-              aria-hidden
-              className="text-lg text-[color:var(--color-ink-500)] transition-transform group-hover:translate-x-1"
+        {/* Lien galerie — absent en démo (pas de galerie fictive) */}
+        {demo ? null : (
+          <Reveal>
+            <Link
+              href={`/i/${token}/gallery`}
+              className="focus-ring group flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--color-border)] bg-white px-6 py-5 transition-all hover:border-[color:var(--color-border-strong)] hover:shadow-[var(--shadow-soft)]"
             >
-              →
-            </span>
-          </Link>
-        </Reveal>
+              <span className="flex items-center gap-3">
+                <IconChip>
+                  <Camera className="h-4 w-4" strokeWidth={1.75} />
+                </IconChip>
+                <span className="flex flex-col">
+                  <span className="text-base font-medium text-[color:var(--color-ink-900)]">
+                    {t('openGallery')}
+                  </span>
+                  <span className={EYEBROW}>{t('galleryHint')}</span>
+                </span>
+              </span>
+              <span
+                aria-hidden
+                className="text-lg text-[color:var(--color-ink-500)] transition-transform group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </Link>
+          </Reveal>
+        )}
       </article>
       {showFooter ? <LandingFooterRich /> : null}
     </>
