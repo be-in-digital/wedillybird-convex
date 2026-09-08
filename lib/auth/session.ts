@@ -89,12 +89,36 @@ export async function decodeSession(token: string): Promise<SessionPayload | nul
   }
 }
 
+/**
+ * `Secure` sur le cookie de session — sauf sur la pile E2E, servie en clair.
+ *
+ * `next start` impose `NODE_ENV=production`, et Playwright sert l'app sur
+ * `http://localhost:3000`. Chromium accepte un cookie `Secure` sur localhost
+ * (origine réputée sûre), **WebKit le jette** : la session n'existait donc pas,
+ * et tous les parcours authentifiés y échouaient sur une redirection vers
+ * `/sign-in`, sans le moindre indice de la cause.
+ *
+ * Le repli exige DEUX conditions simultanées, qu'aucune prod ne réunit :
+ * `E2E_MODE=1` (le commutateur de la pile de test, déjà employé pour les mocks
+ * WhatsApp/SES et documenté « jamais en prod » — cf. `convex/auth.ts`) ET une
+ * URL applicative explicitement en `http://`. Posé par erreur sur un
+ * déploiement HTTPS, il ne dégraderait donc rien.
+ */
+function sessionCookieIsSecure(): boolean {
+  if (process.env.NODE_ENV !== 'production') return false;
+  if (process.env.E2E_MODE !== '1') return true;
+  // `APP_BASE_URL` d'abord : les `NEXT_PUBLIC_*` peuvent être figées à la
+  // compilation, celle-ci est lue à l'exécution.
+  const appUrl = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
+  return !appUrl.startsWith('http://');
+}
+
 export async function setSessionCookie(payload: SessionPayload): Promise<void> {
   const token = await encodeSession(payload);
   const jar = await cookies();
   jar.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: sessionCookieIsSecure(),
     sameSite: 'lax',
     path: '/',
     maxAge: COOKIE_MAX_AGE,

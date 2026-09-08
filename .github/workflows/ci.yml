@@ -137,11 +137,28 @@ jobs:
 
       - name: Build app
         run: pnpm build
+        env:
+          # L'URL du backend en mémoire entre dans le `connect-src` de la CSP,
+          # calculée À LA COMPILATION (cf. `next.config.ts`). Sans elle, le
+          # WebSocket Convex est refusé par la CSP — et WebKit, où ce refus lève
+          # au lieu d'avertir, perd son process de rendu en pleine hydratation.
+          #
+          # Posée ICI seulement, jamais sur l'étape suivante : le process
+          # Playwright lit la même variable via `requiresConvexDev()`, et la
+          # renseigner y réveillerait ~180 tests qui exigent un vrai deployment
+          # Convex dev (`seed:*` est interne, donc hors protocole public).
+          # Doit rester alignée sur `CONVEX_MEM_PORT` (défaut 3210).
+          NEXT_PUBLIC_CONVEX_URL: http://127.0.0.1:3210
 
       - name: Run Playwright
         run: pnpm test:e2e --project=chromium --project=webkit
         env:
           CI: 'true'
+          # Backend Convex en mémoire. Sans lui, `NEXT_PUBLIC_CONVEX_URL` vaut
+          # une sentinelle injoignable et TOUT le « Parcours partenaire » se
+          # saute : le job restait vert en n'exécutant aucun de ces tests, ce
+          # qui a laissé passer une régression sur la création d'affilié.
+          CONVEX_MEM: '1'
 
       - name: Upload report
         if: always()
