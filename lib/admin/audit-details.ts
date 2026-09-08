@@ -143,6 +143,30 @@ const TABLE_LABELS: Record<string, string> = {
   whatsappTemplates: 'Modèles WhatsApp',
 };
 
+/**
+ * Types de cible journalisés par `convex/**`, en toutes lettres.
+ *
+ * La colonne « Cible » affichait le discriminant tel quel : un admin y lisait
+ * `photo_book`, `partner_invite`. Le libellé est celui qu'on montre ; la valeur
+ * technique reste accessible au survol, car c'est elle qu'on cherche quand on
+ * remonte jusqu'au code.
+ */
+const TARGET_LABELS: Record<string, string> = {
+  affiliate: 'Affilié',
+  event: 'Événement',
+  partner_invite: 'Lien partenaire',
+  payment: 'Paiement',
+  photo: 'Photo',
+  photo_book: 'Livre photo',
+  subscription: 'Abonnement',
+  user: 'Compte',
+};
+
+/** Libellé d'un type de cible ; le discriminant brut si on ne le connaît pas. */
+export function auditTargetLabel(targetType: string): string {
+  return TARGET_LABELS[targetType] ?? targetType;
+}
+
 /** Clés dont la valeur est un identifiant : illisible en entier, inutile à lire. */
 const ID_KEYS = new Set([
   'eventId',

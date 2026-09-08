@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseAuditDetails, summarizeAuditField } from '@/lib/admin/audit-details';
+import {
+  auditTargetLabel,
+  parseAuditDetails,
+  summarizeAuditField,
+} from '@/lib/admin/audit-details';
 
 /**
  * Le journal d'audit stockait ses `details` en JSON et les affichait tels quels.
@@ -107,5 +111,19 @@ describe('parseAuditDetails', () => {
     expect(parseAuditDetails(undefined).kind).toBe('empty');
     expect(parseAuditDetails('   ').kind).toBe('empty');
     expect(parseAuditDetails('{}').kind).toBe('empty');
+  });
+});
+
+describe('auditTargetLabel', () => {
+  it('nomme les huit types de cible journalisés', () => {
+    // La liste vient de `grep targetType convex/**` : si une écriture en
+    // introduit un neuvième, c'est ici qu'il faut le nommer.
+    expect(auditTargetLabel('photo_book')).toBe('Livre photo');
+    expect(auditTargetLabel('partner_invite')).toBe('Lien partenaire');
+    expect(auditTargetLabel('user')).toBe('Compte');
+  });
+
+  it('laisse passer un type inconnu plutôt que de le masquer', () => {
+    expect(auditTargetLabel('quelque_chose_de_neuf')).toBe('quelque_chose_de_neuf');
   });
 });

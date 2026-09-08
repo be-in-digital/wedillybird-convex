@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { formatDateTime } from '@/lib/admin/format';
 import {
+  auditTargetLabel,
   parseAuditDetails,
   type AuditField,
   type AuditValue,
@@ -32,14 +33,20 @@ type AuditEntry = {
   createdAt: number;
 };
 
+/**
+ * Ton du badge par type de cible — les huit que `convex/**` journalise
+ * réellement. La table en portait trois (`organization`, `template`,
+ * `newsletter`) qu'aucune écriture ne produit.
+ */
 const TARGET_VARIANT: Record<string, 'neutral' | 'primary' | 'accent' | 'warning'> = {
   user: 'primary',
   event: 'accent',
+  photo: 'accent',
+  photo_book: 'accent',
   payment: 'warning',
-  organization: 'neutral',
-  photo: 'neutral',
-  template: 'neutral',
-  newsletter: 'neutral',
+  subscription: 'warning',
+  affiliate: 'neutral',
+  partner_invite: 'neutral',
 };
 
 /** Nombre de champs montrés dans la ligne ; le reste s'ouvre au clic. */
@@ -189,8 +196,11 @@ function DetailsCell({ entry, actionLabel }: { entry: AuditEntry; actionLabel: s
               <span className="text-[color:var(--color-muted-foreground)]">
                 {t('auditLog.colTarget')}
               </span>
-              <Badge variant={TARGET_VARIANT[entry.targetType] ?? 'neutral'}>
-                {entry.targetType}
+              <Badge
+                variant={TARGET_VARIANT[entry.targetType] ?? 'neutral'}
+                title={entry.targetType}
+              >
+                {auditTargetLabel(entry.targetType)}
               </Badge>
               {/* Identifiant entier et sélectionnable : c'est ce qu'on recopie
                   pour aller vérifier l'objet ailleurs. */}
@@ -246,10 +256,12 @@ export function AdminAuditLogTable({ logs }: { logs: AuditEntry[] }) {
       id: 'target',
       header: t('auditLog.colTarget'),
       card: 'badge',
-      sortValue: (l) => l.targetType,
+      sortValue: (l) => auditTargetLabel(l.targetType),
       cell: (l) => (
         <span className="inline-flex items-center gap-2">
-          <Badge variant={TARGET_VARIANT[l.targetType] ?? 'neutral'}>{l.targetType}</Badge>
+          <Badge variant={TARGET_VARIANT[l.targetType] ?? 'neutral'} title={l.targetType}>
+            {auditTargetLabel(l.targetType)}
+          </Badge>
           <span
             title={l.targetId}
             className="font-mono text-xs text-[color:var(--color-muted-foreground)]"
@@ -278,7 +290,7 @@ export function AdminAuditLogTable({ logs }: { logs: AuditEntry[] }) {
       columns={columns}
       getRowId={(l) => l._id}
       searchable={(l) =>
-        `${l.adminName ?? ''} ${l.adminEmail ?? ''} ${l.action} ${l.targetType} ${l.targetId} ${l.details ?? ''}`
+        `${l.adminName ?? ''} ${l.adminEmail ?? ''} ${l.action} ${l.targetType} ${auditTargetLabel(l.targetType)} ${l.targetId} ${l.details ?? ''}`
       }
       initialSort={{ id: 'date', dir: 'desc' }}
       pageSize={50}
