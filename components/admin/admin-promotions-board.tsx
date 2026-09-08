@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { Ticket } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +32,10 @@ import {
   type CreateCouponInput,
 } from '@/app/[locale]/(app)/admin/actions';
 import { STRIPE_COUPON_NAME_MAX_LENGTH } from '@/lib/payments/coupon-name';
+import { formatDate } from '@/lib/admin/format';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminSection } from './ui/section';
+import { StatusPill } from './ui/status-pill';
 
 type Coupon = {
   id: string;
@@ -98,165 +103,180 @@ export function AdminPromotionsBoard({
   const locale = useLocale();
   const router = useRouter();
 
+  const couponColumns: AdminColumn<Coupon>[] = [
+    {
+      id: 'name',
+      header: 'Nom',
+      card: 'title',
+      sortValue: (c) => c.name ?? c.id,
+      cell: (c) => (
+        <span className="flex flex-wrap items-center gap-2 font-medium">
+          {c.name ?? c.id}
+          {isTrialCoupon(c) ? <Badge variant="success">Essai</Badge> : null}
+          {c.appliesToProducts && c.appliesToProducts.length > 0 ? (
+            <Badge variant="neutral">Pros</Badge>
+          ) : null}
+        </span>
+      ),
+    },
+    {
+      id: 'value',
+      header: 'Réduction',
+      cell: (c) => <span className="font-mono whitespace-nowrap">{couponValue(c)}</span>,
+    },
+    {
+      id: 'duration',
+      header: 'Durée',
+      sortValue: (c) => c.duration,
+      cell: (c) => (
+        <span className="text-[color:var(--color-muted-foreground)]">
+          {DURATION_LABEL[c.duration]}
+          {c.duration === 'repeating' && c.durationInMonths ? ` (${c.durationInMonths} mois)` : ''}
+        </span>
+      ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'redemptions',
+      header: 'Utilisations',
+      align: 'right',
+      sortValue: (c) => c.timesRedeemed,
+      cell: (c) => (
+        <span className="font-mono tabular-nums">
+          {c.timesRedeemed}
+          {c.maxRedemptions != null ? ` / ${c.maxRedemptions}` : ''}
+        </span>
+      ),
+    },
+    {
+      id: 'redeemBy',
+      header: 'Expire',
+      sortValue: (c) => c.redeemBy ?? null,
+      cell: (c) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {c.redeemBy ? formatDate(c.redeemBy, locale) : '—'}
+        </span>
+      ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      card: 'badge',
+      sortValue: (c) => (c.valid ? 0 : 1),
+      cell: (c) => (
+        <StatusPill tone={c.valid ? 'success' : 'neutral'}>
+          {c.valid ? 'Valide' : 'Expiré'}
+        </StatusPill>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      card: 'actions',
+      align: 'right',
+      width: 'w-28',
+      cell: (c) => <DeleteCouponButton couponId={c.id} onDone={() => router.refresh()} />,
+    },
+  ];
+
+  const promoColumns: AdminColumn<PromoCode>[] = [
+    {
+      id: 'code',
+      header: 'Code',
+      card: 'title',
+      sortValue: (p) => p.code,
+      cell: (p) => <span className="font-mono font-medium">{p.code}</span>,
+    },
+    {
+      id: 'coupon',
+      header: 'Réduction',
+      sortValue: (p) => p.couponLabel,
+      cell: (p) => <span className="font-mono whitespace-nowrap">{p.couponLabel}</span>,
+    },
+    {
+      id: 'redemptions',
+      header: 'Utilisations',
+      align: 'right',
+      sortValue: (p) => p.timesRedeemed,
+      cell: (p) => (
+        <span className="font-mono tabular-nums">
+          {p.timesRedeemed}
+          {p.maxRedemptions != null ? ` / ${p.maxRedemptions}` : ''}
+        </span>
+      ),
+    },
+    {
+      id: 'expiresAt',
+      header: 'Expire',
+      sortValue: (p) => p.expiresAt ?? null,
+      cell: (p) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {p.expiresAt ? formatDate(p.expiresAt, locale) : '—'}
+        </span>
+      ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      card: 'badge',
+      sortValue: (p) => (p.active ? 0 : 1),
+      cell: (p) => (
+        <StatusPill tone={p.active ? 'success' : 'neutral'}>
+          {p.active ? 'Actif' : 'Inactif'}
+        </StatusPill>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      card: 'actions',
+      align: 'right',
+      width: 'w-28',
+      cell: (p) => (
+        <TogglePromoButton id={p.id} active={p.active} onDone={() => router.refresh()} />
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-8">
       {/* Remise directe sur un abonnement (geste commercial) */}
       <DiscountSection coupons={coupons} orgs={subscribedOrgs} onDone={() => router.refresh()} />
-      {/* Coupons */}
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-display text-lg italic">Coupons</h2>
-            <p className="text-sm text-[color:var(--color-muted-foreground)]">
-              Réductions réutilisables (%, montant ou mois d&apos;essai offerts), applicables aux
-              forfaits couples et aux abonnements pros.
-            </p>
-          </div>
-          <CreateCouponDialog onDone={() => router.refresh()} />
-        </div>
 
-        <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-                <Th>Nom</Th>
-                <Th>Réduction</Th>
-                <Th>Durée</Th>
-                <Th>Utilisations</Th>
-                <Th>Expire</Th>
-                <Th>Statut</Th>
-                <Th>Actions</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {coupons.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-8 text-center text-[color:var(--color-muted-foreground)]"
-                  >
-                    Aucun coupon. Créez-en un pour lancer une promo ou faire un geste commercial.
-                  </td>
-                </tr>
-              ) : (
-                coupons.map((c) => (
-                  <tr
-                    key={c.id}
-                    className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50"
-                  >
-                    <td className="px-4 py-3 font-medium">
-                      <span className="flex items-center gap-2">
-                        {c.name ?? c.id}
-                        {isTrialCoupon(c) ? <Badge variant="success">Essai</Badge> : null}
-                        {c.appliesToProducts && c.appliesToProducts.length > 0 ? (
-                          <Badge variant="neutral">Pros</Badge>
-                        ) : null}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-mono">{couponValue(c)}</td>
-                    <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                      {DURATION_LABEL[c.duration]}
-                      {c.duration === 'repeating' && c.durationInMonths
-                        ? ` (${c.durationInMonths} mois)`
-                        : ''}
-                    </td>
-                    <td className="px-4 py-3 font-mono">
-                      {c.timesRedeemed}
-                      {c.maxRedemptions != null ? ` / ${c.maxRedemptions}` : ''}
-                    </td>
-                    <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                      {c.redeemBy
-                        ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-                            new Date(c.redeemBy),
-                          )
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={c.valid ? 'success' : 'neutral'}>
-                        {c.valid ? 'Valide' : 'Expiré'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <DeleteCouponButton couponId={c.id} onDone={() => router.refresh()} />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <AdminSection
+        title="Coupons"
+        description="Réductions réutilisables (%, montant ou mois d'essai offerts), applicables aux forfaits couples et aux abonnements pros."
+        actions={<CreateCouponDialog onDone={() => router.refresh()} />}
+        bare
+      >
+        <AdminDataTable
+          rows={coupons}
+          columns={couponColumns}
+          getRowId={(c) => c.id}
+          searchable={(c) => `${c.name ?? ''} ${c.id} ${couponValue(c)}`}
+          emptyTitle="Aucun coupon"
+          emptyDescription="Créez-en un pour lancer une promo ou faire un geste commercial."
+          emptyIcon={Ticket}
+        />
+      </AdminSection>
 
-      {/* Codes promo */}
-      <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="font-display text-lg italic">Codes promo</h2>
-          <p className="text-sm text-[color:var(--color-muted-foreground)]">
-            Codes saisissables par les clients au paiement (couples et pros). Générés depuis un
-            coupon.
-          </p>
-        </div>
-
-        <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-                <Th>Code</Th>
-                <Th>Réduction</Th>
-                <Th>Utilisations</Th>
-                <Th>Expire</Th>
-                <Th>Statut</Th>
-                <Th>Actions</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {promoCodes.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-[color:var(--color-muted-foreground)]"
-                  >
-                    Aucun code promo.
-                  </td>
-                </tr>
-              ) : (
-                promoCodes.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50"
-                  >
-                    <td className="px-4 py-3 font-mono font-medium">{p.code}</td>
-                    <td className="px-4 py-3 font-mono">{p.couponLabel}</td>
-                    <td className="px-4 py-3 font-mono">
-                      {p.timesRedeemed}
-                      {p.maxRedemptions != null ? ` / ${p.maxRedemptions}` : ''}
-                    </td>
-                    <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                      {p.expiresAt
-                        ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-                            new Date(p.expiresAt),
-                          )
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={p.active ? 'success' : 'neutral'}>
-                        {p.active ? 'Actif' : 'Inactif'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <TogglePromoButton
-                        id={p.id}
-                        active={p.active}
-                        onDone={() => router.refresh()}
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <AdminSection
+        title="Codes promo"
+        description="Codes saisissables par les clients au paiement (couples et pros). Générés depuis un coupon."
+        bare
+      >
+        <AdminDataTable
+          rows={promoCodes}
+          columns={promoColumns}
+          getRowId={(p) => p.id}
+          searchable={(p) => `${p.code} ${p.couponLabel}`}
+          emptyTitle="Aucun code promo"
+          emptyDescription="Générez un code depuis un coupon existant pour le communiquer aux clients."
+          emptyIcon={Ticket}
+        />
+      </AdminSection>
     </div>
   );
 }
@@ -323,7 +343,7 @@ function DiscountSection({
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="flex flex-1 flex-col gap-1">
-              <span className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--color-muted-foreground)] uppercase">
+              <span className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
                 Agence
               </span>
               <Select value={orgId} onValueChange={setOrgId}>
@@ -341,7 +361,7 @@ function DiscountSection({
               </Select>
             </label>
             <label className="flex flex-1 flex-col gap-1">
-              <span className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--color-muted-foreground)] uppercase">
+              <span className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
                 Coupon
               </span>
               <Select value={couponId} onValueChange={setCouponId}>
@@ -690,18 +710,10 @@ const inputCls =
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--color-muted-foreground)] uppercase">
+      <span className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
         {label}
       </span>
       {children}
     </label>
-  );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-      {children}
-    </th>
   );
 }

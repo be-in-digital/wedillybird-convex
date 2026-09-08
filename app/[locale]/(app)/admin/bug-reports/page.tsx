@@ -2,8 +2,11 @@ import { setRequestLocale } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
 import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
+import { formatCount } from '@/lib/admin/format';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminBugReportsTable } from '@/components/admin/admin-bug-reports-table';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage } from '@/components/admin/ui/section';
 
 /**
  * /admin/bug-reports — triage des signalements de bug soumis depuis l'app
@@ -30,25 +33,13 @@ export default async function AdminBugReportsPage({
 
   return (
     <AdminShell current="bug-reports" adminName={user?.fullName}>
-      <div className="flex flex-col gap-6">
-        <header>
-          <h1
-            className="font-display italic"
-            style={{
-              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.022em',
-            }}
-          >
-            Rapports de bug
-          </h1>
-          <p className="mt-1 text-sm text-[color:var(--color-muted-foreground)]">
-            {reports.length} signalement{reports.length > 1 ? 's' : ''} · {open.length} à traiter.
-            Soumis depuis le bouton flottant de l’app — faites évoluer le statut au fil du triage.
-          </p>
-        </header>
+      <AdminPage>
+        <AdminPageHeader
+          title="Rapports de bug"
+          description={`${formatCount(reports.length)} signalement${reports.length > 1 ? 's' : ''} · ${formatCount(open.length)} à traiter. Soumis depuis le bouton flottant de l'app — faites évoluer le statut au fil du triage.`}
+        />
         <AdminBugReportsTable reports={reports} />
-      </div>
+      </AdminPage>
     </AdminShell>
   );
 }

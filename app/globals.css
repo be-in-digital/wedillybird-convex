@@ -212,6 +212,13 @@
   --color-primary: var(--color-blush-400);
   --color-primary-hover: var(--color-blush-300);
   --color-primary-soft: oklch(28% 0.06 22);
+  /* Texte POSÉ SUR le primary. Il ne bascule pas tout seul : `@theme` déclare
+     `--color-primary-foreground: var(--color-ivory-50)` sur `:root`, et une
+     custom property est substituée là où elle est *déclarée*, pas là où elle est
+     lue — redéfinir `--color-ivory-50` en dark ne la suivait donc pas. Résultat :
+     de l'ivoire quasi blanc sur du blush clair, ≈ 1,9:1, illisible sur chaque
+     bouton primaire du back-office. En charbon, on remonte à ≈ 7:1. */
+  --color-primary-foreground: oklch(18% 0.018 28);
 
   /* Accent champagne — décalé vers le clair */
   --color-accent: var(--color-champagne-300);

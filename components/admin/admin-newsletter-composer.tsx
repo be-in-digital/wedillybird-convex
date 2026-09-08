@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { Badge } from '@/components/ui/badge';
+import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,16 +21,20 @@ import {
   adminSendNewsletterTestAction,
   type NewsletterCampaign,
 } from '@/app/[locale]/(app)/admin/actions';
+import { formatDateTime } from '@/lib/admin/format';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminSection } from './ui/section';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 const STATUS_LABEL: Record<string, string> = {
   sending: 'En cours',
   sent: 'Envoyée',
   failed: 'Échouée',
 };
-const STATUS_VARIANT: Record<string, 'neutral' | 'success' | 'warning' | 'destructive'> = {
-  sending: 'warning',
+const STATUS_TONE: Record<string, StatusTone> = {
+  sending: 'progress',
   sent: 'success',
-  failed: 'destructive',
+  failed: 'danger',
 };
 
 export function AdminNewsletterComposer({
@@ -61,6 +65,70 @@ export function AdminNewsletterComposer({
     });
   }
 
+  const campaignColumns: AdminColumn<NewsletterCampaign>[] = [
+    {
+      id: 'subject',
+      header: 'Objet',
+      card: 'title',
+      sortValue: (c) => c.subject,
+      cell: (c) => <span className="font-medium">{c.subject}</span>,
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      card: 'badge',
+      sortValue: (c) => c.status,
+      cell: (c) => (
+        <StatusPill tone={STATUS_TONE[c.status] ?? 'neutral'}>
+          {STATUS_LABEL[c.status] ?? c.status}
+        </StatusPill>
+      ),
+    },
+    {
+      id: 'recipients',
+      header: 'Destinataires',
+      align: 'right',
+      sortValue: (c) => c.totalRecipients,
+      cell: (c) => <span className="font-mono tabular-nums">{c.totalRecipients}</span>,
+    },
+    {
+      id: 'sent',
+      header: 'Envoyés',
+      align: 'right',
+      sortValue: (c) => c.sentCount,
+      cell: (c) => (
+        <span className="font-mono text-[color:var(--color-success)] tabular-nums">
+          {c.sentCount}
+        </span>
+      ),
+    },
+    {
+      id: 'failed',
+      header: 'Échecs',
+      align: 'right',
+      sortValue: (c) => c.failedCount,
+      cell: (c) =>
+        c.failedCount > 0 ? (
+          <span className="font-mono text-[color:var(--color-danger)] tabular-nums">
+            {c.failedCount}
+          </span>
+        ) : (
+          <span className="text-[color:var(--color-muted-foreground)]">—</span>
+        ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'date',
+      header: 'Date',
+      sortValue: (c) => c.sentAt ?? c.createdAt,
+      cell: (c) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {formatDateTime(c.sentAt ?? c.createdAt, locale)}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-4 rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
@@ -74,7 +142,7 @@ export function AdminNewsletterComposer({
         </div>
 
         <label className="flex flex-col gap-1">
-          <span className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--color-muted-foreground)] uppercase">
+          <span className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
             Objet
           </span>
           <Input
@@ -86,7 +154,7 @@ export function AdminNewsletterComposer({
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--color-muted-foreground)] uppercase">
+          <span className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
             Message
           </span>
           <textarea
@@ -134,62 +202,22 @@ export function AdminNewsletterComposer({
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-display text-lg italic">Campagnes envoyées</h2>
-        <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-                <Th>Objet</Th>
-                <Th>Statut</Th>
-                <Th>Destinataires</Th>
-                <Th>Envoyés</Th>
-                <Th>Échecs</Th>
-                <Th>Date</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {campaigns.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-[color:var(--color-muted-foreground)]"
-                  >
-                    Aucune campagne envoyée pour le moment.
-                  </td>
-                </tr>
-              ) : (
-                campaigns.map((c) => (
-                  <tr
-                    key={c._id}
-                    className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50"
-                  >
-                    <td className="px-4 py-3 font-medium">{c.subject}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={STATUS_VARIANT[c.status] ?? 'neutral'}>
-                        {STATUS_LABEL[c.status] ?? c.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 font-mono">{c.totalRecipients}</td>
-                    <td className="px-4 py-3 font-mono text-[color:var(--color-success)]">
-                      {c.sentCount}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-[color:var(--color-danger)]">
-                      {c.failedCount || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                      {new Intl.DateTimeFormat(locale, {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      }).format(new Date(c.sentAt ?? c.createdAt))}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <AdminSection
+        title="Campagnes envoyées"
+        description="Historique des envois, du plus récent au plus ancien."
+        bare
+      >
+        <AdminDataTable
+          rows={campaigns}
+          columns={campaignColumns}
+          getRowId={(c) => c._id}
+          searchable={(c) => c.subject}
+          initialSort={{ id: 'date', dir: 'desc' }}
+          emptyTitle="Aucune campagne envoyée"
+          emptyDescription="Composez un message ci-dessus pour lancer votre première campagne."
+          emptyIcon={Send}
+        />
+      </AdminSection>
     </div>
   );
 }
@@ -264,12 +292,4 @@ function errorLabel(code: string): string {
     FORBIDDEN: 'Accès refusé.',
   };
   return map[code] ?? `Erreur : ${code}`;
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-      {children}
-    </th>
-  );
 }

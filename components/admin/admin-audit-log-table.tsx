@@ -1,7 +1,10 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { ScrollText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { formatDateTime } from '@/lib/admin/format';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
 
 type AuditEntry = {
   _id: string;
@@ -27,65 +30,70 @@ const TARGET_VARIANT: Record<string, 'neutral' | 'primary' | 'accent' | 'warning
 export function AdminAuditLogTable({ logs }: { logs: AuditEntry[] }) {
   const t = useTranslations('Admin');
   const locale = useLocale();
-  return (
-    <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-            <Th>{t('auditLog.colDate')}</Th>
-            <Th>{t('auditLog.colAdmin')}</Th>
-            <Th>{t('auditLog.colAction')}</Th>
-            <Th>{t('auditLog.colTarget')}</Th>
-            <Th>{t('auditLog.colDetails')}</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.length === 0 ? (
-            <tr>
-              <td
-                colSpan={5}
-                className="px-4 py-10 text-center text-sm text-[color:var(--color-muted-foreground)]"
-              >
-                {t('auditLog.empty')}
-              </td>
-            </tr>
-          ) : null}
-          {logs.map((l) => (
-            <tr
-              key={l._id}
-              className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50"
-            >
-              <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                {new Intl.DateTimeFormat(locale, {
-                  dateStyle: 'medium',
-                  timeStyle: 'short',
-                }).format(new Date(l.createdAt))}
-              </td>
-              <td className="px-4 py-3 font-medium">{l.adminName ?? l.adminEmail ?? '—'}</td>
-              <td className="px-4 py-3">
-                {t.has(`auditActions.${l.action}`) ? t(`auditActions.${l.action}`) : l.action}
-              </td>
-              <td className="px-4 py-3">
-                <Badge variant={TARGET_VARIANT[l.targetType] ?? 'neutral'}>{l.targetType}</Badge>
-                <span className="ml-2 font-mono text-xs text-[color:var(--color-muted-foreground)]">
-                  {l.targetId.slice(0, 12)}…
-                </span>
-              </td>
-              <td className="max-w-xs truncate px-4 py-3 text-xs text-[color:var(--color-muted-foreground)]">
-                {l.details ?? '—'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
-function Th({ children }: { children: React.ReactNode }) {
+  const columns: AdminColumn<AuditEntry>[] = [
+    {
+      id: 'date',
+      header: t('auditLog.colDate'),
+      sortValue: (l) => l.createdAt,
+      cell: (l) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {formatDateTime(l.createdAt, locale)}
+        </span>
+      ),
+    },
+    {
+      id: 'admin',
+      header: t('auditLog.colAdmin'),
+      sortValue: (l) => l.adminName ?? l.adminEmail ?? '',
+      cell: (l) => <span className="font-medium">{l.adminName ?? l.adminEmail ?? '—'}</span>,
+    },
+    {
+      id: 'action',
+      header: t('auditLog.colAction'),
+      card: 'title',
+      sortValue: (l) => l.action,
+      cell: (l) => (t.has(`auditActions.${l.action}`) ? t(`auditActions.${l.action}`) : l.action),
+    },
+    {
+      id: 'target',
+      header: t('auditLog.colTarget'),
+      card: 'badge',
+      sortValue: (l) => l.targetType,
+      cell: (l) => (
+        <span className="inline-flex items-center gap-2">
+          <Badge variant={TARGET_VARIANT[l.targetType] ?? 'neutral'}>{l.targetType}</Badge>
+          <span
+            title={l.targetId}
+            className="font-mono text-xs text-[color:var(--color-muted-foreground)]"
+          >
+            {l.targetId.slice(0, 12)}…
+          </span>
+        </span>
+      ),
+    },
+    {
+      id: 'details',
+      header: t('auditLog.colDetails'),
+      className: 'max-w-xs truncate text-xs text-[color:var(--color-muted-foreground)]',
+      cell: (l) => <span title={l.details ?? undefined}>{l.details ?? '—'}</span>,
+      hideBelow: 'lg',
+    },
+  ];
+
   return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-      {children}
-    </th>
+    <AdminDataTable
+      rows={logs}
+      columns={columns}
+      getRowId={(l) => l._id}
+      searchable={(l) =>
+        `${l.adminName ?? ''} ${l.adminEmail ?? ''} ${l.action} ${l.targetType} ${l.targetId} ${l.details ?? ''}`
+      }
+      initialSort={{ id: 'date', dir: 'desc' }}
+      pageSize={50}
+      emptyTitle={t('auditLog.empty')}
+      emptyDescription={t('auditLog.emptyDescription')}
+      emptyIcon={ScrollText}
+    />
   );
 }

@@ -68,7 +68,10 @@ test.describe('Parcours partenaire', () => {
     /* ---------------- 1. L'admin ouvre le partenariat ---------------- */
     await signInByEmail(page, ADMIN_EMAIL);
     await page.goto('/admin/affiliates');
-    await expect(page.getByText('Nouvel affilié')).toBeVisible();
+    // La création se fait dans une modale : les champs n'existent pas tant
+    // qu'elle n'est pas ouverte.
+    await page.getByTestId('affiliate-new').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
 
     await page.getByTestId('affiliate-code').fill('SARAH12');
     await page.getByTestId('affiliate-rate').fill('10');
@@ -83,7 +86,10 @@ test.describe('Parcours partenaire', () => {
     // l'admin doit le savoir explicitement. C'est le comportement conçu — le
     // lien attribue déjà, seul le code saisissable manque.
     await expect(page.getByText(/code promo Stripe NON créé/i)).toBeVisible();
-    await expect(page.getByText('SARAH12').first()).toBeVisible();
+    // `visible: true` n'est pas un détail : le tableau du back-office monte les
+    // DEUX rendus, cartes (sous `md`) et lignes, et laisse le CSS trancher. Sans
+    // le filtre, `.first()` tombe sur la carte masquée à cette largeur.
+    await expect(page.getByText('SARAH12').filter({ visible: true }).first()).toBeVisible();
 
     // On simule ce que Stripe aurait renvoyé, pour dérouler la suite.
     const affiliates = await callConvex<
@@ -101,9 +107,13 @@ test.describe('Parcours partenaire', () => {
 
     /* ---------------- 2. Il génère le lien d'invitation ---------------- */
     await page.reload();
+    // Le compte offert se gère dans un dialogue : la ligne ne porte plus que
+    // l'état du lien, les réglages et les actions s'ouvrent au clic.
     const row = page.locator('tr', { hasText: 'SARAH12' }).first();
-    await row.getByRole('button', { name: /lien agence/i }).click();
-    await expect(row.getByRole('button', { name: /copier le lien/i })).toBeVisible();
+    await row.getByRole('button', { name: /configurer|gérer/i }).click();
+    const inviteDialog = page.getByRole('dialog');
+    await inviteDialog.getByRole('button', { name: /créer le lien agence/i }).click();
+    await expect(inviteDialog.getByRole('button', { name: /copier le lien/i })).toBeVisible();
 
     const token = await inviteToken();
     expect(token).toHaveLength(24);

@@ -2,7 +2,18 @@
 
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import {
+  Ban,
+  CircleCheck,
+  Link2,
+  Link2Off,
+  MoreHorizontal,
+  Trash2,
+  UserCog,
+  Users,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -10,15 +21,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useServerAction } from '@/components/admin/use-admin-action';
 import { AdminDeleteUserDialog } from '@/components/admin/admin-delete-user-dialog';
+import { formatDate } from '@/lib/admin/format';
 import {
   adminSuspendUserAction,
   adminUnsuspendUserAction,
   adminChangeUserRoleAction,
   adminSetAffiliateOwnerAction,
 } from '@/app/[locale]/(app)/admin/actions';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminFilterOption, AdminFilterSelect } from './ui/filter-select';
 
 type User = {
   _id: string;
@@ -58,6 +82,8 @@ const ROLE_LABEL_KEY = {
   admin: 'roles.admin',
 } as const;
 
+const ROLES = ['couple', 'pro', 'guest', 'admin'] as const;
+
 const ROLE_VARIANT: Record<string, 'neutral' | 'primary' | 'accent' | 'warning' | 'destructive'> = {
   couple: 'primary',
   pro: 'accent',
@@ -73,7 +99,7 @@ export function AdminUsersTable({
   partnerCodes?: PartnerCode[];
 }) {
   const t = useTranslations('Admin');
-  const [search, setSearch] = useState('');
+  const locale = useLocale();
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [partnersOnly, setPartnersOnly] = useState(false);
 
@@ -84,249 +110,284 @@ export function AdminUsersTable({
   );
   const freeCodes = partnerCodes.filter((c) => !takenAffiliateIds.has(c.id));
 
-  const filtered = users.filter((u) => {
-    const matchSearch =
-      !search ||
-      u.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase()) ||
-      u.phone?.includes(search) ||
-      u.affiliate?.code.toLowerCase().includes(search.toLowerCase());
-    const matchRole = roleFilter === 'all' || u.role === roleFilter;
-    const matchPartner = !partnersOnly || u.affiliate?.kind === 'partner';
-    return matchSearch && matchRole && matchPartner;
-  });
+  const filtered = users.filter(
+    (u) =>
+      (roleFilter === 'all' || u.role === roleFilter) &&
+      (!partnersOnly || u.affiliate?.kind === 'partner'),
+  );
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="text"
-          placeholder={t('users.searchPlaceholder')}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-10 w-full rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 text-sm text-[color:var(--color-foreground)] placeholder:text-[color:var(--color-muted-foreground)] focus:ring-1 focus:ring-[color:var(--color-border-strong)] focus:outline-none sm:w-72"
-        />
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-full rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-sm text-[color:var(--color-foreground)] sm:w-52">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('users.roleFilterAll')}</SelectItem>
-            <SelectItem value="couple">{t('roles.couple')}</SelectItem>
-            <SelectItem value="pro">{t('roles.pro')}</SelectItem>
-            <SelectItem value="guest">{t('roles.guest')}</SelectItem>
-            <SelectItem value="admin">{t('roles.admin')}</SelectItem>
-          </SelectContent>
-        </Select>
-        <label className="flex items-center gap-2 text-sm text-[color:var(--color-foreground)]">
-          <input
-            type="checkbox"
-            checked={partnersOnly}
-            onChange={(e) => setPartnersOnly(e.target.checked)}
-            className="h-4 w-4"
-            data-testid="filter-partners-only"
-          />
-          {t('users.partnersOnly')}
-        </label>
-        <span className="font-mono text-xs text-[color:var(--color-muted-foreground)]">
-          {t('users.count', { count: filtered.length })}
+  const columns: AdminColumn<User>[] = [
+    {
+      id: 'name',
+      header: t('users.colName'),
+      card: 'title',
+      sortValue: (u) => u.fullName ?? '',
+      cell: (u) => <span className="font-medium">{u.fullName ?? '—'}</span>,
+    },
+    {
+      id: 'contact',
+      header: t('users.colContact'),
+      sortValue: (u) => u.email ?? u.phone ?? '',
+      cell: (u) => (
+        <div className="flex min-w-0 flex-col gap-0.5 text-[color:var(--color-muted-foreground)]">
+          {u.email ? <span className="break-all">{u.email}</span> : null}
+          {u.phone ? <span className="font-mono text-xs">{u.phone}</span> : null}
+          {!u.email && !u.phone ? <span>—</span> : null}
+        </div>
+      ),
+    },
+    {
+      id: 'role',
+      header: t('users.colRole'),
+      card: 'badge',
+      sortValue: (u) => u.role,
+      cell: (u) => (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant={ROLE_VARIANT[u.role] ?? 'neutral'}>{t(ROLE_LABEL_KEY[u.role])}</Badge>
+          {/* La suspension se lit à côté du rôle, plus à sa place : le rôle
+              reste ce qu'est le compte, la suspension ce qu'on lui a fait. */}
+          {u.suspendedAt != null ? (
+            <Badge variant="destructive">{t('users.suspended')}</Badge>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      id: 'plan',
+      header: t('users.colPlan'),
+      sortValue: (u) => u.planTier ?? '',
+      cell: (u) => (
+        <span className="text-[color:var(--color-muted-foreground)]">{u.planTier ?? '—'}</span>
+      ),
+      hideBelow: 'xl',
+    },
+    {
+      id: 'partner',
+      header: t('users.colPartner'),
+      sortValue: (u) => u.affiliate?.code ?? '',
+      cell: (u) => <UserPartnerCell user={u} freeCodes={freeCodes} />,
+      hideBelow: 'lg',
+    },
+    {
+      id: 'registeredAt',
+      header: t('users.colRegisteredAt'),
+      sortValue: (u) => u.createdAt,
+      cell: (u) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {formatDate(u.createdAt, locale)}
         </span>
-      </div>
+      ),
+    },
+    {
+      id: 'actions',
+      header: t('common.colActions'),
+      card: 'actions',
+      align: 'right',
+      width: 'w-16',
+      cell: (u) => <UserActions user={u} />,
+    },
+  ];
 
-      <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-        <table className="w-full min-w-[700px] text-sm">
-          <thead>
-            <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-              <Th>{t('users.colName')}</Th>
-              <Th>{t('users.colContact')}</Th>
-              <Th>{t('users.colRole')}</Th>
-              <Th>{t('users.colPlan')}</Th>
-              <Th>{t('users.colPartner')}</Th>
-              <Th>{t('users.colRegisteredAt')}</Th>
-              <Th>{t('common.colActions')}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((u) => (
-              <UserRow key={u._id} user={u} freeCodes={freeCodes} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-      {children}
-    </th>
+    <AdminDataTable
+      rows={filtered}
+      columns={columns}
+      getRowId={(u) => u._id}
+      searchable={(u) =>
+        `${u.fullName ?? ''} ${u.email ?? ''} ${u.phone ?? ''} ${u.affiliate?.code ?? ''}`
+      }
+      searchPlaceholder={t('users.searchPlaceholder')}
+      initialSort={{ id: 'registeredAt', dir: 'desc' }}
+      emptyTitle={t('users.emptyTitle')}
+      emptyDescription={t('users.emptyDescription')}
+      emptyIcon={Users}
+      filters={
+        <>
+          <AdminFilterSelect
+            label={t('users.colRole')}
+            value={roleFilter}
+            onValueChange={setRoleFilter}
+          >
+            <AdminFilterOption value="all">{t('users.roleFilterAll')}</AdminFilterOption>
+            {ROLES.map((role) => (
+              <AdminFilterOption key={role} value={role}>
+                {t(ROLE_LABEL_KEY[role])}
+              </AdminFilterOption>
+            ))}
+          </AdminFilterSelect>
+          <label className="flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-[color:var(--color-border)] px-3 text-sm">
+            <Checkbox
+              checked={partnersOnly}
+              onCheckedChange={(checked) => setPartnersOnly(checked === true)}
+              data-testid="filter-partners-only"
+            />
+            {t('users.partnersOnly')}
+          </label>
+        </>
+      }
+    />
   );
 }
 
-function UserRow({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) {
+function UserPartnerCell({ user, freeCodes }: { user: User; freeCodes: PartnerCode[] }) {
   const t = useTranslations('Admin');
-  const locale = useLocale();
+  const { execute: setOwner, loading: attaching } = useServerAction(adminSetAffiliateOwnerAction);
+  const { confirm, confirmDialog } = useConfirm();
+
+  if (user.affiliate) {
+    return (
+      <>
+        <div className="flex flex-col items-start gap-1">
+          <Badge variant={user.affiliate.kind === 'partner' ? 'accent' : 'neutral'}>
+            {user.affiliate.code}
+          </Badge>
+          {/* Seul un partenariat se détache ici : le code de parrainage
+              particulier est créé PAR le compte du parrain, le détacher
+              laisserait une ligne orpheline. */}
+          {user.affiliate.kind === 'partner' ? (
+            <button
+              type="button"
+              onClick={async () => {
+                if (await confirm({ title: t('users.confirmDetachPartner') })) {
+                  setOwner(user.affiliate!.id, null);
+                }
+              }}
+              disabled={attaching}
+              className="focus-ring inline-flex items-center gap-1 rounded text-[0.6875rem] text-[color:var(--color-muted-foreground)] underline underline-offset-2 disabled:opacity-50"
+            >
+              <Link2Off className="h-3 w-3" strokeWidth={2} aria-hidden />
+              {t('users.detachPartner')}
+            </button>
+          ) : null}
+        </div>
+        {confirmDialog}
+      </>
+    );
+  }
+
+  if (freeCodes.length === 0) {
+    return <span className="text-[color:var(--color-muted-foreground)]">—</span>;
+  }
+
+  return (
+    <Select value="" disabled={attaching} onValueChange={(id) => setOwner(id, user._id)}>
+      <SelectTrigger className="h-8 rounded-md border-[color:var(--color-border)] bg-transparent px-2 text-xs text-[color:var(--color-muted-foreground)]">
+        <Link2 className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+        <SelectValue placeholder={t('users.attachPartner')} />
+      </SelectTrigger>
+      <SelectContent>
+        {freeCodes.map((c) => (
+          <SelectItem key={c.id} value={c.id}>
+            {c.code}
+            {c.displayName ? ` — ${c.displayName}` : ''}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+/**
+ * Actions d'un compte, repliées dans un menu — suspendre, changer de rôle,
+ * supprimer. Les comptes admin n'exposent aucune de ces trois : c'est la garde
+ * qui empêche de se retirer soi-même les droits par mégarde.
+ */
+function UserActions({ user }: { user: User }) {
+  const t = useTranslations('Admin');
   const { execute: suspend, loading: suspending } = useServerAction(adminSuspendUserAction);
   const { execute: unsuspend, loading: unsuspending } = useServerAction(adminUnsuspendUserAction);
   const { execute: changeRole, loading: changing } = useServerAction(adminChangeUserRoleAction);
-  const { execute: setOwner, loading: attaching } = useServerAction(adminSetAffiliateOwnerAction);
   const { confirm, confirmDialog } = useConfirm();
   const [deleting, setDeleting] = useState(false);
   const suspended = user.suspendedAt != null;
   const label = user.fullName ?? user.email ?? user.phone ?? user._id;
 
+  if (user.role === 'admin') {
+    return <span className="text-xs text-[color:var(--color-muted-foreground)]">—</span>;
+  }
+
   return (
     <>
-      <tr className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50">
-        <td className="px-4 py-3 font-medium">{user.fullName ?? '—'}</td>
-        <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            {user.email ? <span className="break-all">{user.email}</span> : null}
-            {user.phone ? <span className="font-mono text-xs">{user.phone}</span> : null}
-          </div>
-        </td>
-        <td className="px-4 py-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant={ROLE_VARIANT[user.role] ?? 'neutral'}>
-              {t(ROLE_LABEL_KEY[user.role])}
-            </Badge>
-            {/* La suspension se lit à côté du rôle, plus à sa place : le rôle
-                reste ce qu'est le compte, la suspension ce qu'on lui a fait. */}
-            {suspended ? <Badge variant="destructive">{t('users.suspended')}</Badge> : null}
-          </div>
-        </td>
-        <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-          {user.planTier ?? '—'}
-        </td>
-        <td className="px-4 py-3">
-          {user.affiliate ? (
-            <div className="flex flex-col items-start gap-1">
-              <Badge variant={user.affiliate.kind === 'partner' ? 'accent' : 'neutral'}>
-                {user.affiliate.code}
-              </Badge>
-              {/* Seul un partenariat se détache ici : le code de parrainage
-                  particulier est créé PAR le compte du parrain, le détacher
-                  laisserait une ligne orpheline. */}
-              {user.affiliate.kind === 'partner' ? (
-                <button
-                  onClick={async () => {
-                    if (await confirm({ title: t('users.confirmDetachPartner') })) {
-                      setOwner(user.affiliate!.id, null);
-                    }
-                  }}
-                  disabled={attaching}
-                  className="text-[11px] text-[color:var(--color-muted-foreground)] underline underline-offset-2 disabled:opacity-50"
-                >
-                  {t('users.detachPartner')}
-                </button>
-              ) : null}
-            </div>
-          ) : freeCodes.length > 0 ? (
-            <Select
-              value=""
-              disabled={attaching}
-              onValueChange={(affiliateId) => setOwner(affiliateId, user._id)}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            disabled={suspending || unsuspending || changing}
+            aria-label={t('common.colActions')}
+            className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-md text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)] disabled:opacity-50"
+          >
+            <MoreHorizontal className="h-4 w-4" strokeWidth={2} aria-hidden />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>{t('users.rolePlaceholder')}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={user.role}
+            onValueChange={async (value) => {
+              const newRole = value as User['role'];
+              if (newRole === user.role) return;
+              if (
+                await confirm({
+                  // Libellé traduit, pas la valeur en base : « Couple », pas « couple ».
+                  title: t('users.confirmChangeRole', { role: t(ROLE_LABEL_KEY[newRole]) }),
+                })
+              ) {
+                changeRole(user._id, newRole);
+              }
+            }}
+          >
+            {ROLES.map((role) => (
+              <DropdownMenuRadioItem key={role} value={role}>
+                <UserCog strokeWidth={1.75} aria-hidden />
+                {t(ROLE_LABEL_KEY[role])}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+
+          <DropdownMenuSeparator />
+
+          {suspended ? (
+            <DropdownMenuItem
+              onSelect={async () => {
+                if (await confirm({ title: t('users.confirmUnsuspend', { name: label }) })) {
+                  unsuspend(user._id);
+                }
+              }}
             >
-              <SelectTrigger className="rounded-md border border-[color:var(--color-border)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-muted-foreground)]">
-                <SelectValue placeholder={t('users.attachPartner')} />
-              </SelectTrigger>
-              <SelectContent>
-                {freeCodes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.code}
-                    {c.displayName ? ` — ${c.displayName}` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <CircleCheck strokeWidth={1.75} aria-hidden />
+              {t('users.unsuspend')}
+            </DropdownMenuItem>
           ) : (
-            <span className="text-[color:var(--color-muted-foreground)]">—</span>
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={async () => {
+                if (
+                  await confirm({
+                    title: t('users.confirmSuspend', { name: label }),
+                    destructive: true,
+                  })
+                ) {
+                  suspend(user._id);
+                }
+              }}
+            >
+              <Ban strokeWidth={1.75} aria-hidden />
+              {t('users.suspend')}
+            </DropdownMenuItem>
           )}
-        </td>
-        <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-          {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-            new Date(user.createdAt),
-          )}
-        </td>
-        <td className="px-4 py-3">
-          <div className="flex items-center gap-2">
-            {user.role === 'admin' ? null : suspended ? (
-              <button
-                onClick={async () => {
-                  if (
-                    await confirm({
-                      title: t('users.confirmUnsuspend', { name: label }),
-                    })
-                  ) {
-                    unsuspend(user._id);
-                  }
-                }}
-                disabled={unsuspending}
-                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-accent)] transition-colors hover:bg-[color:var(--color-accent)]/10 disabled:opacity-50"
-              >
-                {t('users.unsuspend')}
-              </button>
-            ) : (
-              <button
-                onClick={async () => {
-                  if (
-                    await confirm({
-                      title: t('users.confirmSuspend', { name: label }),
-                      destructive: true,
-                    })
-                  ) {
-                    suspend(user._id);
-                  }
-                }}
-                disabled={suspending}
-                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10 disabled:opacity-50"
-              >
-                {t('users.suspend')}
-              </button>
-            )}
-            {user.role !== 'admin' ? (
-              <Select
-                value=""
-                disabled={changing}
-                onValueChange={async (v) => {
-                  const newRole = v as User['role'];
-                  if (
-                    await confirm({
-                      // Libellé traduit, pas la valeur en base : « Couple », pas « couple ».
-                      title: t('users.confirmChangeRole', { role: t(ROLE_LABEL_KEY[newRole]) }),
-                    })
-                  ) {
-                    changeRole(user._id, newRole);
-                  }
-                }}
-              >
-                <SelectTrigger className="rounded-md border border-[color:var(--color-border)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-muted-foreground)]">
-                  <SelectValue placeholder={t('users.rolePlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="couple">{t('roles.couple')}</SelectItem>
-                  <SelectItem value="pro">{t('roles.pro')}</SelectItem>
-                  <SelectItem value="guest">{t('roles.guest')}</SelectItem>
-                  <SelectItem value="admin">{t('roles.admin')}</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : null}
-            {/* Suspendre neutralise, supprimer efface. Un compte ouvert pour
-                tester n'a aucune raison de rester : c'est la seule sortie. */}
-            {user.role !== 'admin' ? (
-              <button
-                onClick={() => setDeleting(true)}
-                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10"
-                data-testid="admin-delete-user"
-              >
-                {t('common.delete')}
-              </button>
-            ) : null}
-          </div>
-        </td>
-      </tr>
+
+          {/* Suspendre neutralise, supprimer efface. Un compte ouvert pour
+              tester n'a aucune raison de rester : c'est la seule sortie. */}
+          <DropdownMenuItem
+            variant="destructive"
+            data-testid="admin-delete-user"
+            onSelect={() => setDeleting(true)}
+          >
+            <Trash2 strokeWidth={1.75} aria-hidden />
+            {t('common.delete')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {confirmDialog}
       <AdminDeleteUserDialog
         userId={user._id}

@@ -2,10 +2,13 @@ import { setRequestLocale } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
 import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
+import { formatCount } from '@/lib/admin/format';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminNewsletterTable } from '@/components/admin/admin-newsletter-table';
 import { AdminNewsletterComposer } from '@/components/admin/admin-newsletter-composer';
 import { adminListNewsletterCampaignsAction } from '@/app/[locale]/(app)/admin/actions';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage } from '@/components/admin/ui/section';
 
 export default async function AdminNewsletterPage({
   params,
@@ -30,25 +33,14 @@ export default async function AdminNewsletterPage({
 
   return (
     <AdminShell current="newsletter" adminName={user?.fullName}>
-      <div className="flex flex-col gap-6">
-        <header>
-          <h1
-            className="font-display italic"
-            style={{
-              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.022em',
-            }}
-          >
-            Newsletter
-          </h1>
-          <p className="mt-1 text-sm text-[color:var(--color-muted-foreground)]">
-            {active} abonnés actifs sur {subscribers.length} total
-          </p>
-        </header>
+      <AdminPage>
+        <AdminPageHeader
+          title="Newsletter"
+          description={`${formatCount(active)} abonnés actifs sur ${formatCount(subscribers.length)} enregistrés.`}
+        />
         <AdminNewsletterComposer activeCount={active} campaigns={campaigns} />
         <AdminNewsletterTable subscribers={subscribers} />
-      </div>
+      </AdminPage>
     </AdminShell>
   );
 }
