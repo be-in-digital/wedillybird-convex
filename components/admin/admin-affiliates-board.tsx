@@ -12,6 +12,7 @@ import {
   adminMarkReferralPaidAction,
   adminRevokePartnerInviteAction,
   adminSendPartnerInviteAction,
+  adminSetAffiliateContactAction,
   adminSetAffiliateStatusAction,
 } from '@/app/[locale]/(app)/admin/actions';
 
@@ -302,6 +303,21 @@ export function AdminAffiliatesBoard({
     return `${origin}/rejoindre/${token}`;
   }
 
+  function setContact(
+    a: Affiliate,
+    next: { ownerEmail: string | null; displayName: string | null },
+  ) {
+    setError(null);
+    startTransition(async () => {
+      const res = await adminSetAffiliateContactAction(a.id, next);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
   function createInvite(a: Affiliate, kind: 'pro' | 'couple', grant: InviteGrantOptions) {
     setError(null);
     startTransition(async () => {
@@ -563,8 +579,15 @@ export function AdminAffiliatesBoard({
                       </span>
                     )}
                   </td>
+                  {/* Nom ET adresse : n'afficher que le premier des deux
+                      laissait un affilié sans e-mail paraître complet, et le
+                      bouton d'envoi grisé sans raison lisible. */}
                   <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
-                    {a.displayName ?? a.ownerEmail ?? '—'}
+                    <ContactCell
+                      affiliate={a}
+                      pending={pending}
+                      onSave={(next) => setContact(a, next)}
+                    />
                   </td>
                   {/* Le lien d'invitation n'a de sens que pour un partenaire :
                       le parrainage particulier n'ouvre pas de compte agence. */}
@@ -704,6 +727,105 @@ export function AdminAffiliatesBoard({
         </div>
       </section>
       {confirmDialog}
+    </div>
+  );
+}
+
+/**
+ * Contact d'un affilié : nom affiché et adresse d'envoi, lisibles et corrigibles.
+ *
+ * La cellule ne montrait que `displayName ?? ownerEmail`. Un affilié nommé mais
+ * sans adresse paraissait donc complet, pendant que « Envoyer par e-mail »
+ * restait grisé — le tableau disait le contraire du bouton. Elle montre
+ * maintenant les deux, et nomme l'absence : c'est ce manque précis qui bloque
+ * l'envoi.
+ */
+function ContactCell({
+  affiliate,
+  pending,
+  onSave,
+}: {
+  affiliate: Affiliate;
+  pending: boolean;
+  onSave: (next: { ownerEmail: string | null; displayName: string | null }) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [email, setEmail] = useState(affiliate.ownerEmail ?? '');
+  const [name, setName] = useState(affiliate.displayName ?? '');
+
+  const fieldCls =
+    'h-7 w-40 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-1.5 text-[11px] text-[color:var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-primary)] disabled:opacity-50';
+
+  if (editing) {
+    return (
+      <div className="flex flex-col items-start gap-1">
+        <input
+          aria-label="Nom affiché du partenaire"
+          className={fieldCls}
+          value={name}
+          disabled={pending}
+          placeholder="Nom affiché"
+          onChange={(e) => setName(e.target.value)}
+        />
+        <input
+          aria-label="Adresse e-mail du partenaire"
+          className={fieldCls}
+          type="email"
+          value={email}
+          disabled={pending}
+          placeholder="sarah@exemple.com"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              onSave({ ownerEmail: email.trim() || null, displayName: name.trim() || null });
+              setEditing(false);
+            }}
+            className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)] px-2 py-0.5 text-[11px] font-medium disabled:opacity-50"
+          >
+            Enregistrer
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              setEmail(affiliate.ownerEmail ?? '');
+              setName(affiliate.displayName ?? '');
+              setEditing(false);
+            }}
+            className="rounded-md px-1.5 py-0.5 text-[11px] underline underline-offset-2 disabled:opacity-50"
+          >
+            Annuler
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <span>{affiliate.displayName ?? '—'}</span>
+      {affiliate.ownerEmail ? (
+        <span className="text-[11px]">{affiliate.ownerEmail}</span>
+      ) : (
+        <span
+          className="text-[11px] text-[color:var(--color-warning)]"
+          title="Sans adresse, le lien d'invitation ne peut pas être envoyé — seulement copié."
+        >
+          aucune adresse
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        disabled={pending}
+        className="text-[11px] underline underline-offset-2 disabled:opacity-50"
+      >
+        Modifier
+      </button>
     </div>
   );
 }

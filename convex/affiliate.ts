@@ -16,6 +16,7 @@ import {
   type QueryCtx,
 } from './_generated/server';
 import type { Doc, Id } from './_generated/dataModel';
+import { isValidEmail } from './lib/email';
 import {
   DEFAULT_RATE_BPS,
   isRewardConfigSafe,
@@ -158,6 +159,62 @@ export const setAffiliateOwner = mutation({
       targetType: 'affiliate',
       targetId: affiliateId,
       details: JSON.stringify({ code: affiliate.code, ownerUserId: ownerUserId ?? null }),
+      createdAt: now,
+    });
+    return { ok: true as const };
+  },
+});
+
+/**
+ * Corrige le contact d'un affilié : adresse d'envoi et nom affiché.
+ *
+ * `ownerEmail` ne s'écrivait qu'à `createAffiliate`. Un partenaire créé sans
+ * adresse — ou avec une faute de frappe — n'avait donc aucune issue : le bouton
+ * « Envoyer par e-mail » restait grisé pour toujours, et la seule sortie était
+ * de supprimer l'affilié et de le recréer, ce qui jette son code, ses
+ * commissions et son historique.
+ *
+ * À ne pas confondre avec `setAffiliateOwner`, qui rattache un COMPTE
+ * utilisateur (et ouvre `/partenaire`). Ici on ne touche qu'à des champs de
+ * contact en texte libre ; deviner l'un depuis l'autre donnerait à quelqu'un
+ * les commissions d'un autre.
+ */
+export const setAffiliateContact = mutation({
+  args: {
+    adminId: v.id('users'),
+    affiliateId: v.id('affiliates'),
+    /** `null` efface l'adresse. */
+    ownerEmail: v.union(v.string(), v.null()),
+    /** `null` efface le nom affiché. */
+    displayName: v.union(v.string(), v.null()),
+  },
+  handler: async (ctx, { adminId, affiliateId, ownerEmail, displayName }) => {
+    await assertAdmin(ctx, adminId);
+    const affiliate = await ctx.db.get(affiliateId);
+    if (!affiliate) throw new Error('AFFILIATE_NOT_FOUND');
+
+    // Même normalisation qu'à la création : une adresse stockée avec une
+    // majuscule ou une espace de bord partirait quand même, mais ne
+    // s'égaliserait plus à elle-même dans les comparaisons.
+    const email = ownerEmail?.trim().toLowerCase() || null;
+    if (email !== null && !isValidEmail(email)) throw new Error('INVALID_EMAIL');
+    const name = displayName?.trim() || null;
+    if (name !== null && name.length > 120) throw new Error('INVALID_NAME');
+
+    const now = Date.now();
+    await ctx.db.patch(affiliateId, {
+      ownerEmail: email ?? undefined,
+      displayName: name ?? undefined,
+      updatedAt: now,
+    });
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'set_affiliate_contact',
+      targetType: 'affiliate',
+      targetId: affiliateId,
+      // L'adresse atterrit dans l'audit : c'est elle qui décide où part un lien
+      // qui ouvre un compte offert.
+      details: JSON.stringify({ code: affiliate.code, ownerEmail: email, displayName: name }),
       createdAt: now,
     });
     return { ok: true as const };
