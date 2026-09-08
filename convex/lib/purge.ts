@@ -76,8 +76,23 @@ async function drop<T extends TableNames>(
 
 /**
  * Tables filles d'un événement, toutes indexées `by_event` sur `eventId`.
+ *
  * `photos`, `quoteDocs` et `contracts` en sont absentes : elles demandent un
  * traitement propre (objets S3, sous-tables) fait juste avant.
+ *
+ * `payments` en est absente **délibérément**. Une ligne de paiement est
+ * l'écriture d'un encaissement plateforme : c'est elle que lisent le CA admin
+ * et `platformAnalytics`, et une agence qui supprime son compte n'a pas à
+ * effacer le chiffre d'affaires que ses couples ont produit. Elle survit donc
+ * à son événement — `listAllPayments`, `paymentsInvoice` et la réconciliation
+ * Stripe traitent déjà l'événement absent. Ce qui la fait tomber, c'est la
+ * suppression de son ACHETEUR (`payments.userId`, non optionnel), et c'est
+ * `purgeUser` qui s'en charge, sous confirmation admin et avec inventaire.
+ *
+ * `photoBookOrders` y reste : une commande de livre n'est pas une écriture
+ * comptable mais une tâche de fabrication, qui imprime une galerie. Sans
+ * l'événement, elle n'est plus exécutable — le paiement qui l'a financée,
+ * lui, subsiste.
  */
 const EVENT_CHILD_TABLES = [
   'guests',
@@ -89,7 +104,6 @@ const EVENT_CHILD_TABLES = [
   'coupleTasks',
   'coupleRooms',
   'eventCollaborators',
-  'payments',
   'photoBookOrders',
   'photoFaces',
   'whatsappTemplates',

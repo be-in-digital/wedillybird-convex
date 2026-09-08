@@ -361,6 +361,117 @@ describe('admin.deleteUser', () => {
   });
 });
 
+describe('organizations.deleteOrganization', () => {
+  it("emporte ce que l'ancienne cascade laissait derrière elle", async () => {
+    const ownerId = await seedUser(t, { email: 'agence@wedillybird.com', role: 'pro' });
+    const organizationId = await seedOrg(ownerId, { name: 'Agence à fermer' });
+    const eventId = await seedEvent(t, ownerId);
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.patch(eventId, { organizationId });
+      // Trois tables que la cascade écrite à la main ne descendait pas.
+      await ctx.db.insert('tables', {
+        eventId,
+        name: 'Table 1',
+        capacity: 8,
+        order: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+      const phaseId = await ctx.db.insert('couplePhases', {
+        eventId,
+        label: '6 mois avant',
+        order: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert('coupleTasks', {
+        eventId,
+        phaseId,
+        label: 'Choisir le traiteur',
+        status: 'todo',
+        order: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert('planningTemplates', {
+        organizationId,
+        name: 'Rétroplanning 12 mois',
+        tasks: [],
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    await t.mutation(api.organizations.deleteOrganization, {
+      organizationId,
+      requesterId: ownerId,
+      confirmName: 'Agence à fermer',
+    });
+
+    await t.run(async (ctx) => {
+      expect(await ctx.db.get(organizationId)).toBeNull();
+      expect(await ctx.db.get(eventId)).toBeNull();
+      expect(await ctx.db.query('tables').collect()).toHaveLength(0);
+      expect(await ctx.db.query('coupleTasks').collect()).toHaveLength(0);
+      expect(await ctx.db.query('couplePhases').collect()).toHaveLength(0);
+      expect(await ctx.db.query('planningTemplates').collect()).toHaveLength(0);
+    });
+  });
+
+  it('laisse debout les paiements des couples — ce sont des encaissements plateforme', async () => {
+    const ownerId = await seedUser(t, { email: 'agence2@wedillybird.com', role: 'pro' });
+    const organizationId = await seedOrg(ownerId, { name: 'Agence payante' });
+    const buyerId = await seedUser(t, { email: 'couple@wedillybird.com' });
+    const eventId = await seedEvent(t, ownerId);
+    await t.run(async (ctx) => {
+      await ctx.db.patch(eventId, { organizationId });
+      const now = Date.now();
+      await ctx.db.insert('payments', {
+        userId: buyerId,
+        eventId,
+        kind: 'plan',
+        plan: 'premium',
+        currency: 'EUR',
+        amountMinor: 5900,
+        provider: 'stripe',
+        providerSessionId: 'cs_test_org_delete',
+        status: 'succeeded',
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    await t.mutation(api.organizations.deleteOrganization, {
+      organizationId,
+      requesterId: ownerId,
+      confirmName: 'Agence payante',
+    });
+
+    // Le CA reste lisible côté admin, l'acheteur aussi : seul l'événement
+    // référencé a disparu, ce que les lectures gèrent déjà.
+    const payments = await t.query(api.admin.listAllPayments, { adminId });
+    expect(payments).toHaveLength(1);
+    expect(payments[0]).toMatchObject({ amountMinor: 5900, userEmail: 'couple@wedillybird.com' });
+  });
+
+  it('refuse un nom de confirmation qui ne correspond pas', async () => {
+    const ownerId = await seedUser(t, { email: 'agence3@wedillybird.com', role: 'pro' });
+    const organizationId = await seedOrg(ownerId, { name: 'Agence protégée' });
+
+    await expect(
+      t.mutation(api.organizations.deleteOrganization, {
+        organizationId,
+        requesterId: ownerId,
+        confirmName: 'Agence protegee',
+      }),
+    ).rejects.toThrow(/NAME_MISMATCH/);
+    await t.run(async (ctx) => {
+      expect(await ctx.db.get(organizationId)).not.toBeNull();
+    });
+  });
+});
+
 describe('admin.userDeletionPreview', () => {
   it("annonce ce qui tombera avant qu'on le clique", async () => {
     const userId = await seedUser(t, { email: 'preview@wedillybird.com' });
