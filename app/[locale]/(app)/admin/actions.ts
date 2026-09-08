@@ -1008,6 +1008,33 @@ export async function adminEnsureAffiliateCouponAction(affiliateId: string): Pro
   }
 }
 
+/**
+ * Corrige l'adresse d'envoi et le nom affiché d'un affilié.
+ *
+ * Sans elle, un partenaire créé sans e-mail n'avait plus aucune issue : le
+ * bouton d'envoi restait grisé, et la seule sortie était de supprimer l'affilié
+ * — donc son code, ses commissions et son historique.
+ */
+export async function adminSetAffiliateContactAction(
+  affiliateId: string,
+  input: { ownerEmail: string | null; displayName: string | null },
+): Promise<ActionResult> {
+  try {
+    const adminId = await requireAdmin();
+    const convex = getConvexServerClient();
+    await convex.mutation(convexApi.setAffiliateContact, {
+      adminId,
+      affiliateId,
+      ownerEmail: input.ownerEmail,
+      displayName: input.displayName,
+    });
+    revalidatePath('/admin/affiliates');
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: msg(e) };
+  }
+}
+
 export async function adminSetAffiliateStatusAction(
   affiliateId: string,
   status: 'active' | 'disabled',
