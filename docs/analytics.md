@@ -24,6 +24,10 @@ Système de suivi des visiteurs pour **décider quoi optimiser dans le marketing
 
 PostHog démarre en **`opt_out_capturing_by_default: true`** → **aucune capture ni cookie** tant que le visiteur n'a pas cliqué « Accepter » dans la bannière (`localStorage['wedillybird-cookie-consent']`). À l'acceptation : opt-in + session replay + capture du pageview courant. Au refus : opt-out. `person_profiles: 'identified_only'` (anonymes = events sans profil).
 
+**Chargement paresseux (sept. 2026)** : `posthog-js` n'est téléchargé (chunk séparé, `import()` dynamique) que si le consentement est déjà « accepté » au chargement de la page, ou au clic « Accepter ». Un visiteur qui refuse ou ignore la bannière ne charge jamais le SDK. Les appels `track` / `identifyUser` émis pendant le chargement sont mis en file d'attente et rejoués.
+
+**Conséquence à garder en tête** : PostHog ne voit que les visiteurs qui acceptent la bannière (typiquement 30 à 60 % d'une audience française). **Pour les volumes (visites, pages vues, pays, referrers), la vérité terrain est Vercel Web Analytics** (`@vercel/analytics`, monté dans `app/[locale]/layout.tsx`) : sans cookie ni identifiant persistant, donc hors périmètre du consentement. À activer une fois sur le projet Vercel (Project → Analytics → Enable) — sans ça, le composant est inerte. PostHog garde son rôle pour le funnel, les events produit, les heatmaps et le replay des consentants.
+
 ## Taxonomie des events
 
 | Event | Déclencheur | Propriétés clés |
