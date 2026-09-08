@@ -116,7 +116,9 @@ async function assertGalleryOpen(
   const org = event.organizationId ? await ctx.db.get(event.organizationId) : null;
   const access = galleryAccessFor(event, org);
   if (access === 'locked') throw new Error('GALLERY_NOT_PURCHASED');
-  if (access === 'expired') throw new Error('GALLERY_EXPIRED');
+  // Tout ce qui n'est pas `'open'` ferme le dépôt — `'grace'` compris : le
+  // sursis rend les photos aux couples, il ne rouvre pas le produit à l'agence.
+  if (access !== 'open') throw new Error('GALLERY_EXPIRED');
 }
 
 /* -------------------------------------------------------------------------- */

@@ -31,10 +31,18 @@ describe('galleryAccessFor — agence', () => {
 
   it('ferme quand la couverture tombe', () => {
     expect(galleryAccessFor(ORG_EVENT, { subscriptionStatus: 'canceled' }, NOW)).toBe('expired');
-    expect(galleryAccessFor(ORG_EVENT, { compedSubscription: { expiresAt: NOW - DAY } }, NOW)).toBe(
-      'expired',
-    );
     expect(galleryAccessFor(ORG_EVENT, null, NOW)).toBe('expired');
+  });
+
+  it('un cadeau qui vient d’expirer laisse un sursis en lecture seule', () => {
+    // Il s'éteint sans prévenir : fermer d'un coup priverait les couples de
+    // photos déjà livrées. Le détail du sursis vit dans `gallery-grace.test.ts`.
+    expect(galleryAccessFor(ORG_EVENT, { compedSubscription: { expiresAt: NOW - DAY } }, NOW)).toBe(
+      'grace',
+    );
+    expect(
+      galleryAccessFor(ORG_EVENT, { compedSubscription: { expiresAt: NOW - 400 * DAY } }, NOW),
+    ).toBe('expired');
   });
 
   it("ignore galleryExpiresAt : ce n'est pas ce qui la gouverne", () => {

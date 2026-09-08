@@ -162,8 +162,56 @@ export function orgHasActiveAccess(
   return (org.paygCredits ?? 0) > 0;
 }
 
+/**
+ * Sursis accordé aux galeries après l'extinction de la couverture d'une agence,
+ * en jours.
+ *
+ * Un cadeau expire en silence : aucun objet Stripe derrière, donc aucune
+ * relance, aucun préavis. Le jour de l'échéance, `galleryAccessFor` refermait
+ * d'un coup TOUTES les galeries de l'organisation — y compris celles de
+ * mariages déjà livrés. Ce ne sont pas les photos de l'agence qui
+ * disparaissaient, ce sont celles de ses couples, qui n'ont rien décidé et
+ * n'ont rien été prévenus.
+ *
+ * Le sursis leur laisse le temps de récupérer. Il est délibérément **en lecture
+ * seule** (`'grace'`, pas `'open'`) : il protège l'accès des couples, il ne
+ * prolonge pas l'usage du produit par l'agence.
+ */
+export const GALLERY_GRACE_DAYS = 60;
+
+const GALLERY_GRACE_MS = GALLERY_GRACE_DAYS * 24 * 60 * 60 * 1000;
+
+/**
+ * La galerie est-elle dans son sursis post-cadeau ?
+ *
+ * Seul le compte OFFERT en bénéficie : il s'éteint sans prévenir. Un abonnement
+ * résilié, lui, a été résilié par quelqu'un, à une date connue, après les
+ * relances de Stripe — le préavis a déjà eu lieu.
+ */
+export function withinGalleryGrace(
+  org: OrgSubscriptionState | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  const expiresAt = org?.compedSubscription?.expiresAt;
+  if (typeof expiresAt !== 'number') return false;
+  return now > expiresAt && now <= expiresAt + GALLERY_GRACE_MS;
+}
+
+/**
+ * Jours entiers restants avant la fermeture définitive, arrondis vers le haut —
+ * « il reste 1 jour » tant qu'il reste quelques heures. `0` hors sursis.
+ */
+export function galleryGraceDaysLeft(
+  org: OrgSubscriptionState | null | undefined,
+  now: number = Date.now(),
+): number {
+  if (!withinGalleryGrace(org, now)) return 0;
+  const endsAt = (org!.compedSubscription!.expiresAt as number) + GALLERY_GRACE_MS;
+  return Math.ceil((endsAt - now) / (24 * 60 * 60 * 1000));
+}
+
 /** État d'accès d'une galerie, du point de vue de l'écran comme du serveur. */
-export type GalleryAccess = 'open' | 'locked' | 'expired';
+export type GalleryAccess = 'open' | 'grace' | 'locked' | 'expired';
 
 /**
  * La galerie d'un événement est-elle ouverte ?
@@ -191,7 +239,10 @@ export function galleryAccessFor(
   now: number = Date.now(),
 ): GalleryAccess {
   if (event.organizationId) {
-    return orgHasActiveAccess(org, now) ? 'open' : 'expired';
+    if (orgHasActiveAccess(org, now)) return 'open';
+    // Sursis en LECTURE SEULE : les couples récupèrent leurs photos, l'agence
+    // n'en dépose plus (cf. `withinGalleryGrace`).
+    return withinGalleryGrace(org, now) ? 'grace' : 'expired';
   }
   if (event.galleryExpiresAt == null) return 'locked';
   return now > event.galleryExpiresAt ? 'expired' : 'open';
