@@ -21,7 +21,8 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
  *   resserrer une fois la base stabilisée. Sources autorisées :
  *     - `self` partout
  *     - Stripe (`js.stripe.com` + `api.stripe.com` + iframe checkout)
- *     - Convex (`*.convex.cloud` + `*.convex.site` pour le websocket)
+ *     - Convex (`*.convex.cloud` + `*.convex.site` pour le websocket), plus
+ *       l'origine réellement configurée (cf. `convexConnectSources`)
  *     - CloudFront (`*.cloudfront.net`) + domaine media custom
  *     - Unsplash pour le hero landing
  *     - `data:` et `blob:` pour les previews photo (img-src)
@@ -36,6 +37,34 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 // https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy
 const isDev = process.env.NODE_ENV !== 'production';
 const devScriptDirectives = isDev ? " 'unsafe-eval'" : '';
+
+/**
+ * Origine Convex réellement configurée, ajoutée à `connect-src` (HTTP **et**
+ * WebSocket).
+ *
+ * Les jokers `*.convex.cloud` ne couvrent que le cloud Convex. La pile E2E, qui
+ * sert les vraies fonctions depuis `http://127.0.0.1:3210`, tombait donc hors
+ * CSP : le `new WebSocket(...)` du client Convex y était refusé, et WebKit — où
+ * ce refus lève une exception au lieu d'un simple avertissement — perdait le
+ * process de rendu en pleine hydratation. Écran « This page couldn't load », sur
+ * un HTML serveur pourtant complet et correct.
+ *
+ * Autoriser le backend que l'application interroge de toute façon n'élargit
+ * rien : en prod la variable vaut le déploiement `*.convex.cloud`, déjà couvert.
+ * Lue à la compilation, comme le reste des headers.
+ */
+function convexConnectSources(): string[] {
+  const configured = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!configured) return [];
+  try {
+    const { origin, protocol, host } = new URL(configured);
+    return [origin, `${protocol === 'https:' ? 'wss' : 'ws'}://${host}`];
+  } catch {
+    // URL invalide (sentinelle des tests, variable mal renseignée) : on
+    // n'ajoute rien plutôt que d'émettre une directive cassée.
+    return [];
+  }
+}
 
 const securityHeaders = [
   {
@@ -56,7 +85,10 @@ const securityHeaders = [
       "img-src 'self' https://*.cloudfront.net https://media.wedillybird.com https://images.unsplash.com https://plus.unsplash.com https://www.facebook.com data: blob:",
       `script-src 'self' 'unsafe-inline'${devScriptDirectives} https://js.stripe.com https://connect.facebook.net`,
       "worker-src 'self' blob:",
-      "connect-src 'self' https://*.convex.cloud https://*.convex.site wss://*.convex.cloud https://api.stripe.com https://*.s3.eu-west-3.amazonaws.com https://www.facebook.com",
+      [
+        "connect-src 'self' https://*.convex.cloud https://*.convex.site wss://*.convex.cloud https://api.stripe.com https://*.s3.eu-west-3.amazonaws.com https://www.facebook.com",
+        ...convexConnectSources(),
+      ].join(' '),
       'frame-src https://js.stripe.com https://checkout.stripe.com',
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self' data:",
