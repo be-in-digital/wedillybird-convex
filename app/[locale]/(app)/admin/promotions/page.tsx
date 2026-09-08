@@ -1,10 +1,12 @@
 import { setRequestLocale } from 'next-intl/server';
+import { AlertTriangle } from 'lucide-react';
 import { redirect } from '@/i18n/navigation';
 import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminPromotionsBoard } from '@/components/admin/admin-promotions-board';
 import { adminListPromotionsAction } from '@/app/[locale]/(app)/admin/actions';
+import { AdminEmptyState, AdminPage, AdminPageHeader } from '@/components/admin/ui';
 
 export default async function AdminPromotionsPage({
   params,
@@ -36,23 +38,11 @@ export default async function AdminPromotionsPage({
 
   return (
     <AdminShell current="promotions" adminName={user?.fullName}>
-      <div className="flex flex-col gap-6">
-        <header>
-          <h1
-            className="font-display italic"
-            style={{
-              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.022em',
-            }}
-          >
-            Promotions &amp; remises
-          </h1>
-          <p className="mt-1 text-sm text-[color:var(--color-muted-foreground)]">
-            Coupons, codes promo et gestes commerciaux — pour les forfaits couples comme pour les
-            abonnements pros.
-          </p>
-        </header>
+      <AdminPage>
+        <AdminPageHeader
+          title="Promotions & remises"
+          description="Coupons, codes promo et gestes commerciaux — pour les forfaits couples comme pour les abonnements pros."
+        />
 
         {promos.ok ? (
           <AdminPromotionsBoard
@@ -61,12 +51,23 @@ export default async function AdminPromotionsPage({
             subscribedOrgs={subscribedOrgs}
           />
         ) : (
-          <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 text-sm text-[color:var(--color-muted-foreground)]">
-            Impossible de charger les promotions Stripe ({promos.error}). Vérifie que
-            <code className="mx-1 font-mono">STRIPE_SECRET_KEY</code> est configurée.
+          <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
+            <AdminEmptyState
+              icon={AlertTriangle}
+              title="Promotions Stripe indisponibles"
+              description={
+                <>
+                  {promos.error}. Vérifiez que{' '}
+                  <code className="font-mono text-[color:var(--color-foreground)]">
+                    STRIPE_SECRET_KEY
+                  </code>{' '}
+                  est configurée pour cet environnement.
+                </>
+              }
+            />
           </div>
         )}
-      </div>
+      </AdminPage>
     </AdminShell>
   );
 }

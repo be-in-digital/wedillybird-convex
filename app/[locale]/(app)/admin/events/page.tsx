@@ -2,8 +2,10 @@ import { setRequestLocale } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
 import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
+import { formatCount } from '@/lib/admin/format';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminEventsTable } from '@/components/admin/admin-events-table';
+import { AdminPage, AdminPageHeader } from '@/components/admin/ui';
 
 export default async function AdminEventsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -18,26 +20,17 @@ export default async function AdminEventsPage({ params }: { params: Promise<{ lo
     convex.query(convexApi.adminListAllEvents, { adminId: session!.userId }),
   ]);
 
+  const active = events.filter((e) => e.status === 'active').length;
+
   return (
     <AdminShell current="events" adminName={user?.fullName}>
-      <div className="flex flex-col gap-6">
-        <header>
-          <h1
-            className="font-display italic"
-            style={{
-              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.022em',
-            }}
-          >
-            Événements
-          </h1>
-          <p className="mt-1 text-sm text-[color:var(--color-muted-foreground)]">
-            {events.length} événements sur la plateforme
-          </p>
-        </header>
+      <AdminPage>
+        <AdminPageHeader
+          title="Événements"
+          description={`${formatCount(events.length)} événements sur la plateforme, dont ${formatCount(active)} actifs.`}
+        />
         <AdminEventsTable events={events} />
-      </div>
+      </AdminPage>
     </AdminShell>
   );
 }

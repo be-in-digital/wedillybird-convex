@@ -1,35 +1,29 @@
 import { setRequestLocale } from 'next-intl/server';
 import {
-  Users,
-  CalendarDays,
-  TrendingUp,
-  CreditCard,
   AlertTriangle,
   Building2,
+  CalendarDays,
+  CreditCard,
   RotateCcw,
+  Target,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
-import { redirect } from '@/i18n/navigation';
+import { Link, redirect } from '@/i18n/navigation';
 import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
+import { formatCount, formatEurCompact, formatRatio } from '@/lib/admin/format';
 import { AdminShell } from '@/components/admin/admin-shell';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminRevenueChart } from '@/components/admin/admin-revenue-chart';
 import { AdminUsersChart } from '@/components/admin/admin-users-chart';
-import { AdminCurrencyChart } from '@/components/admin/admin-currency-chart';
-import { Link } from '@/i18n/navigation';
-
-function formatEur(amountMinor: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amountMinor / 100);
-}
-
-function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)} %`;
-}
+import { AdminBreakdown } from '@/components/admin/admin-breakdown';
+import {
+  AdminPage,
+  AdminPageHeader,
+  AdminSection,
+  AdminStat,
+  AdminStatGrid,
+} from '@/components/admin/ui';
 
 export default async function AdminDashboardPage({
   params,
@@ -48,247 +42,168 @@ export default async function AdminDashboardPage({
     convex.query(convexApi.adminDashboardKpi, { adminId: session!.userId }),
   ]);
 
+  const alerts = [
+    kpi.pastDueSubscriptions > 0 && {
+      href: '/admin/subscriptions',
+      label: `${kpi.pastDueSubscriptions} abonnement${kpi.pastDueSubscriptions > 1 ? 's' : ''} en impayé`,
+      detail: 'Relancer avant suspension automatique',
+    },
+    kpi.failedPaymentsCount > 0 && {
+      href: '/admin/payments',
+      label: `${kpi.failedPaymentsCount} paiement${kpi.failedPaymentsCount > 1 ? 's' : ''} échoué${kpi.failedPaymentsCount > 1 ? 's' : ''}`,
+      detail: `${formatEurCompact(kpi.failedPaymentsAmountMinor)} non encaissés`,
+    },
+  ].filter(Boolean) as { href: string; label: string; detail: string }[];
+
   return (
     <AdminShell current="overview" adminName={user?.fullName}>
-      <div className="flex flex-col gap-6">
-        <header>
-          <h1
-            className="font-display italic"
-            style={{
-              fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.022em',
-            }}
-          >
-            Vue d&apos;ensemble
-          </h1>
-          <p className="mt-2 text-sm text-[color:var(--color-muted-foreground)]">
-            Tableau de bord de la plateforme Wedillybird
-          </p>
-        </header>
+      <AdminPage>
+        <AdminPageHeader
+          title="Vue d'ensemble"
+          description="État de la plateforme : encaissements, base installée et points qui demandent une action."
+        >
+          {alerts.length > 0 ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              {alerts.map((alert) => (
+                <AlertBanner key={alert.href} {...alert} />
+              ))}
+            </div>
+          ) : null}
+        </AdminPageHeader>
 
-        {/* Alertes — n'apparaissent que si quelque chose requiert l'attention */}
-        {kpi.pastDueSubscriptions > 0 ||
-        kpi.failedPaymentsCount > 0 ||
-        kpi.refundedPaymentsCount > 0 ? (
-          <div className="flex flex-wrap gap-3">
-            {kpi.pastDueSubscriptions > 0 ? (
-              <AlertChip
-                href="/admin/subscriptions"
-                label={`${kpi.pastDueSubscriptions} abonnement${kpi.pastDueSubscriptions > 1 ? 's' : ''} en impayé (past_due)`}
-              />
-            ) : null}
-            {kpi.failedPaymentsCount > 0 ? (
-              <AlertChip
-                href="/admin/payments"
-                label={`${kpi.failedPaymentsCount} paiement${kpi.failedPaymentsCount > 1 ? 's' : ''} échoué${kpi.failedPaymentsCount > 1 ? 's' : ''} (${formatEur(kpi.failedPaymentsAmountMinor)})`}
-              />
-            ) : null}
-            {kpi.refundedPaymentsCount > 0 ? (
-              <AlertChip
-                href="/admin/payments"
-                tone="neutral"
-                label={`${kpi.refundedPaymentsCount} remboursement${kpi.refundedPaymentsCount > 1 ? 's' : ''} (${formatEur(kpi.totalRefundedMinor)})`}
-              />
-            ) : null}
-          </div>
-        ) : null}
-
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard
-            icon={<CreditCard className="h-4 w-4" />}
+        {/* Les deux chiffres qui décident de tout le reste, seuls sur leur ligne. */}
+        <AdminStatGrid cols={2}>
+          <AdminStat
+            emphasis="hero"
+            icon={CreditCard}
             label="Revenu net"
-            value={formatEur(kpi.netRevenueMinor)}
-            sub={`brut ${formatEur(kpi.totalRevenueMinor)}`}
-          />
-          <KpiCard
-            icon={<TrendingUp className="h-4 w-4" />}
-            label="MRR"
-            value={formatEur(kpi.mrrMinor)}
-            sub={`${kpi.activeSubscriptions} abonnements actifs`}
-          />
-          <KpiCard
-            icon={<RotateCcw className="h-4 w-4" />}
-            label="Remboursements"
-            value={formatEur(kpi.totalRefundedMinor)}
-            sub={`${kpi.refundedPaymentsCount} paiement${kpi.refundedPaymentsCount > 1 ? 's' : ''}`}
-          />
-          <KpiCard
-            icon={<AlertTriangle className="h-4 w-4" />}
-            label="Paiements échoués"
-            value={kpi.failedPaymentsCount.toString()}
-            sub={formatEur(kpi.failedPaymentsAmountMinor)}
-            variant={kpi.failedPaymentsCount > 0 ? 'destructive' : undefined}
-          />
-          <KpiCard
-            icon={<Users className="h-4 w-4" />}
-            label="Utilisateurs"
-            value={kpi.totalUsers.toString()}
-            sub={`${kpi.usersByRole.couple} couples · ${kpi.usersByRole.pro} pros`}
-          />
-          <KpiCard
-            icon={<CalendarDays className="h-4 w-4" />}
-            label="Événements actifs"
-            value={kpi.activeEvents.toString()}
-            sub={`${kpi.totalEvents} total`}
-          />
-          <KpiCard
-            icon={<Building2 className="h-4 w-4" />}
-            label="Abonnements"
-            value={kpi.activeSubscriptions.toString()}
-            sub={`${kpi.pastDueSubscriptions} past_due · ${kpi.canceledSubscriptions} annulés`}
-            variant={kpi.pastDueSubscriptions > 0 ? 'destructive' : undefined}
-          />
-          <KpiCard
-            icon={<TrendingUp className="h-4 w-4" />}
-            label="Taux de conversion"
-            value={formatPercent(kpi.conversionRate)}
-            sub={`${kpi.paidEvents} payés / ${kpi.totalEvents} créés`}
-          />
-        </div>
-
-        {/* Charts Row 1 */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">Revenus par mois</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminRevenueChart data={kpi.revenueByMonth} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">
-                Nouveaux utilisateurs par mois
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminUsersChart data={kpi.usersByMonth} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts Row 2 */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">Répartition par devise</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminCurrencyChart data={kpi.revenueByCurrency} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">Répartition par provider</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminCurrencyChart data={kpi.revenueByProvider} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick links */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <QuickLink href="/admin/users" label="Gérer les utilisateurs" count={kpi.totalUsers} />
-          <QuickLink href="/admin/events" label="Gérer les événements" count={kpi.totalEvents} />
-          <QuickLink
+            value={formatEurCompact(kpi.netRevenueMinor)}
+            hint={`${formatEurCompact(kpi.totalRevenueMinor)} bruts encaissés`}
             href="/admin/payments"
-            label="Voir les paiements"
-            count={kpi.failedPaymentsCount}
-            suffix="échoués"
           />
-          <QuickLink
+          <AdminStat
+            emphasis="hero"
+            icon={TrendingUp}
+            label="MRR"
+            value={formatEurCompact(kpi.mrrMinor)}
+            hint={`${formatCount(kpi.activeSubscriptions)} abonnements actifs`}
             href="/admin/subscriptions"
-            label="Voir les abonnements"
-            count={kpi.activeSubscriptions}
-            suffix="actifs"
           />
+        </AdminStatGrid>
+
+        <AdminSection
+          title="Indicateurs"
+          description="Base installée et santé de l'encaissement."
+          bare
+        >
+          <AdminStatGrid cols={4}>
+            <AdminStat
+              icon={Users}
+              label="Utilisateurs"
+              value={formatCount(kpi.totalUsers)}
+              hint={`${formatCount(kpi.usersByRole.couple)} couples · ${formatCount(kpi.usersByRole.pro)} pros`}
+              href="/admin/users"
+            />
+            <AdminStat
+              icon={CalendarDays}
+              label="Événements actifs"
+              value={formatCount(kpi.activeEvents)}
+              hint={`${formatCount(kpi.totalEvents)} créés au total`}
+              href="/admin/events"
+            />
+            <AdminStat
+              icon={Target}
+              label="Taux de conversion"
+              value={formatRatio(kpi.conversionRate)}
+              hint={`${formatCount(kpi.paidEvents)} payés sur ${formatCount(kpi.totalEvents)}`}
+              href="/admin/analytics"
+            />
+            <AdminStat
+              icon={Building2}
+              label="Abonnements"
+              value={formatCount(kpi.activeSubscriptions)}
+              hint={`${formatCount(kpi.canceledSubscriptions)} annulés`}
+              tone={kpi.pastDueSubscriptions > 0 ? 'critical' : 'default'}
+              delta={
+                kpi.pastDueSubscriptions > 0
+                  ? {
+                      value: `${kpi.pastDueSubscriptions} past_due`,
+                      direction: 'down',
+                      good: false,
+                    }
+                  : undefined
+              }
+              href="/admin/subscriptions"
+            />
+            <AdminStat
+              icon={RotateCcw}
+              label="Remboursements"
+              value={formatEurCompact(kpi.totalRefundedMinor)}
+              hint={`${formatCount(kpi.refundedPaymentsCount)} paiement${kpi.refundedPaymentsCount > 1 ? 's' : ''}`}
+              href="/admin/payments"
+            />
+            <AdminStat
+              icon={AlertTriangle}
+              label="Paiements échoués"
+              value={formatCount(kpi.failedPaymentsCount)}
+              hint={formatEurCompact(kpi.failedPaymentsAmountMinor)}
+              tone={kpi.failedPaymentsCount > 0 ? 'critical' : 'default'}
+              href="/admin/payments"
+            />
+          </AdminStatGrid>
+        </AdminSection>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <AdminSection
+            title="Revenus par mois"
+            description="Montants encaissés, convertis en euros."
+            contentClassName="p-4"
+          >
+            <AdminRevenueChart data={kpi.revenueByMonth} />
+          </AdminSection>
+          <AdminSection
+            title="Nouveaux comptes par mois"
+            description="Créations cumulées par rôle."
+            contentClassName="p-4"
+          >
+            <AdminUsersChart data={kpi.usersByMonth} />
+          </AdminSection>
         </div>
-      </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <AdminSection title="Répartition par devise" contentClassName="p-5">
+            <AdminBreakdown data={kpi.revenueByCurrency} />
+          </AdminSection>
+          <AdminSection title="Répartition par provider" contentClassName="p-5">
+            <AdminBreakdown data={kpi.revenueByProvider} />
+          </AdminSection>
+        </div>
+      </AdminPage>
     </AdminShell>
   );
 }
 
-function AlertChip({
-  href,
-  label,
-  tone = 'destructive',
-}: {
-  href: string;
-  label: string;
-  tone?: 'destructive' | 'neutral';
-}) {
+/**
+ * Bandeau d'alerte cliquable. L'ancienne version était une pastille sans verbe :
+ * elle disait qu'il y avait un problème, pas quoi en faire. Ici le libellé porte
+ * le compte et la ligne du dessous porte l'action attendue.
+ */
+function AlertBanner({ href, label, detail }: { href: string; label: string; detail: string }) {
   return (
     <Link
       href={href as never}
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-        tone === 'destructive'
-          ? 'border-[color:var(--color-danger)]/30 bg-[color:var(--color-danger)]/10 text-[color:var(--color-danger)] hover:bg-[color:var(--color-danger)]/20'
-          : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-muted-foreground)] hover:bg-[color:var(--color-surface-elevated)]'
-      }`}
+      className="focus-ring group flex items-start gap-2.5 rounded-lg border border-[color:var(--color-danger)]/35 bg-[color:var(--color-danger-soft)]/60 px-3 py-2.5 transition-colors hover:border-[color:var(--color-danger)]/60"
     >
-      <AlertTriangle className="h-3.5 w-3.5" />
-      {label}
-    </Link>
-  );
-}
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  sub,
-  variant,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub?: string;
-  variant?: 'destructive';
-}) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-[color:var(--color-muted-foreground)]">
-          {icon}
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase">{label}</span>
-        </div>
-        <p
-          className={`mt-2 text-2xl font-semibold tracking-tight ${variant === 'destructive' ? 'text-[color:var(--color-danger)]' : ''}`}
-        >
-          {value}
-        </p>
-        {sub ? (
-          <p className="mt-1 text-xs text-[color:var(--color-muted-foreground)]">{sub}</p>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
-
-function QuickLink({
-  href,
-  label,
-  count,
-  suffix,
-}: {
-  href: string;
-  label: string;
-  count: number;
-  suffix?: string;
-}) {
-  return (
-    <Link
-      href={href as never}
-      className="group flex items-center justify-between rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4 transition-colors hover:border-[color:var(--color-border-strong)]"
-    >
-      <span className="text-sm font-medium">{label}</span>
-      <span className="font-mono text-xs text-[color:var(--color-muted-foreground)]">
-        {count}
-        {suffix ? ` ${suffix}` : ''}
+      <AlertTriangle
+        className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--color-danger)]"
+        strokeWidth={2}
+        aria-hidden
+      />
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-[color:var(--color-foreground)]">
+          {label}
+        </span>
+        <span className="block text-xs text-[color:var(--color-muted-foreground)]">{detail}</span>
       </span>
     </Link>
   );

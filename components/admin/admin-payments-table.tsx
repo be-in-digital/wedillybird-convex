@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { CreditCard, FileDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,14 +15,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { currencyDivisor, formatDateTime, formatMoneyMinor } from '@/lib/admin/format';
 import { adminRefundPaymentAction } from '@/app/[locale]/(app)/admin/actions';
+import {
+  AdminDataTable,
+  AdminFilterOption,
+  AdminFilterSelect,
+  StatusPill,
+  type AdminColumn,
+  type StatusTone,
+} from './ui';
 
 type Payment = {
   _id: string;
@@ -41,35 +45,14 @@ type Payment = {
   updatedAt: number;
 };
 
-const STATUS_VARIANT: Record<string, 'neutral' | 'success' | 'warning' | 'destructive'> = {
+const STATUS_TONE: Record<Payment['status'], StatusTone> = {
   pending: 'warning',
   succeeded: 'success',
-  failed: 'destructive',
+  failed: 'danger',
   cancelled: 'neutral',
-  refunded: 'neutral',
+  refunded: 'info',
   partially_refunded: 'warning',
 };
-
-const CURRENCY_DIVISOR: Record<string, number> = {
-  EUR: 100,
-  USD: 100,
-  XOF: 1,
-  MAD: 100,
-  TND: 1000,
-};
-
-function divisor(currency: string): number {
-  return CURRENCY_DIVISOR[currency] ?? 100;
-}
-
-function formatAmount(amountMinor: number, currency: string, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(amountMinor / divisor(currency));
-}
 
 export function AdminPaymentsTable({ payments }: { payments: Payment[] }) {
   const t = useTranslations('Admin');
@@ -77,74 +60,151 @@ export function AdminPaymentsTable({ payments }: { payments: Payment[] }) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
 
-  const filtered = payments.filter((p) => {
-    const matchStatus = statusFilter === 'all' || p.status === statusFilter;
-    const matchCurrency = currencyFilter === 'all' || p.currency === currencyFilter;
-    return matchStatus && matchCurrency;
-  });
+  const filtered = payments.filter(
+    (p) =>
+      (statusFilter === 'all' || p.status === statusFilter) &&
+      (currencyFilter === 'all' || p.currency === currencyFilter),
+  );
+
+  const columns: AdminColumn<Payment>[] = [
+    {
+      id: 'client',
+      header: t('payments.colClient'),
+      card: 'title',
+      sortValue: (p) => p.userName ?? p.userEmail ?? '',
+      cell: (p) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{p.userName ?? p.userEmail ?? '—'}</p>
+          {p.userName && p.userEmail ? (
+            <p className="truncate text-xs text-[color:var(--color-muted-foreground)]">
+              {p.userEmail}
+            </p>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      id: 'plan',
+      header: t('payments.colPlan'),
+      cell: (p) =>
+        p.plan ? (
+          <Badge variant={p.plan === 'premium' ? 'primary' : 'neutral'}>{p.plan}</Badge>
+        ) : (
+          <Badge variant="neutral">{p.kind === 'post_event_upsell' ? 'Upsell HD' : '—'}</Badge>
+        ),
+      sortValue: (p) => p.plan ?? p.kind ?? '',
+      hideBelow: 'lg',
+    },
+    {
+      id: 'amount',
+      header: t('payments.colAmount'),
+      align: 'right',
+      // Tri sur le montant brut : trier sur la chaîne formatée classerait
+      // « 1 000 € » avant « 90 € ».
+      sortValue: (p) => p.amountMinor / currencyDivisor(p.currency),
+      cell: (p) => {
+        const refunded = p.refundedAmountMinor ?? 0;
+        return (
+          <span className="font-mono whitespace-nowrap tabular-nums">
+            {formatMoneyMinor(p.amountMinor, p.currency, locale)}
+            {refunded > 0 ? (
+              <span className="ml-1 text-[0.6875rem] text-[color:var(--color-muted-foreground)]">
+                (−{formatMoneyMinor(refunded, p.currency, locale)})
+              </span>
+            ) : null}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'provider',
+      header: t('payments.colProvider'),
+      sortValue: (p) => p.provider,
+      cell: (p) => <span className="text-[color:var(--color-muted-foreground)]">{p.provider}</span>,
+      hideBelow: 'xl',
+    },
+    {
+      id: 'status',
+      header: t('payments.colStatus'),
+      card: 'badge',
+      sortValue: (p) => p.status,
+      cell: (p) => (
+        <StatusPill tone={STATUS_TONE[p.status] ?? 'neutral'}>
+          {t.has(`paymentStatuses.${p.status}`) ? t(`paymentStatuses.${p.status}`) : p.status}
+        </StatusPill>
+      ),
+    },
+    {
+      id: 'date',
+      header: t('payments.colDate'),
+      sortValue: (p) => p.createdAt,
+      cell: (p) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {formatDateTime(p.createdAt, locale)}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: t('common.colActions'),
+      card: 'actions',
+      align: 'right',
+      width: 'w-40',
+      cell: (p) => <PaymentActions payment={p} />,
+    },
+  ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-foreground)]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('payments.statusFilterAll')}</SelectItem>
-            <SelectItem value="succeeded">{t('paymentStatuses.succeeded')}</SelectItem>
-            <SelectItem value="pending">{t('paymentStatuses.pending')}</SelectItem>
-            <SelectItem value="failed">{t('paymentStatuses.failed')}</SelectItem>
-            <SelectItem value="cancelled">{t('paymentStatuses.cancelled')}</SelectItem>
-            <SelectItem value="refunded">{t('paymentStatuses.refunded')}</SelectItem>
-            <SelectItem value="partially_refunded">
+    <AdminDataTable
+      rows={filtered}
+      columns={columns}
+      getRowId={(p) => p._id}
+      searchable={(p) => `${p.userName ?? ''} ${p.userEmail ?? ''} ${p.plan ?? ''} ${p.provider}`}
+      initialSort={{ id: 'date', dir: 'desc' }}
+      emptyTitle={t('payments.emptyTitle')}
+      emptyDescription={t('payments.emptyDescription')}
+      emptyIcon={CreditCard}
+      filters={
+        <>
+          <AdminFilterSelect
+            label={t('payments.colStatus')}
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+          >
+            <AdminFilterOption value="all">{t('payments.statusFilterAll')}</AdminFilterOption>
+            <AdminFilterOption value="succeeded">
+              {t('paymentStatuses.succeeded')}
+            </AdminFilterOption>
+            <AdminFilterOption value="pending">{t('paymentStatuses.pending')}</AdminFilterOption>
+            <AdminFilterOption value="failed">{t('paymentStatuses.failed')}</AdminFilterOption>
+            <AdminFilterOption value="cancelled">
+              {t('paymentStatuses.cancelled')}
+            </AdminFilterOption>
+            <AdminFilterOption value="refunded">{t('paymentStatuses.refunded')}</AdminFilterOption>
+            <AdminFilterOption value="partially_refunded">
               {t('paymentStatuses.partially_refunded')}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
-          <SelectTrigger className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-foreground)]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('payments.currencyFilterAll')}</SelectItem>
-            <SelectItem value="EUR">EUR</SelectItem>
-            <SelectItem value="USD">USD</SelectItem>
-            <SelectItem value="XOF">XOF</SelectItem>
-            <SelectItem value="MAD">MAD</SelectItem>
-            <SelectItem value="TND">TND</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="font-mono text-xs text-[color:var(--color-muted-foreground)]">
-          {t('payments.count', { count: filtered.length })}
-        </span>
-      </div>
-
-      <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-        <table className="w-full min-w-[760px] text-sm">
-          <thead>
-            <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-              <Th>{t('payments.colClient')}</Th>
-              <Th>{t('payments.colPlan')}</Th>
-              <Th>{t('payments.colAmount')}</Th>
-              <Th>{t('payments.colProvider')}</Th>
-              <Th>{t('payments.colStatus')}</Th>
-              <Th>{t('payments.colDate')}</Th>
-              <Th>{t('common.colActions')}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((p) => (
-              <PaymentRow key={p._id} payment={p} locale={locale} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+            </AdminFilterOption>
+          </AdminFilterSelect>
+          <AdminFilterSelect
+            label={t('payments.colAmount')}
+            value={currencyFilter}
+            onValueChange={setCurrencyFilter}
+            widthClassName="w-full sm:w-auto sm:min-w-[8.5rem]"
+          >
+            <AdminFilterOption value="all">{t('payments.currencyFilterAll')}</AdminFilterOption>
+            <AdminFilterOption value="EUR">EUR</AdminFilterOption>
+            <AdminFilterOption value="USD">USD</AdminFilterOption>
+            <AdminFilterOption value="XOF">XOF</AdminFilterOption>
+            <AdminFilterOption value="MAD">MAD</AdminFilterOption>
+            <AdminFilterOption value="TND">TND</AdminFilterOption>
+          </AdminFilterSelect>
+        </>
+      }
+    />
   );
 }
 
-function PaymentRow({ payment: p, locale }: { payment: Payment; locale: string }) {
+function PaymentActions({ payment: p }: { payment: Payment }) {
   const t = useTranslations('Admin');
   const refunded = p.refundedAmountMinor ?? 0;
   const remaining = p.amountMinor - refunded;
@@ -153,55 +213,25 @@ function PaymentRow({ payment: p, locale }: { payment: Payment; locale: string }
   const hasInvoice =
     p.status === 'succeeded' || p.status === 'partially_refunded' || p.status === 'refunded';
 
+  if (!hasInvoice && !canRefund) {
+    return <span className="text-xs text-[color:var(--color-muted-foreground)]">—</span>;
+  }
+
   return (
-    <tr className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50">
-      <td className="px-4 py-3 font-medium">{p.userName ?? p.userEmail ?? '—'}</td>
-      <td className="px-4 py-3">
-        {p.plan ? (
-          <Badge variant={p.plan === 'premium' ? 'primary' : 'neutral'}>{p.plan}</Badge>
-        ) : (
-          <Badge variant="neutral">{p.kind === 'post_event_upsell' ? 'Upsell HD' : '—'}</Badge>
-        )}
-      </td>
-      <td className="px-4 py-3 font-mono">
-        {formatAmount(p.amountMinor, p.currency, locale)}
-        {refunded > 0 ? (
-          <span className="ml-1 text-[10px] text-[color:var(--color-muted-foreground)]">
-            (−{formatAmount(refunded, p.currency, locale)})
-          </span>
-        ) : null}
-      </td>
-      <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">{p.provider}</td>
-      <td className="px-4 py-3">
-        <Badge variant={STATUS_VARIANT[p.status] ?? 'neutral'}>
-          {t.has(`paymentStatuses.${p.status}`) ? t(`paymentStatuses.${p.status}`) : p.status}
-        </Badge>
-      </td>
-      <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-        {new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
-          new Date(p.createdAt),
-        )}
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1">
-          {hasInvoice ? (
-            <a
-              href={`/api/payments/${p._id}/invoice.pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)]"
-            >
-              {t('payments.invoice')}
-            </a>
-          ) : null}
-          {canRefund ? (
-            <RefundDialog payment={p} remaining={remaining} />
-          ) : !hasInvoice ? (
-            <span className="text-xs text-[color:var(--color-muted-foreground)]">—</span>
-          ) : null}
-        </div>
-      </td>
-    </tr>
+    <div className="flex flex-wrap items-center justify-end gap-1">
+      {hasInvoice ? (
+        <a
+          href={`/api/payments/${p._id}/invoice.pdf`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)]"
+        >
+          <FileDown className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+          {t('payments.invoice')}
+        </a>
+      ) : null}
+      {canRefund ? <RefundDialog payment={p} remaining={remaining} /> : null}
+    </div>
   );
 }
 
@@ -214,7 +244,7 @@ function RefundDialog({ payment: p, remaining }: { payment: Payment; remaining: 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const div = divisor(p.currency);
+  const div = currencyDivisor(p.currency);
   const maxMajor = remaining / div;
 
   function submit() {
@@ -247,7 +277,10 @@ function RefundDialog({ payment: p, remaining }: { payment: Payment; remaining: 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10">
+        <button
+          type="button"
+          className="focus-ring inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger-soft)]"
+        >
           {t('payments.refund.trigger')}
         </button>
       </DialogTrigger>
@@ -258,7 +291,7 @@ function RefundDialog({ payment: p, remaining }: { payment: Payment; remaining: 
             {t.rich('payments.refund.description', {
               client: p.userName ?? p.userEmail ?? t('payments.clientFallback'),
               plan: p.plan ?? 'Upsell HD',
-              amount: formatAmount(remaining, p.currency, locale),
+              amount: formatMoneyMinor(remaining, p.currency, locale),
               mono: (chunks) => <span className="font-mono">{chunks}</span>,
             })}{' '}
             {p.provider === 'mock'
@@ -268,12 +301,10 @@ function RefundDialog({ payment: p, remaining }: { payment: Payment; remaining: 
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+            <Checkbox
               checked={partial}
-              onChange={(e) => setPartial(e.target.checked)}
-              className="h-4 w-4 rounded border-[color:var(--color-border)] accent-[color:var(--color-primary)]"
+              onCheckedChange={(checked) => setPartial(checked === true)}
             />
             {t('payments.refund.partialLabel')}
           </label>
@@ -286,6 +317,7 @@ function RefundDialog({ payment: p, remaining }: { payment: Payment; remaining: 
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={maxMajor.toFixed(div === 1 ? 0 : 2)}
+                aria-label={t('payments.refund.partialLabel')}
                 className="focus-ring w-32 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 font-mono text-sm text-[color:var(--color-foreground)]"
               />
               <span className="font-mono text-xs text-[color:var(--color-muted-foreground)]">
@@ -294,7 +326,11 @@ function RefundDialog({ payment: p, remaining }: { payment: Payment; remaining: 
             </div>
           ) : null}
 
-          {error ? <p className="text-sm text-[color:var(--color-danger)]">{error}</p> : null}
+          {error ? (
+            <p role="alert" className="text-sm text-[color:var(--color-danger)]">
+              {error}
+            </p>
+          ) : null}
         </div>
 
         <DialogFooter>
@@ -309,19 +345,11 @@ function RefundDialog({ payment: p, remaining }: { payment: Payment; remaining: 
               : partial
                 ? t('payments.refund.submitPartial')
                 : t('payments.refund.submitFull', {
-                    amount: formatAmount(remaining, p.currency, locale),
+                    amount: formatMoneyMinor(remaining, p.currency, locale),
                   })}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-      {children}
-    </th>
   );
 }

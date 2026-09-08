@@ -2,22 +2,35 @@
 
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { CalendarDays, Gift, MoreHorizontal, Trash2, Undo2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useServerAction } from '@/components/admin/use-admin-action';
+import { formatDate } from '@/lib/admin/format';
 import {
   adminUpdateEventStatusAction,
   adminDeleteEventAction,
   adminGrantEventPlanAction,
   adminRevokeEventPlanAction,
 } from '@/app/[locale]/(app)/admin/actions';
+import {
+  AdminDataTable,
+  AdminFilterOption,
+  AdminFilterSelect,
+  StatusPill,
+  type AdminColumn,
+  type StatusTone,
+} from './ui';
 
 type Event = {
   _id: string;
@@ -37,94 +50,134 @@ type Event = {
   updatedAt: number;
 };
 
-const STATUS_VARIANT: Record<string, 'neutral' | 'success' | 'warning' | 'destructive'> = {
+const STATUS_TONE: Record<Event['status'], StatusTone> = {
   draft: 'neutral',
   active: 'success',
   archived: 'warning',
-  cancelled: 'destructive',
+  cancelled: 'danger',
 };
+
+const STATUSES = ['draft', 'active', 'archived', 'cancelled'] as const;
 
 export function AdminEventsTable({ events }: { events: Event[] }) {
   const t = useTranslations('Admin');
-  const [search, setSearch] = useState('');
+  const locale = useLocale();
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const filtered = events.filter((e) => {
-    const matchSearch =
-      !search ||
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.coupleNames.partnerA.toLowerCase().includes(search.toLowerCase()) ||
-      e.coupleNames.partnerB.toLowerCase().includes(search.toLowerCase()) ||
-      e.ownerEmail?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'all' || e.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = events.filter((e) => statusFilter === 'all' || e.status === statusFilter);
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="text"
-          placeholder={t('events.searchPlaceholder')}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-foreground)] placeholder:text-[color:var(--color-muted-foreground)] focus:ring-1 focus:ring-[color:var(--color-border-strong)] focus:outline-none"
-        />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-foreground)]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('events.statusFilterAll')}</SelectItem>
-            <SelectItem value="draft">{t('eventStatuses.draft')}</SelectItem>
-            <SelectItem value="active">{t('eventStatuses.active')}</SelectItem>
-            <SelectItem value="archived">{t('eventStatuses.archived')}</SelectItem>
-            <SelectItem value="cancelled">{t('eventStatuses.cancelled')}</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="font-mono text-xs text-[color:var(--color-muted-foreground)]">
-          {t('events.count', { count: filtered.length })}
+  const columns: AdminColumn<Event>[] = [
+    {
+      id: 'couple',
+      header: t('events.colCouple'),
+      card: 'title',
+      sortValue: (e) => `${e.coupleNames.partnerA} ${e.coupleNames.partnerB}`,
+      cell: (e) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">
+            {e.coupleNames.partnerA} &amp; {e.coupleNames.partnerB}
+          </p>
+          <p className="truncate text-xs text-[color:var(--color-muted-foreground)]">{e.title}</p>
+        </div>
+      ),
+    },
+    {
+      id: 'date',
+      header: t('events.colDate'),
+      sortValue: (e) => e.eventDate,
+      cell: (e) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {formatDate(e.eventDate, locale)}
         </span>
-      </div>
+      ),
+    },
+    {
+      id: 'status',
+      header: t('events.colStatus'),
+      card: 'badge',
+      sortValue: (e) => e.status,
+      cell: (e) => (
+        <StatusPill tone={STATUS_TONE[e.status] ?? 'neutral'}>
+          {t(`eventStatuses.${e.status}`)}
+        </StatusPill>
+      ),
+    },
+    {
+      id: 'plan',
+      header: t('events.colPlan'),
+      sortValue: (e) => e.planTier ?? '',
+      cell: (e) => (
+        <span className="flex flex-wrap items-center gap-1.5 text-[color:var(--color-muted-foreground)]">
+          {e.planTier ?? '—'}
+          {e.comped ? <Badge variant="warning">{t('events.compedBadge')}</Badge> : null}
+        </span>
+      ),
+    },
+    {
+      id: 'owner',
+      header: t('events.colOwner'),
+      sortValue: (e) => e.ownerName ?? e.ownerEmail ?? '',
+      cell: (e) => (
+        <span className="truncate text-[color:var(--color-muted-foreground)]">
+          {e.ownerName ?? e.ownerEmail ?? '—'}
+        </span>
+      ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'actions',
+      header: t('common.colActions'),
+      card: 'actions',
+      align: 'right',
+      width: 'w-16',
+      cell: (e) => <EventActions event={e} />,
+    },
+  ];
 
-      <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-        <table className="w-full min-w-[720px] text-sm">
-          <thead>
-            <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-              <Th>{t('events.colCouple')}</Th>
-              <Th>{t('events.colTitle')}</Th>
-              <Th>{t('events.colDate')}</Th>
-              <Th>{t('events.colStatus')}</Th>
-              <Th>{t('events.colPlan')}</Th>
-              <Th>{t('events.colOwner')}</Th>
-              <Th>{t('common.colActions')}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((e) => (
-              <EventRow key={e._id} event={e} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-      {children}
-    </th>
+    <AdminDataTable
+      rows={filtered}
+      columns={columns}
+      getRowId={(e) => e._id}
+      searchable={(e) =>
+        `${e.title} ${e.coupleNames.partnerA} ${e.coupleNames.partnerB} ${e.ownerName ?? ''} ${e.ownerEmail ?? ''}`
+      }
+      searchPlaceholder={t('events.searchPlaceholder')}
+      initialSort={{ id: 'date', dir: 'desc' }}
+      emptyTitle={t('events.emptyTitle')}
+      emptyDescription={t('events.emptyDescription')}
+      emptyIcon={CalendarDays}
+      filters={
+        <AdminFilterSelect
+          label={t('events.colStatus')}
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+        >
+          <AdminFilterOption value="all">{t('events.statusFilterAll')}</AdminFilterOption>
+          {STATUSES.map((s) => (
+            <AdminFilterOption key={s} value={s}>
+              {t(`eventStatuses.${s}`)}
+            </AdminFilterOption>
+          ))}
+        </AdminFilterSelect>
+      }
+    />
   );
 }
 
-function EventRow({ event }: { event: Event }) {
+/**
+ * Actions d'une ligne, repliées dans un menu.
+ *
+ * La version précédente alignait un select de statut, deux boutons d'offre et un
+ * bouton de suppression **dans la cellule** : cinq cibles côte à côte, illisibles
+ * dès que la fenêtre rétrécissait, et impossibles à atteindre sur téléphone. Un
+ * seul déclencheur, un menu qui nomme chaque geste.
+ */
+function EventActions({ event }: { event: Event }) {
   const t = useTranslations('Admin');
   // Le libellé du forfait, traduit : la confirmation disait « le forfait
   // « premium » », c'est-à-dire la valeur en base, pas un mot français.
   const tPlans = useTranslations('Plans.tiers');
-  const locale = useLocale();
   const { execute: updateStatus, loading: updating } = useServerAction(
     adminUpdateEventStatusAction,
   );
@@ -132,119 +185,107 @@ function EventRow({ event }: { event: Event }) {
   const { execute: grantPlan, loading: granting } = useServerAction(adminGrantEventPlanAction);
   const { execute: revokePlan, loading: revoking } = useServerAction(adminRevokeEventPlanAction);
   const { confirm, confirmDialog } = useConfirm();
+  const busy = updating || deleting || granting || revoking;
 
   return (
     <>
-      <tr className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50">
-        <td className="px-4 py-3 font-medium">
-          {event.coupleNames.partnerA} & {event.coupleNames.partnerB}
-        </td>
-        <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">{event.title}</td>
-        <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-          {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-            new Date(event.eventDate),
-          )}
-        </td>
-        <td className="px-4 py-3">
-          <Badge variant={STATUS_VARIANT[event.status] ?? 'neutral'}>
-            {t(`eventStatuses.${event.status}`)}
-          </Badge>
-        </td>
-        <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-          <span className="flex flex-wrap items-center gap-1.5">
-            {event.planTier ?? '—'}
-            {event.comped ? <Badge variant="warning">{t('events.compedBadge')}</Badge> : null}
-          </span>
-        </td>
-        <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-          {event.ownerName ?? event.ownerEmail ?? '—'}
-        </td>
-        <td className="px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Select
-              value=""
-              disabled={updating}
-              onValueChange={async (v) => {
-                const newStatus = v as Event['status'];
-                if (
-                  await confirm({
-                    // Libellé traduit, pas la valeur en base : « Actif », pas « active ».
-                    title: t('events.confirmChangeStatus', {
-                      status: t(`eventStatuses.${newStatus}`),
-                    }),
-                  })
-                ) {
-                  updateStatus(event._id, newStatus);
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            disabled={busy}
+            aria-label={t('common.colActions')}
+            className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-md text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)] disabled:opacity-50"
+          >
+            <MoreHorizontal className="h-4 w-4" strokeWidth={2} aria-hidden />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>{t('events.statusPlaceholder')}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={event.status}
+            onValueChange={async (value) => {
+              const newStatus = value as Event['status'];
+              if (newStatus === event.status) return;
+              if (
+                await confirm({
+                  // Libellé traduit, pas la valeur en base : « Actif », pas « active ».
+                  title: t('events.confirmChangeStatus', {
+                    status: t(`eventStatuses.${newStatus}`),
+                  }),
+                })
+              ) {
+                updateStatus(event._id, newStatus);
+              }
+            }}
+          >
+            {STATUSES.map((s) => (
+              <DropdownMenuRadioItem key={s} value={s}>
+                {t(`eventStatuses.${s}`)}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+
+          <DropdownMenuSeparator />
+
+          {/* Forfait offert : la seule façon de donner un accès Premium sans
+              transaction Stripe (partenariat, démo). La révocation n'est
+              proposée que sur un forfait effectivement offert — le serveur
+              refuse de toute façon sur un event payé. */}
+          {event.comped ? (
+            <DropdownMenuItem
+              onSelect={async () => {
+                if (await confirm({ title: t('events.confirmRevokePlan'), destructive: true })) {
+                  revokePlan(event._id, undefined);
                 }
               }}
             >
-              <SelectTrigger className="rounded-md border border-[color:var(--color-border)] bg-transparent px-2 py-1 text-xs text-[color:var(--color-muted-foreground)]">
-                <SelectValue placeholder={t('events.statusPlaceholder')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="draft">{t('eventStatuses.draft')}</SelectItem>
-                <SelectItem value="active">{t('eventStatuses.active')}</SelectItem>
-                <SelectItem value="archived">{t('eventStatuses.archived')}</SelectItem>
-                <SelectItem value="cancelled">{t('eventStatuses.cancelled')}</SelectItem>
-              </SelectContent>
-            </Select>
-            {/* Forfait offert : la seule façon de donner un accès Premium sans
-                transaction Stripe (partenariat, démo). La révocation n'est
-                proposée que sur un forfait effectivement offert — le serveur
-                refuse de toute façon sur un event payé. */}
-            {event.comped ? (
-              <button
-                onClick={async () => {
-                  if (await confirm({ title: t('events.confirmRevokePlan'), destructive: true })) {
-                    revokePlan(event._id, undefined);
+              <Undo2 strokeWidth={1.75} aria-hidden />
+              {t('events.revokePlan')}
+            </DropdownMenuItem>
+          ) : (
+            <>
+              {/* Premium est le geste par défaut : un menu où il faut encore
+                  choisir n'a pas de défaut. L'entrée principale n'envoie donc
+                  AUCUN tier — c'est `DEFAULT_COMPED_EVENT_PLAN` qui tranche côté
+                  serveur. L'Essentiel reste offrable, en le demandant. */}
+              <DropdownMenuItem
+                onSelect={async () => {
+                  if (
+                    await confirm({
+                      title: t('events.confirmGrantPlan', { plan: tPlans('premium') }),
+                    })
+                  ) {
+                    grantPlan(event._id, undefined, undefined);
                   }
                 }}
-                disabled={revoking}
-                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
               >
-                {t('events.revokePlan')}
-              </button>
-            ) : (
-              // Premium est le geste par défaut : un menu où il faut encore
-              // choisir n'a pas de défaut. Le bouton principal n'envoie donc
-              // AUCUN tier — c'est `DEFAULT_COMPED_EVENT_PLAN` qui tranche côté
-              // serveur. L'Essentiel reste offrable, en le demandant.
-              <>
-                <button
-                  onClick={async () => {
-                    if (
-                      await confirm({
-                        title: t('events.confirmGrantPlan', { plan: tPlans('premium') }),
-                      })
-                    ) {
-                      grantPlan(event._id, undefined, undefined);
-                    }
-                  }}
-                  disabled={granting}
-                  className="rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs font-medium text-[color:var(--color-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
-                >
-                  {t('events.grantPremium')}
-                </button>
-                <button
-                  onClick={async () => {
-                    if (
-                      await confirm({
-                        title: t('events.confirmGrantPlan', { plan: tPlans('essential') }),
-                      })
-                    ) {
-                      grantPlan(event._id, 'essential', undefined);
-                    }
-                  }}
-                  disabled={granting}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
-                >
-                  {t('events.grantEssential')}
-                </button>
-              </>
-            )}
-            {event.status !== 'cancelled' ? (
-              <button
-                onClick={async () => {
+                <Gift strokeWidth={1.75} aria-hidden />
+                {t('events.grantPremium')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={async () => {
+                  if (
+                    await confirm({
+                      title: t('events.confirmGrantPlan', { plan: tPlans('essential') }),
+                    })
+                  ) {
+                    grantPlan(event._id, 'essential', undefined);
+                  }
+                }}
+              >
+                <Gift strokeWidth={1.75} aria-hidden />
+                {t('events.grantEssential')}
+              </DropdownMenuItem>
+            </>
+          )}
+
+          {event.status !== 'cancelled' ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={async () => {
                   if (
                     await confirm({
                       title: t('events.confirmDelete', { title: event.title }),
@@ -254,15 +295,14 @@ function EventRow({ event }: { event: Event }) {
                     deleteEvent(event._id);
                   }
                 }}
-                disabled={deleting}
-                className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10 disabled:opacity-50"
               >
+                <Trash2 strokeWidth={1.75} aria-hidden />
                 {t('common.delete')}
-              </button>
-            ) : null}
-          </div>
-        </td>
-      </tr>
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
       {confirmDialog}
     </>
   );

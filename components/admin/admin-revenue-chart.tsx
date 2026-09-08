@@ -1,53 +1,36 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useLocale, useTranslations } from 'next-intl';
+import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
+import { formatEurCompact } from '@/lib/admin/format';
+import { AXIS_PROPS, GRID_PROPS, SERIES, TOOLTIP_PROPS, compactNumber } from './charts/chart-theme';
+import { ChartFrame } from './charts/chart-frame';
 
+/** Revenu encaissé par mois. Une seule série → pas de légende, le titre suffit. */
 export function AdminRevenueChart({ data }: { data: Record<string, number> }) {
   const t = useTranslations('Admin');
+  const locale = useLocale();
+
   const chartData = Object.entries(data)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, amount]) => ({
-      month: month.slice(2),
-      revenue: amount / 100,
-    }));
-
-  if (chartData.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-sm text-[color:var(--color-muted-foreground)]">
-        {t('charts.noData')}
-      </div>
-    );
-  }
+    .map(([month, amountMinor]) => ({ month: month.slice(2), revenue: amountMinor / 100 }));
 
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-        <XAxis
-          dataKey="month"
-          stroke="var(--color-muted-foreground)"
-          fontSize={11}
-          tickLine={false}
-        />
-        <YAxis
-          stroke="var(--color-muted-foreground)"
-          fontSize={11}
-          tickLine={false}
-          tickFormatter={(v: number) => `${v} €`}
-        />
+    <ChartFrame isEmpty={chartData.length === 0}>
+      <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+        <CartesianGrid {...GRID_PROPS} />
+        <XAxis dataKey="month" {...AXIS_PROPS} />
+        <YAxis {...AXIS_PROPS} width={48} tickFormatter={(v: number) => compactNumber(v, locale)} />
         <Tooltip
-          contentStyle={{
-            background: 'var(--color-surface-elevated)',
-            border: '1px solid var(--color-border)',
-            borderRadius: '8px',
-            color: 'var(--color-foreground)',
-            fontSize: 12,
-          }}
-          formatter={(value) => [`${value} €`, t('charts.revenue')]}
+          {...TOOLTIP_PROPS}
+          formatter={(value) => [
+            formatEurCompact(Number(value) * 100, locale),
+            t('charts.revenue'),
+          ]}
         />
-        <Bar dataKey="revenue" fill="oklch(65% 0.15 22)" radius={[4, 4, 0, 0]} />
+        {/* Coins arrondis côté valeur seulement : la base reste ancrée à l'axe. */}
+        <Bar dataKey="revenue" fill={SERIES.brand} radius={[4, 4, 0, 0]} maxBarSize={44} />
       </BarChart>
-    </ResponsiveContainer>
+    </ChartFrame>
   );
 }

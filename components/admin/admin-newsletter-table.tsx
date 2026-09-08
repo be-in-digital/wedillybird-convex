@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Badge } from '@/components/ui/badge';
+import { Mail } from 'lucide-react';
+import { formatDate } from '@/lib/admin/format';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  AdminDataTable,
+  AdminFilterOption,
+  AdminFilterSelect,
+  StatusPill,
+  type AdminColumn,
+} from './ui';
 
 type Subscriber = {
   _id: string;
@@ -24,92 +25,86 @@ export function AdminNewsletterTable({ subscribers }: { subscribers: Subscriber[
   const t = useTranslations('Admin');
   const locale = useLocale();
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [search, setSearch] = useState('');
 
-  const filtered = subscribers.filter((s) => {
-    const matchSearch = !search || s.email.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'all' || s.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = subscribers.filter((s) => statusFilter === 'all' || s.status === statusFilter);
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="text"
-          placeholder={t('newsletter.searchPlaceholder')}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-foreground)] placeholder:text-[color:var(--color-muted-foreground)] focus:ring-1 focus:ring-[color:var(--color-border-strong)] focus:outline-none"
-        />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-foreground)]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('newsletter.statusFilterAll')}</SelectItem>
-            <SelectItem value="active">{t('newsletter.statusFilterActive')}</SelectItem>
-            <SelectItem value="unsubscribed">{t('newsletter.statusFilterUnsubscribed')}</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="font-mono text-xs text-[color:var(--color-muted-foreground)]">
-          {t('newsletter.count', { count: filtered.length })}
+  const columns: AdminColumn<Subscriber>[] = [
+    {
+      id: 'email',
+      header: t('newsletter.colEmail'),
+      card: 'title',
+      sortValue: (s) => s.email,
+      cell: (s) => <span className="font-medium break-all">{s.email}</span>,
+    },
+    {
+      id: 'status',
+      header: t('newsletter.colStatus'),
+      card: 'badge',
+      sortValue: (s) => s.status,
+      cell: (s) => (
+        <StatusPill tone={s.status === 'active' ? 'success' : 'neutral'}>
+          {s.status === 'active'
+            ? t('newsletter.statusActive')
+            : t('newsletter.statusUnsubscribed')}
+        </StatusPill>
+      ),
+    },
+    {
+      id: 'source',
+      header: t('newsletter.colSource'),
+      sortValue: (s) => s.source ?? '',
+      cell: (s) => (
+        <span className="text-[color:var(--color-muted-foreground)]">{s.source ?? '—'}</span>
+      ),
+    },
+    {
+      id: 'subscribedAt',
+      header: t('newsletter.colSubscribedAt'),
+      sortValue: (s) => s.subscribedAt,
+      cell: (s) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {formatDate(s.subscribedAt, locale)}
         </span>
-      </div>
+      ),
+    },
+    {
+      id: 'unsubscribedAt',
+      header: t('newsletter.colUnsubscribedAt'),
+      sortValue: (s) => s.unsubscribedAt ?? null,
+      cell: (s) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {s.unsubscribedAt ? formatDate(s.unsubscribedAt, locale) : '—'}
+        </span>
+      ),
+      hideBelow: 'lg',
+    },
+  ];
 
-      <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-              <Th>{t('newsletter.colEmail')}</Th>
-              <Th>{t('newsletter.colStatus')}</Th>
-              <Th>{t('newsletter.colSource')}</Th>
-              <Th>{t('newsletter.colSubscribedAt')}</Th>
-              <Th>{t('newsletter.colUnsubscribedAt')}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((s) => (
-              <tr
-                key={s._id}
-                className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50"
-              >
-                <td className="px-4 py-3 font-medium">{s.email}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={s.status === 'active' ? 'success' : 'neutral'}>
-                    {s.status === 'active'
-                      ? t('newsletter.statusActive')
-                      : t('newsletter.statusUnsubscribed')}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                  {s.source ?? '—'}
-                </td>
-                <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                  {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-                    new Date(s.subscribedAt),
-                  )}
-                </td>
-                <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                  {s.unsubscribedAt
-                    ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-                        new Date(s.unsubscribedAt),
-                      )
-                    : '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-      {children}
-    </th>
+    <AdminDataTable
+      rows={filtered}
+      columns={columns}
+      getRowId={(s) => s._id}
+      searchable={(s) => `${s.email} ${s.source ?? ''}`}
+      searchPlaceholder={t('newsletter.searchPlaceholder')}
+      initialSort={{ id: 'subscribedAt', dir: 'desc' }}
+      pageSize={50}
+      emptyTitle={t('newsletter.emptyTitle')}
+      emptyDescription={t('newsletter.emptyDescription')}
+      emptyIcon={Mail}
+      filters={
+        <AdminFilterSelect
+          label={t('newsletter.colStatus')}
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+        >
+          <AdminFilterOption value="all">{t('newsletter.statusFilterAll')}</AdminFilterOption>
+          <AdminFilterOption value="active">{t('newsletter.statusFilterActive')}</AdminFilterOption>
+          <AdminFilterOption value="unsubscribed">
+            {t('newsletter.statusFilterUnsubscribed')}
+          </AdminFilterOption>
+        </AdminFilterSelect>
+      }
+    />
   );
 }

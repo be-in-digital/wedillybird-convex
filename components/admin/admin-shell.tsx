@@ -1,57 +1,50 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import {
-  LayoutDashboard,
-  BarChart3,
-  Megaphone,
-  Users,
-  CalendarDays,
-  CreditCard,
-  FileText,
-  BookOpen,
-  Building2,
-  Ticket,
-  Handshake,
-  Shield,
-  Mail,
-  ScrollText,
-  Bug,
-  LogOut,
-  Menu,
-  X,
-} from 'lucide-react';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { useEffect, type ReactNode } from 'react';
+import { ChevronsUpDown, LogOut, SquareArrowOutUpRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
 import { signOutAction } from '@/app/[locale]/(auth)/actions';
 import { cn } from '@/lib/cn';
+import { initialsOf } from '@/lib/admin/format';
 import { ThemeProvider } from '@/components/ui/theme-provider';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuLabel,
+  SidebarProvider,
+  SidebarToggle,
+  SidebarTrigger,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { ADMIN_NAV, adminNavItem, type AdminSection } from './admin-nav';
+import { AdminCommandPalette } from './admin-command-palette';
 
-const NAV_ITEMS = [
-  { key: 'overview', href: '/admin', icon: LayoutDashboard, labelKey: 'nav.overview' },
-  { key: 'analytics', href: '/admin/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
-  { key: 'acquisition', href: '/admin/acquisition', icon: Megaphone, labelKey: 'nav.acquisition' },
-  { key: 'users', href: '/admin/users', icon: Users, labelKey: 'nav.users' },
-  { key: 'events', href: '/admin/events', icon: CalendarDays, labelKey: 'nav.events' },
-  { key: 'payments', href: '/admin/payments', icon: CreditCard, labelKey: 'nav.payments' },
-  { key: 'invoices', href: '/admin/invoices', icon: FileText, labelKey: 'nav.invoices' },
-  { key: 'photo-books', href: '/admin/photo-books', icon: BookOpen, labelKey: 'nav.photoBooks' },
-  {
-    key: 'subscriptions',
-    href: '/admin/subscriptions',
-    icon: Building2,
-    labelKey: 'nav.subscriptions',
-  },
-  { key: 'promotions', href: '/admin/promotions', icon: Ticket, labelKey: 'nav.promotions' },
-  { key: 'affiliates', href: '/admin/affiliates', icon: Handshake, labelKey: 'nav.affiliates' },
-  { key: 'moderation', href: '/admin/moderation', icon: Shield, labelKey: 'nav.moderation' },
-  { key: 'newsletter', href: '/admin/newsletter', icon: Mail, labelKey: 'nav.newsletter' },
-  { key: 'audit-log', href: '/admin/audit-log', icon: ScrollText, labelKey: 'nav.auditLog' },
-  { key: 'bug-reports', href: '/admin/bug-reports', icon: Bug, labelKey: 'nav.bugReports' },
-] as const;
-
-export type AdminSection = (typeof NAV_ITEMS)[number]['key'];
+export type { AdminSection };
 
 export interface AdminShellProps {
   children: ReactNode;
@@ -60,125 +53,195 @@ export interface AdminShellProps {
 }
 
 /**
- * Shell du back-office admin (dark). Sidebar fixe ≥ md ; sur mobile elle devient
- * un tiroir (Radix Dialog latéral) déclenché depuis une barre supérieure — sinon
- * les 240px de rail écrasaient le contenu à ~135px sur téléphone.
+ * Shell du back-office super admin (thème dark « Linear-grade », DESIGN.md §2).
+ *
+ * Structure : rail de navigation groupé et repliable à gauche, barre supérieure
+ * collante (fil d'Ariane + palette ⌘K + menu compte), contenu au centre. Sur
+ * mobile le rail devient un tiroir — mais c'est le CSS qui tranche, pas un hook
+ * de largeur, pour qu'aucune sidebar ne clignote à l'hydratation.
  */
 export function AdminShell({ children, current, adminName }: AdminShellProps) {
-  const t = useTranslations('Admin');
-  const [open, setOpen] = useState(false);
-
-  const renderNav = (onNavigate?: () => void) => (
-    <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">
-      {NAV_ITEMS.map((item) => {
-        const active = item.key === current;
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.key}
-            href={item.href as never}
-            onClick={onNavigate}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-              active
-                ? 'bg-[color:var(--color-surface-elevated)] text-[color:var(--color-foreground)]'
-                : 'text-[color:var(--color-muted-foreground)] hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)]',
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-            {t(item.labelKey)}
-          </Link>
-        );
-      })}
-    </nav>
-  );
-
-  const renderBrand = () => (
-    <div className="flex items-center gap-2 px-5 py-4">
-      <span
-        aria-hidden
-        className="inline-block h-2 w-2 rounded-full"
-        style={{ background: 'oklch(65% 0.15 22)' }}
-      />
-      <span className="font-display text-lg tracking-tight italic">{t('shell.brand')}</span>
-    </div>
-  );
-
-  const renderFooter = () => (
-    <div className="border-t border-[color:var(--color-border)] px-3 py-4">
-      {adminName ? (
-        <p className="mb-3 truncate px-3 font-mono text-[10px] tracking-[0.24em] text-[color:var(--color-muted-foreground)] uppercase">
-          {adminName}
-        </p>
-      ) : null}
-      <form action={signOutAction}>
-        <button
-          type="submit"
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)]"
-        >
-          <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-          {t('shell.signOut')}
-        </button>
-      </form>
-    </div>
-  );
-
   return (
     <ThemeProvider theme="dark">
-      <div
-        data-theme="dark"
-        className="flex min-h-screen bg-[color:var(--color-background)] text-[color:var(--color-foreground)]"
-      >
-        {/* Sidebar desktop */}
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[color:var(--color-border)] bg-[color:var(--color-background)] md:flex">
-          <div className="border-b border-[color:var(--color-border)]">{renderBrand()}</div>
-          {renderNav()}
-          {renderFooter()}
-        </aside>
-
-        {/* Colonne contenu */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* Barre supérieure mobile + tiroir */}
-          <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--color-border)] bg-[color:var(--color-background)]/95 px-4 py-3 backdrop-blur md:hidden">
-            <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-              <DialogPrimitive.Trigger
-                aria-label="Ouvrir le menu"
-                className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[color:var(--color-border)] text-[color:var(--color-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)]"
-              >
-                <Menu className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-              </DialogPrimitive.Trigger>
-              <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay className="animate-fade-in fixed inset-0 z-50 bg-black/55 backdrop-blur-sm" />
-                <DialogPrimitive.Content
-                  data-theme="dark"
-                  className="animate-fade-in fixed inset-y-0 left-0 z-50 flex w-[82vw] max-w-xs flex-col border-r border-[color:var(--color-border)] bg-[color:var(--color-background)] text-[color:var(--color-foreground)] shadow-[var(--shadow-popover)] focus:outline-none"
-                >
-                  <DialogPrimitive.Title className="sr-only">
-                    {t('shell.brand')}
-                  </DialogPrimitive.Title>
-                  <div className="flex items-center justify-between border-b border-[color:var(--color-border)] pr-2">
-                    {renderBrand()}
-                    <DialogPrimitive.Close
-                      aria-label="Fermer le menu"
-                      className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)]"
-                    >
-                      <X className="h-5 w-5" strokeWidth={2} aria-hidden />
-                    </DialogPrimitive.Close>
-                  </div>
-                  {renderNav(() => setOpen(false))}
-                  {renderFooter()}
-                </DialogPrimitive.Content>
-              </DialogPrimitive.Portal>
-            </DialogPrimitive.Root>
-            <span className="font-display text-base tracking-tight italic">{t('shell.brand')}</span>
-          </header>
-
-          <main className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">{children}</div>
-          </main>
-        </div>
+      <div data-theme="dark" className="min-h-dvh bg-[color:var(--color-background)]">
+        <SidebarProvider>
+          <AdminSidebar current={current} adminName={adminName} />
+          <SidebarInset>
+            <AdminTopBar current={current} />
+            <main className="flex-1">
+              <div className="mx-auto w-full max-w-[86rem] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                {children}
+              </div>
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
       </div>
     </ThemeProvider>
+  );
+}
+
+function AdminSidebar({ current, adminName }: { current: AdminSection; adminName?: string }) {
+  const t = useTranslations('Admin');
+  const pathname = usePathname();
+  const { setOpenMobile, open } = useSidebar();
+
+  // Le tiroir mobile ne se referme pas tout seul : sans ça, on navigue et on
+  // retrouve le menu ouvert par-dessus la page qu'on vient de demander.
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
+
+  return (
+    <Sidebar mobileTitle={t('shell.brand')}>
+      <SidebarHeader className={cn(!open && 'md:justify-center md:px-0')}>
+        <Link
+          href={'/admin' as never}
+          className="focus-ring flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1"
+        >
+          <span
+            aria-hidden
+            className="font-display flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[color:var(--color-primary-soft)] text-sm leading-none text-[color:var(--color-primary)] italic"
+          >
+            W
+          </span>
+          <span className="font-display truncate text-base tracking-tight italic group-data-[state=collapsed]/sidebar:hidden">
+            {t('shell.brand')}
+          </span>
+        </Link>
+        <SidebarToggle
+          label={t('shell.toggleNav')}
+          className="ml-auto hidden group-data-[state=collapsed]/sidebar:hidden md:inline-flex"
+        />
+      </SidebarHeader>
+
+      <SidebarContent>
+        {ADMIN_NAV.map((group) => (
+          <SidebarGroup key={group.key}>
+            <SidebarGroupLabel>{t(group.labelKey)}</SidebarGroupLabel>
+            <SidebarMenu>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const label = t(item.labelKey);
+                return (
+                  <SidebarMenuItem key={item.key}>
+                    <SidebarMenuButton asChild isActive={item.key === current} tooltip={label}>
+                      {/* `aria-label` garantit le nom accessible même en rail
+                          replié, où le libellé visible est retiré du flux. */}
+                      <Link href={item.href as never} aria-label={label}>
+                        <Icon strokeWidth={1.75} aria-hidden />
+                        <SidebarMenuLabel>{label}</SidebarMenuLabel>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+
+      <SidebarFooter>
+        {!open ? (
+          <SidebarToggle label={t('shell.toggleNav')} className="mx-auto hidden md:inline-flex" />
+        ) : null}
+        <AdminAccountMenu adminName={adminName} />
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
+function AdminAccountMenu({ adminName }: { adminName?: string }) {
+  const t = useTranslations('Admin');
+  const initials = initialsOf(adminName);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('shell.account')}
+          className={cn(
+            'focus-ring flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors',
+            'hover:bg-[color:var(--color-surface-elevated)]',
+            'group-data-[state=collapsed]/sidebar:justify-center group-data-[state=collapsed]/sidebar:px-0',
+          )}
+        >
+          <span
+            aria-hidden
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--color-surface-elevated)] text-[0.6875rem] font-semibold text-[color:var(--color-foreground)]"
+          >
+            {initials}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium group-data-[state=collapsed]/sidebar:hidden">
+            {adminName ?? t('shell.account')}
+          </span>
+          <ChevronsUpDown
+            className="h-3.5 w-3.5 shrink-0 text-[color:var(--color-muted-foreground)] group-data-[state=collapsed]/sidebar:hidden"
+            strokeWidth={2}
+            aria-hidden
+          />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="start" className="w-56">
+        <DropdownMenuLabel>{adminName ?? t('shell.account')}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href={'/dashboard' as never}>
+            <SquareArrowOutUpRight strokeWidth={1.75} aria-hidden />
+            {t('shell.backToApp')}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <form action={signOutAction}>
+          <DropdownMenuItem asChild variant="destructive">
+            <button type="submit" className="w-full">
+              <LogOut strokeWidth={1.75} aria-hidden />
+              {t('shell.signOut')}
+            </button>
+          </DropdownMenuItem>
+        </form>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function AdminTopBar({ current }: { current: AdminSection }) {
+  const t = useTranslations('Admin');
+  const item = adminNavItem(current);
+  const isOverview = current === 'overview';
+
+  return (
+    <header
+      className={cn(
+        'sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-[color:var(--color-border)]',
+        'bg-[color:var(--color-background)]/85 px-3 backdrop-blur sm:px-5',
+      )}
+    >
+      <SidebarTrigger label={t('shell.openNav')} className="md:hidden" />
+
+      <Breadcrumb className="min-w-0 flex-1">
+        <BreadcrumbList>
+          {isOverview ? (
+            <BreadcrumbItem>
+              <BreadcrumbPage>{t('nav.overview')}</BreadcrumbPage>
+            </BreadcrumbItem>
+          ) : (
+            <>
+              <BreadcrumbItem className="hidden sm:inline-flex">
+                <BreadcrumbLink asChild>
+                  <Link href={'/admin' as never}>{t('shell.brand')}</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden sm:inline-flex" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{item ? t(item.labelKey) : t('shell.brand')}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </>
+          )}
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <AdminCommandPalette current={current} />
+    </header>
   );
 }
