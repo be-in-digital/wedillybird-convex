@@ -4,6 +4,8 @@ import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminAffiliatesBoard } from '@/components/admin/admin-affiliates-board';
+import { AdminPage } from '@/components/admin/ui/section';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
 
 /**
  * Admin affiliation (FR-only, comme le reste de /admin). Crée des affiliés
@@ -32,7 +34,13 @@ export default async function AdminAffiliatesPage({
 
   return (
     <AdminShell current="affiliates" adminName={user?.fullName ?? undefined}>
-      <AdminAffiliatesBoard affiliates={affiliates} referrals={referrals} invites={invites} />
+      <AdminPage>
+        <AdminPageHeader
+          title="Affiliation"
+          description="Affiliés sur invitation. Parrainage particulier = crédit (auto) ; partenaire = cash (payout groupé, acquis à la date de l'event)."
+        />
+        <AdminAffiliatesBoard affiliates={affiliates} referrals={referrals} invites={invites} />
+      </AdminPage>
     </AdminShell>
   );
 }

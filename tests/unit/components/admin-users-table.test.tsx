@@ -51,11 +51,15 @@ describe('AdminUsersTable — libellé de rôle', () => {
       />,
     );
 
+    // `AdminDataTable` monte les deux rendus (carte sous `md`, tableau au-delà)
+    // et laisse le CSS trancher : chaque libellé apparaît donc deux fois dans le
+    // DOM de jsdom, qui n'applique pas les media queries. On compte les
+    // occurrences plutôt que d'en exiger une seule.
     for (const role of ['couple', 'pro', 'guest', 'admin']) {
-      expect(screen.getByText(`Admin.roles.${role}`)).toBeInTheDocument();
+      expect(screen.getAllByText(`Admin.roles.${role}`).length).toBeGreaterThan(0);
     }
     // Aucune valeur brute ne doit rester visible dans un badge.
-    expect(screen.queryByText('guest', { exact: true })).toBeNull();
-    expect(screen.queryByText('admin', { exact: true })).toBeNull();
+    expect(screen.queryAllByText('guest', { exact: true })).toHaveLength(0);
+    expect(screen.queryAllByText('admin', { exact: true })).toHaveLength(0);
   });
 });

@@ -1,82 +1,62 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
+import { Area, AreaChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts';
+import { AXIS_PROPS, CHART_SURFACE, GRID_PROPS, SERIES, TOOLTIP_PROPS } from './charts/chart-theme';
+import { ChartFrame } from './charts/chart-frame';
+import { ChartLegend } from './charts/chart-legend';
 
 type MonthData = { couple: number; pro: number; guest: number };
 
+/** Ordre fixe des séries : la teinte suit le rôle, jamais son rang dans les données. */
+const ROLES = [
+  { key: 'couple', color: SERIES.brand, labelKey: 'charts.couples' },
+  { key: 'pro', color: SERIES.blue, labelKey: 'charts.pros' },
+  { key: 'guest', color: SERIES.gold, labelKey: 'charts.guests' },
+] as const;
+
+/**
+ * Nouveaux comptes par mois, empilés par rôle.
+ *
+ * Trois séries → légende obligatoire : l'identité ne doit jamais reposer sur la
+ * seule couleur. Les aplats sont séparés par un liseré de 2 px couleur surface,
+ * qui sert aussi d'encodage secondaire pour la paire or↔rose (WARN daltonien).
+ * Ce liseré interdit la légende de Recharts (elle en dérive ses pastilles, donc
+ * les rendait couleur surface, donc invisibles) : voir `ChartLegend`.
+ */
 export function AdminUsersChart({ data }: { data: Record<string, MonthData> }) {
   const t = useTranslations('Admin');
+
   const chartData = Object.entries(data)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, counts]) => ({
-      month: month.slice(2),
-      ...counts,
-    }));
-
-  if (chartData.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-sm text-[color:var(--color-muted-foreground)]">
-        {t('charts.noData')}
-      </div>
-    );
-  }
+    .map(([month, counts]) => ({ month: month.slice(2), ...counts }));
 
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <AreaChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-        <XAxis
-          dataKey="month"
-          stroke="var(--color-muted-foreground)"
-          fontSize={11}
-          tickLine={false}
-        />
-        <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} />
-        <Tooltip
-          contentStyle={{
-            background: 'var(--color-surface-elevated)',
-            border: '1px solid var(--color-border)',
-            borderRadius: '8px',
-            color: 'var(--color-foreground)',
-            fontSize: 12,
-          }}
-        />
-        <Legend wrapperStyle={{ fontSize: 11 }} />
-        <Area
-          type="monotone"
-          dataKey="couple"
-          stackId="1"
-          stroke="oklch(65% 0.15 22)"
-          fill="oklch(65% 0.15 22 / 0.3)"
-          name={t('charts.couples')}
-        />
-        <Area
-          type="monotone"
-          dataKey="pro"
-          stackId="1"
-          stroke="oklch(65% 0.12 145)"
-          fill="oklch(65% 0.12 145 / 0.3)"
-          name={t('charts.pros')}
-        />
-        <Area
-          type="monotone"
-          dataKey="guest"
-          stackId="1"
-          stroke="oklch(65% 0.08 250)"
-          fill="oklch(65% 0.08 250 / 0.3)"
-          name={t('charts.guests')}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
+    <>
+      <ChartFrame isEmpty={chartData.length === 0} height={252}>
+        <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -12 }}>
+          <CartesianGrid {...GRID_PROPS} />
+          <XAxis dataKey="month" {...AXIS_PROPS} />
+          <YAxis {...AXIS_PROPS} width={40} allowDecimals={false} />
+          <Tooltip {...TOOLTIP_PROPS} cursor={{ stroke: 'var(--color-border-strong)' }} />
+          {ROLES.map((role) => (
+            <Area
+              key={role.key}
+              type="monotone"
+              dataKey={role.key}
+              stackId="1"
+              stroke={CHART_SURFACE}
+              strokeWidth={2}
+              fill={role.color}
+              fillOpacity={0.75}
+              name={t(role.labelKey)}
+            />
+          ))}
+        </AreaChart>
+      </ChartFrame>
+      {chartData.length > 0 ? (
+        <ChartLegend items={ROLES.map((r) => ({ label: t(r.labelKey), color: r.color }))} />
+      ) : null}
+    </>
   );
 }

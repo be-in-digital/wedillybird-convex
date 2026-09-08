@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,12 +15,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { formatDate, formatMoneyMinor } from '@/lib/admin/format';
 import {
   adminCancelSubscriptionAction,
   adminReactivateSubscriptionAction,
   adminListOrgInvoicesAction,
   type OrgInvoicesResult,
 } from '@/app/[locale]/(app)/admin/actions';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Org = {
   _id: string;
@@ -36,119 +40,126 @@ type Org = {
   createdAt: number;
 };
 
-const STATUS_VARIANT: Record<string, 'neutral' | 'success' | 'warning' | 'destructive' | 'accent'> =
-  {
-    active: 'success',
-    trialing: 'accent',
-    past_due: 'warning',
-    canceled: 'destructive',
-    unpaid: 'destructive',
-  };
+const STATUS_TONE: Record<string, StatusTone> = {
+  active: 'success',
+  trialing: 'progress',
+  past_due: 'warning',
+  canceled: 'danger',
+  unpaid: 'danger',
+};
 
 export function AdminSubscriptionsTable({ organizations }: { organizations: Org[] }) {
   const t = useTranslations('Admin');
   const locale = useLocale();
-  const [search, setSearch] = useState('');
 
-  const filtered = organizations.filter((o) => {
-    return (
-      !search ||
-      o.name.toLowerCase().includes(search.toLowerCase()) ||
-      o.slug.toLowerCase().includes(search.toLowerCase()) ||
-      o.ownerName?.toLowerCase().includes(search.toLowerCase()) ||
-      o.ownerEmail?.toLowerCase().includes(search.toLowerCase())
-    );
-  });
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="text"
-          placeholder={t('subscriptions.searchPlaceholder')}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2 text-sm text-[color:var(--color-foreground)] placeholder:text-[color:var(--color-muted-foreground)] focus:ring-1 focus:ring-[color:var(--color-border-strong)] focus:outline-none"
-        />
-        <span className="font-mono text-xs text-[color:var(--color-muted-foreground)]">
-          {t('subscriptions.count', { count: filtered.length })}
-        </span>
-      </div>
-
-      <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-        <table className="w-full min-w-[760px] text-sm">
-          <thead>
-            <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-              <Th>{t('subscriptions.colOrg')}</Th>
-              <Th>{t('subscriptions.colOwner')}</Th>
-              <Th>{t('subscriptions.colTier')}</Th>
-              <Th>{t('subscriptions.colStatus')}</Th>
-              <Th>{t('subscriptions.colRenewal')}</Th>
-              <Th>{t('subscriptions.colPaygCredits')}</Th>
-              <Th>{t('common.colActions')}</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((o) => (
-              <OrgRow key={o._id} org={o} locale={locale} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function OrgRow({ org: o, locale }: { org: Org; locale: string }) {
-  const isCanceled = o.subscriptionStatus === 'canceled';
-  const hasSub = Boolean(o.hasStripeSubscription);
-
-  return (
-    <tr className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50">
-      <td className="px-4 py-3">
-        <div>
-          <p className="font-medium">{o.name}</p>
-          <p className="font-mono text-xs text-[color:var(--color-muted-foreground)]">{o.slug}</p>
+  const columns: AdminColumn<Org>[] = [
+    {
+      id: 'org',
+      header: t('subscriptions.colOrg'),
+      card: 'title',
+      sortValue: (o) => o.name,
+      cell: (o) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{o.name}</p>
+          <p className="truncate font-mono text-xs text-[color:var(--color-muted-foreground)]">
+            {o.slug}
+          </p>
         </div>
-      </td>
-      <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-        {o.ownerName ?? o.ownerEmail ?? '—'}
-      </td>
-      <td className="px-4 py-3">
-        {o.subscriptionTier ? (
+      ),
+    },
+    {
+      id: 'owner',
+      header: t('subscriptions.colOwner'),
+      sortValue: (o) => o.ownerName ?? o.ownerEmail ?? '',
+      cell: (o) => (
+        <span className="truncate text-[color:var(--color-muted-foreground)]">
+          {o.ownerName ?? o.ownerEmail ?? '—'}
+        </span>
+      ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'tier',
+      header: t('subscriptions.colTier'),
+      sortValue: (o) => o.subscriptionTier ?? '',
+      cell: (o) =>
+        o.subscriptionTier ? (
           <Badge variant="accent">{o.subscriptionTier}</Badge>
         ) : (
           <span className="text-[color:var(--color-muted-foreground)]">—</span>
-        )}
-      </td>
-      <td className="px-4 py-3">
-        {o.subscriptionStatus ? (
-          <Badge variant={STATUS_VARIANT[o.subscriptionStatus] ?? 'neutral'}>
+        ),
+    },
+    {
+      id: 'status',
+      header: t('subscriptions.colStatus'),
+      card: 'badge',
+      sortValue: (o) => o.subscriptionStatus ?? '',
+      cell: (o) =>
+        o.subscriptionStatus ? (
+          <StatusPill tone={STATUS_TONE[o.subscriptionStatus] ?? 'neutral'}>
             {o.subscriptionStatus}
-          </Badge>
+          </StatusPill>
         ) : (
           <span className="text-[color:var(--color-muted-foreground)]">—</span>
-        )}
-      </td>
-      <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-        {o.subscriptionPeriodEnd
-          ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-              new Date(o.subscriptionPeriodEnd),
-            )
-          : '—'}
-      </td>
-      <td className="px-4 py-3 font-mono">{o.paygCredits ?? 0}</td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1">
-          {o.hasStripeCustomer ? <InvoicesDialog org={o} /> : null}
-          {hasSub && !isCanceled ? <CancelDialog org={o} /> : null}
-          {hasSub && isCanceled ? <ReactivateButton org={o} /> : null}
-          {!o.hasStripeCustomer && !hasSub ? (
-            <span className="text-xs text-[color:var(--color-muted-foreground)]">—</span>
-          ) : null}
-        </div>
-      </td>
-    </tr>
+        ),
+    },
+    {
+      id: 'renewal',
+      header: t('subscriptions.colRenewal'),
+      sortValue: (o) => o.subscriptionPeriodEnd ?? null,
+      cell: (o) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {o.subscriptionPeriodEnd ? formatDate(o.subscriptionPeriodEnd, locale) : '—'}
+        </span>
+      ),
+    },
+    {
+      id: 'payg',
+      header: t('subscriptions.colPaygCredits'),
+      align: 'right',
+      sortValue: (o) => o.paygCredits ?? 0,
+      cell: (o) => <span className="font-mono tabular-nums">{o.paygCredits ?? 0}</span>,
+      hideBelow: 'xl',
+    },
+    {
+      id: 'actions',
+      header: t('common.colActions'),
+      card: 'actions',
+      align: 'right',
+      className: 'whitespace-nowrap',
+      cell: (o) => <OrgActions org={o} />,
+    },
+  ];
+
+  return (
+    <AdminDataTable
+      rows={organizations}
+      columns={columns}
+      getRowId={(o) => o._id}
+      searchable={(o) => `${o.name} ${o.slug} ${o.ownerName ?? ''} ${o.ownerEmail ?? ''}`}
+      searchPlaceholder={t('subscriptions.searchPlaceholder')}
+      initialSort={{ id: 'org', dir: 'asc' }}
+      emptyTitle={t('subscriptions.emptyTitle')}
+      emptyDescription={t('subscriptions.emptyDescription')}
+      emptyIcon={Building2}
+    />
+  );
+}
+
+function OrgActions({ org: o }: { org: Org }) {
+  const isCanceled = o.subscriptionStatus === 'canceled';
+  const hasSub = Boolean(o.hasStripeSubscription);
+
+  if (!o.hasStripeCustomer && !hasSub) {
+    return <span className="text-xs text-[color:var(--color-muted-foreground)]">—</span>;
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      {o.hasStripeCustomer ? <InvoicesDialog org={o} /> : null}
+      {hasSub && !isCanceled ? <CancelDialog org={o} /> : null}
+      {hasSub && isCanceled ? <ReactivateButton org={o} /> : null}
+    </div>
   );
 }
 
@@ -174,7 +185,10 @@ function CancelDialog({ org: o }: { org: Org }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10">
+        <button
+          type="button"
+          className="focus-ring inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger-soft)]"
+        >
           {t('common.cancel')}
         </button>
       </DialogTrigger>
@@ -190,13 +204,13 @@ function CancelDialog({ org: o }: { org: Org }) {
         </DialogHeader>
 
         <div className="flex flex-col gap-2">
-          <label className="flex items-start gap-2 rounded-lg border border-[color:var(--color-border)] p-3 text-sm">
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-[color:var(--color-border)] p-3 text-sm transition-colors hover:border-[color:var(--color-border-strong)]">
             <input
               type="radio"
               name={`cancel-mode-${o._id}`}
               checked={mode === 'period_end'}
               onChange={() => setMode('period_end')}
-              className="mt-0.5"
+              className="mt-0.5 h-4 w-4 accent-[color:var(--color-primary)]"
             />
             <span>
               <span className="font-medium">{t('subscriptions.cancel.periodEndTitle')}</span>
@@ -205,13 +219,13 @@ function CancelDialog({ org: o }: { org: Org }) {
               </span>
             </span>
           </label>
-          <label className="flex items-start gap-2 rounded-lg border border-[color:var(--color-border)] p-3 text-sm">
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-[color:var(--color-border)] p-3 text-sm transition-colors hover:border-[color:var(--color-border-strong)]">
             <input
               type="radio"
               name={`cancel-mode-${o._id}`}
               checked={mode === 'immediate'}
               onChange={() => setMode('immediate')}
-              className="mt-0.5"
+              className="mt-0.5 h-4 w-4 accent-[color:var(--color-primary)]"
             />
             <span>
               <span className="font-medium">{t('subscriptions.cancel.immediateTitle')}</span>
@@ -255,13 +269,18 @@ function ReactivateButton({ org: o }: { org: Org }) {
   return (
     <span className="flex items-center gap-1">
       <button
+        type="button"
         onClick={reactivate}
         disabled={pending}
-        className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-success)] transition-colors hover:bg-[color:var(--color-success)]/10 disabled:opacity-50"
+        className="focus-ring inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-[color:var(--color-success)] transition-colors hover:bg-[color:var(--color-success-soft)] disabled:opacity-50"
       >
         {pending ? t('subscriptions.reactivate.submitting') : t('subscriptions.reactivate.submit')}
       </button>
-      {error ? <span className="text-[10px] text-[color:var(--color-danger)]">{error}</span> : null}
+      {error ? (
+        <span role="alert" className="text-xs text-[color:var(--color-danger)]">
+          {error}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -285,7 +304,10 @@ function InvoicesDialog({ org: o }: { org: Org }) {
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? load() : setOpen(false))}>
       <DialogTrigger asChild>
-        <button className="rounded-md px-2 py-1 text-xs font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)]">
+        <button
+          type="button"
+          className="focus-ring inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)]"
+        >
           {t('subscriptions.invoices.trigger')}
         </button>
       </DialogTrigger>
@@ -312,17 +334,12 @@ function InvoicesDialog({ org: o }: { org: Org }) {
                 <div>
                   <p className="font-mono">{inv.id}</p>
                   <p className="text-xs text-[color:var(--color-muted-foreground)]">
-                    {new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-                      new Date(inv.date),
-                    )}
+                    {formatDate(inv.date, locale)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono">
-                    {new Intl.NumberFormat(locale, {
-                      style: 'currency',
-                      currency: inv.currency,
-                    }).format(inv.amountMinor / 100)}
+                  <span className="font-mono tabular-nums">
+                    {formatMoneyMinor(inv.amountMinor, inv.currency, locale)}
                   </span>
                   <Badge variant={inv.status === 'paid' ? 'success' : 'neutral'}>
                     {t.has(`stripeInvoiceStatuses.${inv.status}`)
@@ -354,13 +371,5 @@ function InvoicesDialog({ org: o }: { org: Org }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-      {children}
-    </th>
   );
 }

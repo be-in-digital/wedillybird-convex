@@ -194,6 +194,61 @@ Specs communes : focus ring visible (`ring-2` primary + offset), états hover/ac
 
 ---
 
+## 9 bis. Back-office admin — primitives (septembre 2026)
+
+Le super-admin (`/admin`, dark strict) est bâti sur des primitives dédiées. **Toute
+nouvelle page admin les réutilise** ; en écrire une variante locale, c'est reproduire
+la dérive qu'elles ont corrigée (quinze en-têtes copiés-collés dont les `clamp()`
+avaient déjà divergé).
+
+**Base shadcn** (`components/ui/`, `components.json` à la racine) : `table`, `tabs`,
+`dropdown-menu`, `separator`, `tooltip`, `sheet`, `scroll-area`, `breadcrumb`,
+`popover`, `command`, `checkbox`, `switch`, `progress`, `sidebar` — toutes thémées
+sur les tokens OKLCH, donc valables dans les deux univers.
+
+**Primitives admin** (`components/admin/ui/`, import par chemin, pas de barrel) :
+
+| Primitive | Rôle |
+|---|---|
+| `AdminPage` / `AdminPageHeader` / `AdminSection` | Rythme vertical et échelle typographique uniques. `AdminSection bare` quand le contenu est déjà encadré — jamais de carte dans une carte. |
+| `AdminStat` / `AdminStatGrid` | Tuiles KPI à **deux niveaux d'emphase** (`hero`, `default`). Une grille où tout a le même poids ne hiérarchise rien. |
+| `AdminDataTable` | Tri, recherche, filtres, pagination, état vide. Sous `md` chaque ligne devient une carte ; le rôle des colonnes s'y déclare via `card`. |
+| `AdminCardList` | Même socle pour les collections de **documents** (commande avec adresse postale, signalement avec pile d'erreurs). Un seul rendu. |
+| `AdminMeter` / `AdminFunnel` | Jauges et entonnoirs, sur les tokens de statut. |
+| `StatusPill` | Pastille de statut : chaque ton porte **aussi une icône** — la couleur seule n'encode jamais un état. |
+| `AdminEmptyState` | Distingue « rien à afficher » de « rien ne correspond au filtre ». |
+
+**Navigation** : `components/admin/admin-nav.ts` est la source unique (sidebar, fil
+d'Ariane, palette ⌘K). Quinze entrées groupées en cinq intentions — Pilotage, Revenus,
+Clients, Croissance, Système. Les liens portent un `aria-label` : le rail replié masque
+le libellé visible, le nom accessible doit survivre.
+
+**Formatage** : `lib/admin/format.ts` (montants en unité mineure, dates, ratios,
+initiales). `currencyDivisor` y est **la** table des décimales — XOF est zéro-décimale
+et TND en millimes, une deuxième copie afficherait un montant faux de deux ordres de
+grandeur.
+
+**Typographie du back-office** : Bodoni italic pour le seul `h1` de page ; titres de
+section, en-têtes de colonne et micro-libellés en Geist (`0.6875rem`, `tracking-[0.08em]`,
+capitales). Le **mono reste réservé** aux identifiants, montants et horodatages.
+
+### Graphes (`components/admin/charts/`)
+
+`chart-theme.ts` porte axes, grille, tooltip et la palette. `SERIES` — rose de marque
+`#d55759`, bleu `#2b7ec9`, or `#be8700` — est **validée en toutes paires** sur la surface
+dark réelle (`#1a1110`) : bande de luminance, plancher de chroma, séparation daltonienne
+et vision normale, contraste ≥ 3:1. La paire or↔rose est en zone WARN daltonienne, donc
+utilisable **uniquement** avec encodage secondaire (légende + liseré de 2 px entre aplats).
+**Ne pas ajouter de 4ᵉ série sans revalider.**
+
+Règles de forme : grille horizontale seule ; une seule série → pas de légende, le titre
+suffit ; deux séries ou plus → `ChartLegend` (HTML, pas `<Legend>` de Recharts, qui dérive
+ses pastilles du `stroke` — donc du liseré couleur surface, donc invisibles) ; **pas de
+camembert** : une part-de-tout se lit en barres triées (`AdminBreakdown`), et un camembert
+à deux parts n'apprend rien qu'une phrase ne dise mieux.
+
+---
+
 ## 10. Accessibilité & responsive
 - **Contraste AA** garanti (luminance branding contrainte 35–65 %).
 - **Focus** toujours visible (focus-ring). Navigation clavier complète. Skip-link présent.

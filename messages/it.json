@@ -2,7 +2,20 @@
   "Admin": {
     "shell": {
       "brand": "Admin",
-      "signOut": "Esci"
+      "signOut": "Esci",
+      "openNav": "Apri la navigazione",
+      "toggleNav": "Comprimi o espandi la navigazione",
+      "search": "Cerca una sezione",
+      "searchHint": "Vai a…",
+      "commandEmpty": "Nessuna sezione corrispondente.",
+      "commandSections": "Sezioni",
+      "account": "Account",
+      "backToApp": "Torna all’applicazione",
+      "groupSteering": "Pilotaggio",
+      "groupRevenue": "Ricavi",
+      "groupCustomers": "Clienti",
+      "groupGrowth": "Crescita",
+      "groupSystem": "Sistema"
     },
     "nav": {
       "overview": "Panoramica",
@@ -83,7 +96,8 @@
       "colAction": "Azione",
       "colTarget": "Obiettivo",
       "colDetails": "Dettagli",
-      "empty": "Nessuna azione registrata"
+      "empty": "Nessuna azione registrata",
+      "emptyDescription": "Ogni azione di amministrazione è registrata qui."
     },
     "users": {
       "searchPlaceholder": "Cerca un utente…",
@@ -122,7 +136,9 @@
       "deleteBlockedAdmin": "Un account amministratore non si elimina. Togli prima il ruolo admin.",
       "deleteBlockedBilled": "Abbonamento Stripe ancora attivo ({orgs}). Annullalo da Abbonamenti prima di eliminare.",
       "deleteBlockedTeam": "Questa organizzazione ha un team ({orgs}). Trasferisci la proprietà prima di eliminare.",
-      "deleteError": "Eliminazione impossibile: {code}"
+      "deleteError": "Eliminazione impossibile: {code}",
+      "emptyTitle": "Nessun utente",
+      "emptyDescription": "Gli account creati alla registrazione compariranno qui."
     },
     "events": {
       "searchPlaceholder": "Cerca un evento…",
@@ -142,7 +158,9 @@
       "grantPremium": "Offri Premium",
       "confirmGrantPlan": "Offrire il piano «{plan}» a questo evento, senza pagamento?",
       "revokePlan": "Revoca omaggio",
-      "confirmRevokePlan": "Revocare il piano offerto per questo evento?"
+      "confirmRevokePlan": "Revocare il piano offerto per questo evento?",
+      "emptyTitle": "Nessun evento",
+      "emptyDescription": "I matrimoni creati da coppie e agenzie compariranno qui."
     },
     "moderation": {
       "photosHeading": "Foto in attesa ({count})",
@@ -158,7 +176,12 @@
       "anonymous": "Anonimo",
       "sizeKb": "{size} KB",
       "approve": "Approva",
-      "reject": "Rifiuta"
+      "reject": "Rifiuta",
+      "photosDescription": "Foto in attesa di approvazione prima della pubblicazione nella galleria.",
+      "photosEmptyDescription": "Niente da rivedere: tutte le foto inviate sono state trattate.",
+      "templatesDescription": "Modelli di messaggio inviati per l’approvazione Meta.",
+      "templatesEmpty": "Nessun modello",
+      "templatesEmptyDescription": "I modelli di messaggio creati dalle organizzazioni compariranno qui."
     },
     "newsletter": {
       "searchPlaceholder": "Cerca per email…",
@@ -172,7 +195,9 @@
       "colSubscribedAt": "Iscritto il",
       "colUnsubscribedAt": "Disiscritto il",
       "statusActive": "Attivo",
-      "statusUnsubscribed": "Disiscritto"
+      "statusUnsubscribed": "Disiscritto",
+      "emptyTitle": "Nessun iscritto",
+      "emptyDescription": "Le iscrizioni dal sito compariranno qui."
     },
     "payments": {
       "statusFilterAll": "Tutti gli stati",
@@ -198,7 +223,9 @@
         "submitting": "Rimborso…",
         "submitPartial": "Rimborsa l'importo inserito",
         "submitFull": "Rimborsa {amount}"
-      }
+      },
+      "emptyTitle": "Nessun pagamento",
+      "emptyDescription": "Le transazioni incassate compariranno qui dopo la prima vendita."
     },
     "invoices": {
       "searchPlaceholder": "Cerca per cliente…",
@@ -209,7 +236,9 @@
       "colStatus": "Stato",
       "colDate": "Data",
       "colInvoice": "Fattura",
-      "downloadPdf": "PDF"
+      "downloadPdf": "PDF",
+      "emptyTitle": "Nessuna fattura",
+      "emptyDescription": "Viene generata una fattura per ogni pagamento incassato."
     },
     "subscriptions": {
       "searchPlaceholder": "Cerca un'organizzazione…",
@@ -240,7 +269,20 @@
         "title": "Fatture · {name}",
         "description": "Fatture di abbonamento Stripe di questa organizzazione.",
         "empty": "Nessuna fattura per questa organizzazione."
-      }
+      },
+      "emptyTitle": "Nessuna organizzazione",
+      "emptyDescription": "Le agenzie abbonate compariranno qui con il loro stato Stripe."
+    },
+    "table": {
+      "searchPlaceholder": "Cerca…",
+      "clearSearch": "Cancella la ricerca",
+      "count": "{count} risultati",
+      "range": "{from}–{to} su {total}",
+      "page": "Pagina {page} / {pages}",
+      "previous": "Pagina precedente",
+      "next": "Pagina successiva",
+      "noMatchTitle": "Nessun risultato",
+      "noMatchDescription": "Nessuna riga corrisponde a questa ricerca. Prova un altro termine o reimposta i filtri."
     }
   },
   "BugReport": {

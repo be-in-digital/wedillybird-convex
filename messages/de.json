@@ -2,7 +2,20 @@
   "Admin": {
     "shell": {
       "brand": "Admin",
-      "signOut": "Abmelden"
+      "signOut": "Abmelden",
+      "openNav": "Navigation öffnen",
+      "toggleNav": "Navigation ein- oder ausklappen",
+      "search": "Bereich suchen",
+      "searchHint": "Gehe zu…",
+      "commandEmpty": "Kein passender Bereich.",
+      "commandSections": "Bereiche",
+      "account": "Konto",
+      "backToApp": "Zurück zur Anwendung",
+      "groupSteering": "Steuerung",
+      "groupRevenue": "Umsatz",
+      "groupCustomers": "Kunden",
+      "groupGrowth": "Wachstum",
+      "groupSystem": "System"
     },
     "nav": {
       "overview": "Übersicht",
@@ -83,7 +96,8 @@
       "colAction": "Aktion",
       "colTarget": "Ziel",
       "colDetails": "Details",
-      "empty": "Keine Aktion aufgezeichnet"
+      "empty": "Keine Aktion aufgezeichnet",
+      "emptyDescription": "Jede Administrationsaktion wird hier protokolliert."
     },
     "users": {
       "searchPlaceholder": "Einen Benutzer suchen…",
@@ -122,7 +136,9 @@
       "deleteBlockedAdmin": "Ein Administratorkonto lässt sich nicht löschen. Entziehe zuerst die Admin-Rolle.",
       "deleteBlockedBilled": "Stripe-Abo noch aktiv ({orgs}). Kündige es unter Abos, bevor du löschst.",
       "deleteBlockedTeam": "Diese Organisation hat ein Team ({orgs}). Übertrage zuerst die Inhaberschaft.",
-      "deleteError": "Löschen nicht möglich: {code}"
+      "deleteError": "Löschen nicht möglich: {code}",
+      "emptyTitle": "Keine Nutzer",
+      "emptyDescription": "Bei der Registrierung angelegte Konten erscheinen hier."
     },
     "events": {
       "searchPlaceholder": "Ein Event suchen…",
@@ -142,7 +158,9 @@
       "grantPremium": "Premium freischalten",
       "confirmGrantPlan": "Den Tarif „{plan}“ für dieses Event ohne Zahlung freischalten?",
       "revokePlan": "Freischaltung entziehen",
-      "confirmRevokePlan": "Den geschenkten Tarif für dieses Event entziehen?"
+      "confirmRevokePlan": "Den geschenkten Tarif für dieses Event entziehen?",
+      "emptyTitle": "Keine Veranstaltungen",
+      "emptyDescription": "Von Paaren und Agenturen angelegte Hochzeiten erscheinen hier."
     },
     "moderation": {
       "photosHeading": "Ausstehende Fotos ({count})",
@@ -158,7 +176,12 @@
       "anonymous": "Anonym",
       "sizeKb": "{size} KB",
       "approve": "Genehmigen",
-      "reject": "Ablehnen"
+      "reject": "Ablehnen",
+      "photosDescription": "Fotos, die vor der Veröffentlichung in der Galerie freigegeben werden müssen.",
+      "photosEmptyDescription": "Nichts zu prüfen: Alle hochgeladenen Fotos wurden bearbeitet.",
+      "templatesDescription": "Nachrichtenvorlagen zur Meta-Freigabe eingereicht.",
+      "templatesEmpty": "Keine Vorlagen",
+      "templatesEmptyDescription": "Von Organisationen erstellte Nachrichtenvorlagen erscheinen hier."
     },
     "newsletter": {
       "searchPlaceholder": "Nach E-Mail suchen…",
@@ -172,7 +195,9 @@
       "colSubscribedAt": "Angemeldet am",
       "colUnsubscribedAt": "Abgemeldet am",
       "statusActive": "Aktiv",
-      "statusUnsubscribed": "Abgemeldet"
+      "statusUnsubscribed": "Abgemeldet",
+      "emptyTitle": "Keine Abonnenten",
+      "emptyDescription": "Anmeldungen über die Website erscheinen hier."
     },
     "payments": {
       "statusFilterAll": "Alle Status",
@@ -198,7 +223,9 @@
         "submitting": "Erstatten…",
         "submitPartial": "Den eingegebenen Betrag erstatten",
         "submitFull": "{amount} erstatten"
-      }
+      },
+      "emptyTitle": "Keine Zahlungen",
+      "emptyDescription": "Eingegangene Transaktionen erscheinen hier nach dem ersten Verkauf."
     },
     "invoices": {
       "searchPlaceholder": "Nach Kunde suchen…",
@@ -209,7 +236,9 @@
       "colStatus": "Status",
       "colDate": "Datum",
       "colInvoice": "Rechnung",
-      "downloadPdf": "PDF"
+      "downloadPdf": "PDF",
+      "emptyTitle": "Keine Rechnungen",
+      "emptyDescription": "Für jede eingegangene Zahlung wird eine Rechnung erzeugt."
     },
     "subscriptions": {
       "searchPlaceholder": "Eine Organisation suchen…",
@@ -240,7 +269,20 @@
         "title": "Rechnungen · {name}",
         "description": "Stripe-Abonnementrechnungen dieser Organisation.",
         "empty": "Keine Rechnung für diese Organisation."
-      }
+      },
+      "emptyTitle": "Keine Organisationen",
+      "emptyDescription": "Abonnierte Agenturen erscheinen hier mit ihrem Stripe-Status."
+    },
+    "table": {
+      "searchPlaceholder": "Suchen…",
+      "clearSearch": "Suche zurücksetzen",
+      "count": "{count} Ergebnisse",
+      "range": "{from}–{to} von {total}",
+      "page": "Seite {page} / {pages}",
+      "previous": "Vorherige Seite",
+      "next": "Nächste Seite",
+      "noMatchTitle": "Keine Ergebnisse",
+      "noMatchDescription": "Keine Zeile entspricht dieser Suche. Versuchen Sie einen anderen Begriff oder setzen Sie die Filter zurück."
     }
   },
   "BugReport": {

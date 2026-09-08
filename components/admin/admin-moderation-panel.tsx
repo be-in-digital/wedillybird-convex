@@ -1,9 +1,14 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { Badge } from '@/components/ui/badge';
+import { Check, ImageOff, MessageSquare, X } from 'lucide-react';
 import { useServerAction } from '@/components/admin/use-admin-action';
+import { formatDate } from '@/lib/admin/format';
 import { adminModeratePhotoAction } from '@/app/[locale]/(app)/admin/actions';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminEmptyState } from './ui/empty-state';
+import { AdminSection } from './ui/section';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Photo = {
   _id: string;
@@ -30,13 +35,13 @@ type Template = {
   createdAt: number;
 };
 
-const TEMPLATE_STATUS_VARIANT: Record<string, 'neutral' | 'success' | 'warning' | 'destructive'> = {
+const TEMPLATE_STATUS_TONE: Record<string, StatusTone> = {
   draft: 'neutral',
   pending: 'warning',
   approved: 'success',
-  rejected: 'destructive',
+  rejected: 'danger',
   paused: 'warning',
-  disabled: 'destructive',
+  disabled: 'danger',
 };
 
 export function AdminModerationPanel({
@@ -48,76 +53,96 @@ export function AdminModerationPanel({
 }) {
   const t = useTranslations('Admin');
   const locale = useLocale();
+
+  const templateColumns: AdminColumn<Template>[] = [
+    {
+      id: 'name',
+      header: t('moderation.colName'),
+      card: 'title',
+      sortValue: (tpl) => tpl.name,
+      cell: (tpl) => <span className="font-mono text-xs font-medium">{tpl.name}</span>,
+    },
+    {
+      id: 'body',
+      header: t('moderation.colBody'),
+      className: 'max-w-xs truncate text-[color:var(--color-muted-foreground)]',
+      cell: (tpl) => <span title={tpl.bodyText}>{tpl.bodyText}</span>,
+    },
+    {
+      id: 'cta',
+      header: t('moderation.colCta'),
+      cell: (tpl) => (
+        <span className="text-[color:var(--color-muted-foreground)]">{tpl.ctaLabel}</span>
+      ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'status',
+      header: t('moderation.colStatus'),
+      card: 'badge',
+      sortValue: (tpl) => tpl.status,
+      cell: (tpl) => (
+        <div className="flex flex-col items-start gap-1">
+          <StatusPill tone={TEMPLATE_STATUS_TONE[tpl.status] ?? 'neutral'}>{tpl.status}</StatusPill>
+          {tpl.rejectionReason ? (
+            <p className="text-xs text-[color:var(--color-danger)]">{tpl.rejectionReason}</p>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      id: 'submittedAt',
+      header: t('moderation.colSubmittedAt'),
+      sortValue: (tpl) => tpl.submittedAt ?? null,
+      cell: (tpl) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {tpl.submittedAt ? formatDate(tpl.submittedAt, locale) : '—'}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-8">
-      {/* Photos section */}
-      <section className="flex flex-col gap-4">
-        <h2 className="font-display text-lg italic">
-          {t('moderation.photosHeading', { count: photos.length })}
-        </h2>
+      <AdminSection
+        title={t('moderation.photosHeading', { count: photos.length })}
+        description={t('moderation.photosDescription')}
+        bare
+      >
         {photos.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-[color:var(--color-border)] px-6 py-10 text-center text-sm text-[color:var(--color-muted-foreground)]">
-            {t('moderation.photosEmpty')}
-          </p>
+          <div className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
+            <AdminEmptyState
+              icon={ImageOff}
+              title={t('moderation.photosEmpty')}
+              description={t('moderation.photosEmptyDescription')}
+              compact
+            />
+          </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {photos.map((p) => (
               <PhotoCard key={p._id} photo={p} />
             ))}
           </div>
         )}
-      </section>
+      </AdminSection>
 
-      {/* Templates section */}
-      <section className="flex flex-col gap-4">
-        <h2 className="font-display text-lg italic">
-          {t('moderation.templatesHeading', { count: templates.length })}
-        </h2>
-        <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-                <Th>{t('moderation.colName')}</Th>
-                <Th>{t('moderation.colBody')}</Th>
-                <Th>{t('moderation.colCta')}</Th>
-                <Th>{t('moderation.colStatus')}</Th>
-                <Th>{t('moderation.colSubmittedAt')}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {templates.map((t) => (
-                <tr
-                  key={t._id}
-                  className="border-b border-[color:var(--color-border)] last:border-0 hover:bg-[color:var(--color-surface-elevated)]/50"
-                >
-                  <td className="px-4 py-3 font-mono text-xs font-medium">{t.name}</td>
-                  <td className="max-w-xs truncate px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                    {t.bodyText}
-                  </td>
-                  <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                    {t.ctaLabel}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge variant={TEMPLATE_STATUS_VARIANT[t.status] ?? 'neutral'}>
-                      {t.status}
-                    </Badge>
-                    {t.rejectionReason ? (
-                      <p className="mt-1 text-xs text-red-400">{t.rejectionReason}</p>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3 text-[color:var(--color-muted-foreground)]">
-                    {t.submittedAt
-                      ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
-                          new Date(t.submittedAt),
-                        )
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <AdminSection
+        title={t('moderation.templatesHeading', { count: templates.length })}
+        description={t('moderation.templatesDescription')}
+        bare
+      >
+        <AdminDataTable
+          rows={templates}
+          columns={templateColumns}
+          getRowId={(tpl) => tpl._id}
+          searchable={(tpl) => `${tpl.name} ${tpl.bodyText} ${tpl.ctaLabel} ${tpl.status}`}
+          initialSort={{ id: 'submittedAt', dir: 'desc' }}
+          emptyTitle={t('moderation.templatesEmpty')}
+          emptyDescription={t('moderation.templatesEmptyDescription')}
+          emptyIcon={MessageSquare}
+        />
+      </AdminSection>
     </div>
   );
 }
@@ -130,50 +155,75 @@ function PhotoCard({ photo }: { photo: Photo }) {
   const sizeKb = Math.round(photo.sizeBytes / 1024);
 
   return (
-    <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-4">
+    <figure className="flex flex-col gap-3 overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3">
       {thumbUrl ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
+        /* eslint-disable-next-line @next/next/no-img-element -- URL CloudFront signée, hors loader Next */
         <img
           src={thumbUrl}
           alt={t('moderation.photoAlt')}
-          className="h-40 w-full rounded-lg object-cover"
+          className="aspect-[4/3] w-full rounded-lg object-cover"
         />
       ) : (
-        <div className="flex h-40 items-center justify-center rounded-lg bg-[color:var(--color-surface-elevated)] text-xs text-[color:var(--color-muted-foreground)]">
+        <div className="flex aspect-[4/3] items-center justify-center rounded-lg bg-[color:var(--color-surface-elevated)] text-xs text-[color:var(--color-muted-foreground)]">
           {t('moderation.noPreview')}
         </div>
       )}
-      <div className="flex flex-col gap-1 text-xs text-[color:var(--color-muted-foreground)]">
-        <p>
-          {photo.uploaderName ?? t('moderation.anonymous')} ·{' '}
-          {t('moderation.sizeKb', { size: sizeKb })}
-        </p>
-        <p>{photo.contentType}</p>
-      </div>
+      <figcaption className="flex flex-col gap-0.5 text-xs text-[color:var(--color-muted-foreground)]">
+        <span className="truncate text-[color:var(--color-foreground)]">
+          {photo.uploaderName ?? t('moderation.anonymous')}
+        </span>
+        <span className="font-mono">
+          {t('moderation.sizeKb', { size: sizeKb })} · {photo.contentType}
+        </span>
+      </figcaption>
+      {/* Modération sur tokens, pas sur `bg-red-100 text-red-800` : ces classes
+          Tailwind brutes posaient une pastille claire sur le back-office sombre. */}
       <div className="flex items-center gap-2">
-        <button
+        <ModerateButton
+          tone="approve"
+          disabled={loading}
           onClick={() => moderate(photo._id, 'approved')}
-          disabled={loading}
-          className="flex-1 rounded-lg bg-[color:var(--color-sage-100)] px-3 py-1.5 text-xs font-medium text-[color:var(--color-sage-700)] transition-colors hover:bg-[color:var(--color-sage-100)]/80 disabled:opacity-50"
         >
+          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
           {t('moderation.approve')}
-        </button>
-        <button
-          onClick={() => moderate(photo._id, 'rejected')}
+        </ModerateButton>
+        <ModerateButton
+          tone="reject"
           disabled={loading}
-          className="flex-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-800 transition-colors hover:bg-red-100/80 disabled:opacity-50"
+          onClick={() => moderate(photo._id, 'rejected')}
         >
+          <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
           {t('moderation.reject')}
-        </button>
+        </ModerateButton>
       </div>
-    </div>
+    </figure>
   );
 }
 
-function Th({ children }: { children: React.ReactNode }) {
+function ModerateButton({
+  tone,
+  disabled,
+  onClick,
+  children,
+}: {
+  tone: 'approve' | 'reject';
+  disabled: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <th className="px-4 py-3 text-left font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={[
+        'focus-ring inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50',
+        tone === 'approve'
+          ? 'bg-[color:var(--color-success-soft)] text-[color:color-mix(in_oklab,var(--color-success),var(--color-foreground)_42%)] hover:brightness-110'
+          : 'bg-[color:var(--color-danger-soft)] text-[color:color-mix(in_oklab,var(--color-danger),var(--color-foreground)_40%)] hover:brightness-110',
+      ].join(' ')}
+    >
       {children}
-    </th>
+    </button>
   );
 }

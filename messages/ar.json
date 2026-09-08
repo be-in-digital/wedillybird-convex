@@ -2,7 +2,20 @@
   "Admin": {
     "shell": {
       "brand": "المسؤول",
-      "signOut": "تسجيل الخروج"
+      "signOut": "تسجيل الخروج",
+      "openNav": "فتح التنقل",
+      "toggleNav": "طي أو توسيع التنقل",
+      "search": "البحث عن قسم",
+      "searchHint": "الانتقال إلى…",
+      "commandEmpty": "لا يوجد قسم مطابق.",
+      "commandSections": "الأقسام",
+      "account": "الحساب",
+      "backToApp": "العودة إلى التطبيق",
+      "groupSteering": "القيادة",
+      "groupRevenue": "الإيرادات",
+      "groupCustomers": "العملاء",
+      "groupGrowth": "النمو",
+      "groupSystem": "النظام"
     },
     "nav": {
       "overview": "نظرة عامة",
@@ -83,7 +96,8 @@
       "colAction": "الإجراء",
       "colTarget": "الهدف",
       "colDetails": "التفاصيل",
-      "empty": "لم يُسجَّل أي إجراء"
+      "empty": "لم يُسجَّل أي إجراء",
+      "emptyDescription": "يُسجَّل هنا كل إجراء إداري."
     },
     "users": {
       "searchPlaceholder": "ابحث عن مستخدم…",
@@ -122,7 +136,9 @@
       "deleteBlockedAdmin": "لا يمكن حذف حساب مسؤول. أزل دور المسؤول أولاً.",
       "deleteBlockedBilled": "اشتراك Stripe ما زال نشطًا ({orgs}). ألغِه من الاشتراكات قبل الحذف.",
       "deleteBlockedTeam": "لهذه المؤسسة فريق ({orgs}). انقل ملكيتها قبل الحذف.",
-      "deleteError": "تعذّر الحذف: {code}"
+      "deleteError": "تعذّر الحذف: {code}",
+      "emptyTitle": "لا يوجد مستخدمون",
+      "emptyDescription": "ستظهر هنا الحسابات المُنشأة عند التسجيل."
     },
     "events": {
       "searchPlaceholder": "ابحث عن فعالية…",
@@ -142,7 +158,9 @@
       "grantPremium": "منح باقة بريميوم",
       "confirmGrantPlan": "منح باقة «{plan}» لهذا الحدث دون دفع؟",
       "revokePlan": "سحب المنح",
-      "confirmRevokePlan": "سحب الباقة الممنوحة من هذا الحدث؟"
+      "confirmRevokePlan": "سحب الباقة الممنوحة من هذا الحدث؟",
+      "emptyTitle": "لا توجد فعاليات",
+      "emptyDescription": "ستظهر هنا حفلات الزفاف التي ينشئها الأزواج والوكالات."
     },
     "moderation": {
       "photosHeading": "الصور المعلّقة ({count})",
@@ -158,7 +176,12 @@
       "anonymous": "مجهول",
       "sizeKb": "{size} ك.ب",
       "approve": "موافقة",
-      "reject": "رفض"
+      "reject": "رفض",
+      "photosDescription": "صور بانتظار الموافقة قبل نشرها في المعرض.",
+      "photosEmptyDescription": "لا شيء للمراجعة: تمت معالجة كل الصور المرسلة.",
+      "templatesDescription": "قوالب الرسائل المُرسلة لموافقة Meta.",
+      "templatesEmpty": "لا توجد قوالب",
+      "templatesEmptyDescription": "ستظهر هنا قوالب الرسائل التي تنشئها المؤسسات."
     },
     "newsletter": {
       "searchPlaceholder": "ابحث بالبريد الإلكتروني…",
@@ -172,7 +195,9 @@
       "colSubscribedAt": "تاريخ الاشتراك",
       "colUnsubscribedAt": "تاريخ إلغاء الاشتراك",
       "statusActive": "نشط",
-      "statusUnsubscribed": "ألغى الاشتراك"
+      "statusUnsubscribed": "ألغى الاشتراك",
+      "emptyTitle": "لا يوجد مشتركون",
+      "emptyDescription": "ستظهر هنا الاشتراكات القادمة من الموقع."
     },
     "payments": {
       "statusFilterAll": "كل الحالات",
@@ -198,7 +223,9 @@
         "submitting": "جارٍ الاسترداد…",
         "submitPartial": "استرداد المبلغ المُدخَل",
         "submitFull": "استرداد {amount}"
-      }
+      },
+      "emptyTitle": "لا توجد مدفوعات",
+      "emptyDescription": "ستظهر المعاملات المحصّلة هنا بعد أول عملية بيع."
     },
     "invoices": {
       "searchPlaceholder": "ابحث بالعميل…",
@@ -209,7 +236,9 @@
       "colStatus": "الحالة",
       "colDate": "التاريخ",
       "colInvoice": "الفاتورة",
-      "downloadPdf": "PDF"
+      "downloadPdf": "PDF",
+      "emptyTitle": "لا توجد فواتير",
+      "emptyDescription": "تُنشأ فاتورة لكل دفعة محصّلة."
     },
     "subscriptions": {
       "searchPlaceholder": "ابحث عن مؤسسة…",
@@ -240,7 +269,20 @@
         "title": "الفواتير · {name}",
         "description": "فواتير اشتراك Stripe لهذه المؤسسة.",
         "empty": "لا توجد فاتورة لهذه المؤسسة."
-      }
+      },
+      "emptyTitle": "لا توجد مؤسسات",
+      "emptyDescription": "ستظهر هنا الوكالات المشتركة مع حالتها في Stripe."
+    },
+    "table": {
+      "searchPlaceholder": "بحث…",
+      "clearSearch": "مسح البحث",
+      "count": "{count} نتيجة",
+      "range": "{from}–{to} من {total}",
+      "page": "صفحة {page} / {pages}",
+      "previous": "الصفحة السابقة",
+      "next": "الصفحة التالية",
+      "noMatchTitle": "لا توجد نتائج",
+      "noMatchDescription": "لا يوجد سطر يطابق هذا البحث. جرّب كلمة أخرى أو أعد ضبط عوامل التصفية."
     }
   },
   "BugReport": {
