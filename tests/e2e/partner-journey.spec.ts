@@ -1,12 +1,5 @@
 import { expect, test } from '@playwright/test';
-import {
-  callConvex,
-  MEM_BACKEND_REQUIRED,
-  memBackendUnavailable,
-  resetBackend,
-  signInByEmail,
-  waitForEmailLink,
-} from './utils/mem-backend';
+import { callConvex, signInByEmail, useMemBackend, waitForEmailLink } from './utils/mem-backend';
 
 /**
  * Le partenariat, dans un vrai navigateur, contre les vraies fonctions Convex.
@@ -21,16 +14,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@wedillybird.test';
 const PARTNER_EMAIL = 'sarah@yourweddingmethod.test';
 
 test.describe('Parcours partenaire', () => {
-  let backendUp = false;
-
-  test.beforeAll(async () => {
-    backendUp = !(await memBackendUnavailable());
-  });
-
-  test.beforeEach(async () => {
-    test.skip(!backendUp, MEM_BACKEND_REQUIRED);
-    await resetBackend();
-  });
+  useMemBackend();
 
   test('connexion par e-mail : le lien reçu ouvre bien une session', async ({ page }) => {
     await signInByEmail(page, 'nouvelle@test.fr');
@@ -178,9 +162,16 @@ test.describe('Parcours partenaire', () => {
     });
 
     // Le lien doit être là, dans l'en-tête, sans que personne n'ait donné l'URL.
-    await norah.goto('/dashboard');
+    //
+    // L'aller est rejoué : `waitForURL` ci-dessus se contente de la PREMIÈRE
+    // destination, et `/onboarding` enchaîne ensuite sur `/dashboard` de son
+    // propre chef. Partir pendant cette redirection fait échouer la navigation
+    // demandée (« interrupted by another navigation ») — chez WebKit surtout.
     const link = norah.getByTestId('partner-space-link');
-    await expect(link).toBeVisible();
+    await expect(async () => {
+      await norah.goto('/dashboard');
+      await expect(link).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
     await link.click();
     await norah.waitForURL(/\/partenaire/);
     await expect(norah.getByText('NORAH10')).toBeVisible();
