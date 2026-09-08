@@ -23,18 +23,18 @@ export function currencyDivisor(currency: string): number {
   return CURRENCY_DIVISOR[currency] ?? 100;
 }
 
-/** Montant en unité mineure → chaîne localisée (« 1 234,56 € »). */
-export function formatMoneyMinor(
-  amountMinor: number,
-  currency: string,
-  locale = 'fr-FR',
-  opts: { maximumFractionDigits?: number } = {},
-): string {
+/**
+ * Montant en unité mineure → chaîne localisée (« 1 234,56 € »).
+ *
+ * Le nombre de décimales est celui de la devise, décidé par `Intl` : 2 pour
+ * l'euro, 0 pour le franc CFA, 3 pour le dinar. On forçait `minimumFractionDigits: 0`,
+ * ce qui affichait « 17,7 € » dans un tableau de commissions là où une ligne
+ * comptable s'écrit « 17,70 € » — et alignait mal les colonnes de montants.
+ */
+export function formatMoneyMinor(amountMinor: number, currency: string, locale = 'fr-FR'): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: opts.maximumFractionDigits ?? 2,
   }).format(amountMinor / currencyDivisor(currency));
 }
 

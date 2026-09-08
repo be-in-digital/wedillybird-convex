@@ -34,7 +34,13 @@ export function DialogContent({
       <DialogPrimitive.Content
         data-theme={theme === 'dark' ? 'dark' : undefined}
         className={cn(
-          'animate-scale-in fixed top-1/2 left-1/2 z-50 flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] shadow-[var(--shadow-popover)] focus:outline-none',
+          // La couleur de texte doit être POSÉE ici. Le contenu est portalisé
+          // vers `<body>` : `data-theme` ci-dessus redéfinit bien les tokens pour
+          // les descendants, mais un texte sans `color` déclaré hérite, lui, de la
+          // couleur calculée du `<body>` — restée en thème clair. Sans cette
+          // classe, tout texte non colorisé explicitement s'affichait en charbon
+          // sur le charbon des modales du back-office.
+          'animate-scale-in fixed top-1/2 left-1/2 z-50 flex max-h-[90dvh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-[color:var(--color-border-strong)] bg-[color:var(--color-surface)] text-[color:var(--color-foreground)] shadow-[var(--shadow-popover)] focus:outline-none',
           className,
         )}
         {...props}

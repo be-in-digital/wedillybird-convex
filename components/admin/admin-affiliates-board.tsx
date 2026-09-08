@@ -19,6 +19,16 @@ import {
 } from 'lucide-react';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -244,6 +254,11 @@ const EVENT_TIER_OPTIONS: ReadonlyArray<{ value: 'essential' | 'premium'; label:
  * que le lien offrira réellement.
  */
 const DEFAULT_TIER = 'agency' as const;
+
+/** Palier pro en toutes lettres. Le slug brut (« agency ») n'est pas un libellé. */
+function tierLabel(tier: 'starter' | 'business' | 'agency'): string {
+  return TIER_OPTIONS.find((t) => t.value === tier)?.label ?? tier;
+}
 const DEFAULT_MONTHS = 12;
 const DEFAULT_EVENT_TIER = 'premium' as const;
 
@@ -640,6 +655,7 @@ export function AdminAffiliatesBoard({
           <span className="text-xs text-[color:var(--color-muted-foreground)]">—</span>
         ) : (
           <PartnerInviteCell
+            affiliateCode={a.code}
             invite={latestInvite.get(a.id) ?? null}
             pending={pending}
             onCreate={(kind, grant) => createInvite(a, kind, grant)}
@@ -843,7 +859,7 @@ export function AdminAffiliatesBoard({
       >
         <div className="flex flex-col gap-5">
           <FieldGroup title="Identité">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Code"
                 htmlFor="affiliate-code"
@@ -884,13 +900,13 @@ export function AdminAffiliatesBoard({
           </FieldGroup>
 
           <FieldGroup title="Économie">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Commission"
                 htmlFor="affiliate-rate"
                 hint={`${commissionOn100.toLocaleString('fr-FR')} € pour 100 € HT encaissés.`}
               >
-                <div className="relative">
+                <div className="relative max-w-[9rem]">
                   <Input
                     id="affiliate-rate"
                     type="number"
@@ -915,7 +931,7 @@ export function AdminAffiliatesBoard({
                     : 'À 0, aucun code saisissable — seul le lien attribue la vente.'
                 }
               >
-                <div className="relative">
+                <div className="relative max-w-[9rem]">
                   <Input
                     id="affiliate-discount"
                     type="number"
@@ -931,24 +947,32 @@ export function AdminAffiliatesBoard({
                   </span>
                 </div>
               </Field>
-              <div className="flex flex-col justify-center gap-2 sm:col-span-2 lg:col-span-1">
-                <CapMeter combinedBps={combinedBps} />
-                {overCap ? (
-                  <p className="flex items-start gap-1.5 text-xs text-[color:var(--color-danger)]">
-                    <AlertTriangle
-                      className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                      strokeWidth={2}
-                      aria-hidden
-                    />
-                    Au-delà de 25 %, la marge de l&apos;Essentiel ne tient plus.
-                  </p>
-                ) : null}
-              </div>
+            </div>
+
+            <div
+              className={cn(
+                'flex flex-col gap-2 rounded-lg border px-4 py-3 transition-colors',
+                overCap
+                  ? 'border-[color:var(--color-danger)]/40 bg-[color:var(--color-danger-soft)]/40'
+                  : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)]/40',
+              )}
+            >
+              <CapMeter combinedBps={combinedBps} />
+              {overCap ? (
+                <p className="flex items-start gap-1.5 text-xs text-[color:var(--color-danger)]">
+                  <AlertTriangle
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                  Au-delà de 25 %, la marge de l&apos;Essentiel ne tient plus.
+                </p>
+              ) : null}
             </div>
           </FieldGroup>
 
           <FieldGroup title="Contact">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Nom affiché"
                 htmlFor="affiliate-display-name"
@@ -967,7 +991,6 @@ export function AdminAffiliatesBoard({
                 label="E-mail (payout)"
                 htmlFor="affiliate-owner-email"
                 hint="Sans adresse, le lien d'invitation ne pourra être que copié, pas envoyé."
-                className="sm:col-span-2 lg:col-span-2"
               >
                 <Input
                   id="affiliate-owner-email"
@@ -1144,15 +1167,105 @@ function ContactCell({
 }
 
 /**
- * État du compte offert d'un partenaire, dans une seule cellule.
+ * Compte offert d'un partenaire — pastille d'état dans la ligne, gestion dans un
+ * dialogue.
+ *
+ * Tout tenait auparavant dans la cellule : deux offres, chacune avec ses menus
+ * et son bouton, plus l'état du lien courant. Une ligne de tableau faisait trois
+ * fois la hauteur des autres et poussait la colonne Actions hors de l'écran. La
+ * ligne ne porte plus que l'état — la seule chose qu'on lit en balayant — et le
+ * reste s'ouvre quand on en a besoin.
  *
  * Le jeton n'est rendu par le serveur que tant que le lien sert : un lien
  * consommé ou révoqué n'a plus de raison de circuler, donc il n'y a rien à
- * copier — seulement un état à lire. « Nouveau lien » reste proposé dans tous
- * les cas : regénérer un lien perdu doit rester trivial (et révoque
+ * copier — seulement un état à lire. Créer un nouveau lien reste proposé dans
+ * tous les cas : regénérer un lien perdu doit rester trivial (et révoque
  * automatiquement le précédent côté serveur).
  */
 function PartnerInviteCell({
+  affiliateCode,
+  invite,
+  pending,
+  onCreate,
+  onRevoke,
+  onSend,
+  fallbackEmail,
+  buildUrl,
+}: {
+  affiliateCode: string;
+  invite: PartnerInvite | null;
+  pending: boolean;
+  onCreate: (kind: 'pro' | 'couple', grant: InviteGrantOptions) => void;
+  onRevoke: (inviteId: string) => void;
+  onSend: (inviteId: string) => void;
+  /** E-mail de l'affilié, si l'invitation n'en porte pas elle-même. */
+  fallbackEmail: string | null;
+  buildUrl: (token: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const stateTone: StatusTone = !invite
+    ? 'neutral'
+    : invite.state === 'usable'
+      ? 'success'
+      : invite.state === 'consumed'
+        ? 'info'
+        : 'neutral';
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <div className="flex flex-wrap items-center gap-2">
+        {invite ? (
+          <StatusPill tone={stateTone}>{INVITE_STATE_LABEL[invite.state]}</StatusPill>
+        ) : null}
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            disabled={pending}
+            className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-md border border-[color:var(--color-border)] px-2.5 text-xs font-medium whitespace-nowrap transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
+          >
+            <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            {invite ? 'Gérer' : 'Configurer'}
+          </button>
+        </DialogTrigger>
+      </div>
+
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Compte offert — {affiliateCode}</DialogTitle>
+          <DialogDescription>
+            Un lien d&apos;invitation ouvre un compte offert au partenaire. Un seul lien vit à la
+            fois : en créer un nouveau révoque le précédent.
+          </DialogDescription>
+        </DialogHeader>
+
+        <InvitePanel
+          invite={invite}
+          pending={pending}
+          onCreate={onCreate}
+          onRevoke={onRevoke}
+          onSend={onSend}
+          fallbackEmail={fallbackEmail}
+          buildUrl={buildUrl}
+        />
+
+        <DialogFooter>
+          <DialogClose asChild>
+            <button
+              type="button"
+              className="focus-ring inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-foreground)]"
+            >
+              Fermer
+            </button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Corps du dialogue : l'état du lien courant, puis la création du suivant. */
+function InvitePanel({
   invite,
   pending,
   onCreate,
@@ -1166,13 +1279,12 @@ function PartnerInviteCell({
   onCreate: (kind: 'pro' | 'couple', grant: InviteGrantOptions) => void;
   onRevoke: (inviteId: string) => void;
   onSend: (inviteId: string) => void;
-  /** E-mail de l'affilié, si l'invitation n'en porte pas elle-même. */
   fallbackEmail: string | null;
   buildUrl: (token: string) => string;
 }) {
   const [copied, setCopied] = useState(false);
   // Ce que le prochain lien offrira. Volontairement pré-rempli sur les défauts
-  // et NON sur l'invitation existante : « Nouveau lien » sert le plus souvent à
+  // et NON sur l'invitation existante : « nouveau lien » sert le plus souvent à
   // remettre un partenaire aux conditions courantes, pas à reconduire des
   // conditions périmées. Les menus restent visibles avant le clic, donc rien
   // ne change en silence.
@@ -1183,173 +1295,170 @@ function PartnerInviteCell({
   // savoir s'il y a une adresse à servir, et laquelle annoncer au survol.
   const recipient = invite?.inviteeEmail ?? fallbackEmail;
 
-  const selectCls = 'h-8 w-auto min-w-0 gap-1.5 px-2 text-xs';
-  const createBtnCls =
-    'focus-ring inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-[color:var(--color-border)] px-2.5 text-xs font-medium whitespace-nowrap transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50';
+  const offerBtn =
+    'focus-ring inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[color:var(--color-border)] px-3 text-sm font-medium whitespace-nowrap transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50';
 
-  /**
-   * Les deux offres, chacune avec ses propres réglages.
-   *
-   * Deux lignes plutôt qu'un choix caché : le type de lien décide de ce qu'on
-   * donne — un abonnement agence qui court dans le temps, ou un forfait de
-   * mariage acheté une fois — et ne se corrige pas après coup, le lien consommé
-   * ayant déjà créé le compte. Les mois n'apparaissent que côté agence : un
-   * forfait particulier n'a pas de durée, il a une rétention de galerie liée à
-   * la date du mariage.
-   */
-  const creationControls = (
-    <div className="flex min-w-[14rem] flex-col gap-2.5">
-      <div className="flex flex-col gap-1">
-        <span className="text-[0.625rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
-          Compte agence
-        </span>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Select value={tier} disabled={pending} onValueChange={(v) => setTier(v as typeof tier)}>
-            <SelectTrigger className={selectCls} aria-label="Palier offert à l'agence">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TIER_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={String(months)}
-            disabled={pending}
-            onValueChange={(v) => setMonths(Number(v))}
-          >
-            <SelectTrigger className={selectCls} aria-label="Durée du compte offert, en mois">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS_OPTIONS.map((m) => (
-                <SelectItem key={m} value={String(m)}>
-                  {m} mois
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+  return (
+    <div className="flex flex-col gap-5">
+      {invite ? (
+        <section className="flex flex-col gap-2.5 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)]/40 p-4">
+          <p className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
+            Lien en cours
+          </p>
+          <p className="text-sm">
+            {invite.kind === 'couple'
+              ? `Compte personnel · mariage ${invite.grantEventTier === 'premium' ? 'Premium' : 'Essentiel'} offert`
+              : `Compte agence · ${tierLabel(invite.grantTier)} · ${invite.grantMonths} mois`}
+          </p>
+          {invite.lastSentAt ? (
+            <p className="text-xs text-[color:var(--color-muted-foreground)]">
+              Envoyé {invite.sendCount > 1 ? `${invite.sendCount}× ` : ''}à {invite.lastSentTo} le{' '}
+              {formatDate(invite.lastSentAt)}
+            </p>
+          ) : null}
+
+          {invite.state === 'usable' && invite.token ? (
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onSend(invite.id)}
+                disabled={pending || !recipient}
+                title={
+                  recipient
+                    ? `Envoyer le lien à ${recipient}`
+                    : "Aucune adresse connue : renseignez l'e-mail de l'affilié pour pouvoir envoyer."
+                }
+                className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg bg-[color:var(--color-primary)] px-3 text-sm font-medium text-[color:var(--color-primary-foreground)] transition-colors hover:bg-[color:var(--color-primary-hover)] disabled:opacity-50"
+              >
+                <Mail className="h-4 w-4" strokeWidth={2} aria-hidden />
+                {invite.lastSentAt ? 'Renvoyer' : 'Envoyer par e-mail'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigator.clipboard.writeText(buildUrl(invite.token!));
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 2000);
+                }}
+                className={offerBtn}
+              >
+                {copied ? (
+                  <CheckCircle2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                ) : (
+                  <Link2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                )}
+                {copied ? 'Copié' : 'Copier le lien'}
+              </button>
+              <button
+                type="button"
+                onClick={() => onRevoke(invite.id)}
+                disabled={pending}
+                className="focus-ring inline-flex h-9 items-center rounded-lg px-2.5 text-sm text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-foreground)] disabled:opacity-50"
+              >
+                Annuler le lien
+              </button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {/*
+        Deux offres, chacune avec ses propres réglages. Le type de lien décide de
+        ce qu'on donne — un abonnement agence qui court dans le temps, ou un
+        forfait de mariage acheté une fois — et ne se corrige pas après coup, le
+        lien consommé ayant déjà créé le compte. Les mois n'apparaissent que côté
+        agence : un forfait particulier n'a pas de durée, il a une rétention de
+        galerie liée à la date du mariage.
+      */}
+      <section className="flex flex-col gap-4">
+        <p className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
+          {invite ? 'Remplacer par un nouveau lien' : 'Créer un lien'}
+        </p>
+
+        <div className="flex flex-col gap-3 rounded-lg border border-[color:var(--color-border)] p-4">
+          <p className="text-sm font-medium">Compte agence</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Palier">
+              <Select
+                value={tier}
+                disabled={pending}
+                onValueChange={(v) => setTier(v as typeof tier)}
+              >
+                <SelectTrigger className="h-9" aria-label="Palier offert à l'agence">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIER_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Durée">
+              <Select
+                value={String(months)}
+                disabled={pending}
+                onValueChange={(v) => setMonths(Number(v))}
+              >
+                <SelectTrigger className="h-9" aria-label="Durée du compte offert, en mois">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS_OPTIONS.map((m) => (
+                    <SelectItem key={m} value={String(m)}>
+                      {m} mois
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
           <button
             type="button"
             onClick={() => onCreate('pro', { grantTier: tier, grantMonths: months })}
             disabled={pending}
-            className={createBtnCls}
+            className={`${offerBtn} w-full sm:w-auto sm:self-start`}
           >
-            <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-            Lien agence
+            <Link2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Créer le lien agence
           </button>
         </div>
-      </div>
 
-      <div className="flex flex-col gap-1">
-        <span className="text-[0.625rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
-          Compte personnel
-        </span>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Select
-            value={eventTier}
-            disabled={pending}
-            onValueChange={(v) => setEventTier(v as typeof eventTier)}
-          >
-            <SelectTrigger className={selectCls} aria-label="Forfait offert au particulier">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {EVENT_TIER_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col gap-3 rounded-lg border border-[color:var(--color-border)] p-4">
+          <p className="text-sm font-medium">Compte personnel</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Forfait offert">
+              <Select
+                value={eventTier}
+                disabled={pending}
+                onValueChange={(v) => setEventTier(v as typeof eventTier)}
+              >
+                <SelectTrigger className="h-9" aria-label="Forfait offert au particulier">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_TIER_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
           <button
             type="button"
             onClick={() => onCreate('couple', { grantEventTier: eventTier })}
             disabled={pending}
-            className={createBtnCls}
+            className={`${offerBtn} w-full sm:w-auto sm:self-start`}
           >
-            <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-            Lien personnel
+            <Link2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Créer le lien personnel
           </button>
         </div>
-      </div>
-    </div>
-  );
-
-  if (!invite) {
-    return creationControls;
-  }
-
-  const stateTone: StatusTone =
-    invite.state === 'usable' ? 'success' : invite.state === 'consumed' ? 'info' : 'neutral';
-
-  return (
-    <div className="flex min-w-[14rem] flex-col items-start gap-2">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <StatusPill tone={stateTone}>{INVITE_STATE_LABEL[invite.state]}</StatusPill>
-        <span className="text-xs text-[color:var(--color-muted-foreground)]">
-          {invite.kind === 'couple'
-            ? `mariage ${invite.grantEventTier === 'premium' ? 'Premium' : 'Essentiel'} offert`
-            : `${invite.grantMonths} mois ${invite.grantTier}`}
-        </span>
-      </div>
-
-      {invite.lastSentAt ? (
-        <p className="text-xs text-[color:var(--color-muted-foreground)]">
-          Envoyé {invite.sendCount > 1 ? `${invite.sendCount}× ` : ''}à {invite.lastSentTo} le{' '}
-          {formatDate(invite.lastSentAt)}
-        </p>
-      ) : null}
-
-      {invite.state === 'usable' && invite.token ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onSend(invite.id)}
-            disabled={pending || !recipient}
-            title={
-              recipient
-                ? `Envoyer le lien à ${recipient}`
-                : "Aucune adresse connue : renseignez l'e-mail de l'affilié pour pouvoir envoyer."
-            }
-            className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-md bg-[color:var(--color-primary)] px-2.5 text-xs font-medium text-[color:var(--color-primary-foreground)] transition-colors hover:bg-[color:var(--color-primary-hover)] disabled:opacity-50"
-          >
-            <Mail className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-            {invite.lastSentAt ? 'Renvoyer' : 'Envoyer'}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              void navigator.clipboard.writeText(buildUrl(invite.token!));
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 2000);
-            }}
-            className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-md border border-[color:var(--color-border)] px-2.5 text-xs font-medium transition-colors hover:bg-[color:var(--color-surface-elevated)]"
-          >
-            {copied ? (
-              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-            ) : (
-              <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-            )}
-            {copied ? 'Copié' : 'Copier le lien'}
-          </button>
-          <button
-            type="button"
-            onClick={() => onRevoke(invite.id)}
-            disabled={pending}
-            className="focus-ring inline-flex h-8 items-center rounded-md px-2 text-xs text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-foreground)] disabled:opacity-50"
-          >
-            Annuler
-          </button>
-        </div>
-      ) : (
-        // Regénérer, c'est re-choisir : un lien mort se remplace le plus
-        // souvent parce que les conditions ont changé.
-        creationControls
-      )}
+      </section>
     </div>
   );
 }

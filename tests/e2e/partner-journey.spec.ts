@@ -101,9 +101,13 @@ test.describe('Parcours partenaire', () => {
 
     /* ---------------- 2. Il génère le lien d'invitation ---------------- */
     await page.reload();
+    // Le compte offert se gère dans un dialogue : la ligne ne porte plus que
+    // l'état du lien, les réglages et les actions s'ouvrent au clic.
     const row = page.locator('tr', { hasText: 'SARAH12' }).first();
-    await row.getByRole('button', { name: /lien agence/i }).click();
-    await expect(row.getByRole('button', { name: /copier le lien/i })).toBeVisible();
+    await row.getByRole('button', { name: /configurer|gérer/i }).click();
+    const inviteDialog = page.getByRole('dialog');
+    await inviteDialog.getByRole('button', { name: /créer le lien agence/i }).click();
+    await expect(inviteDialog.getByRole('button', { name: /copier le lien/i })).toBeVisible();
 
     const token = await inviteToken();
     expect(token).toHaveLength(24);
