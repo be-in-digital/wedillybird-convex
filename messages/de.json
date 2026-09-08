@@ -1276,7 +1276,8 @@
     },
     "orgExpiredTitle": "Galerie geschlossen",
     "orgExpiredHint": "Die Abdeckung Ihrer Agentur ist nicht mehr aktiv. Nehmen Sie Ihr Abo wieder auf, um die Galerien Ihrer Hochzeiten zu öffnen.",
-    "orgExpiredCta": "Zur Abrechnung"
+    "orgExpiredCta": "Zur Abrechnung",
+    "graceNotice": "Die Abdeckung Ihrer Agentur ist abgelaufen. Diese Fotos bleiben noch {days} Tage sichtbar und herunterladbar — neue Uploads sind geschlossen. Nehmen Sie ein Abo wieder auf, um die Galerie zu öffnen."
   },
   "Checkin": {
     "title": "Gäste-Check-in",

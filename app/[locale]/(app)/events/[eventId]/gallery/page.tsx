@@ -8,7 +8,7 @@ import { AppShell } from '@/components/app/app-shell';
 import { OwnerGallery } from '@/components/gallery/owner-gallery';
 import { buttonVariants } from '@/components/ui/button';
 import { canDownloadGalleryZip } from '@/lib/gallery/zip-access';
-import { galleryAccessFor } from '@/lib/payments/entitlements';
+import { galleryAccessFor, galleryGraceDaysLeft } from '@/lib/payments/entitlements';
 import { cn } from '@/lib/cn';
 
 export default async function GalleryPage({
@@ -54,8 +54,9 @@ export default async function GalleryPage({
   // Ne charge les photos que si la galerie est ouverte (la query côté
   // Convex est gardée par ownership, pas par expiry — on évite juste un
   // round-trip inutile).
+  // `'grace'` charge les photos comme `'open'` : c'est tout l'objet du sursis.
   const photos =
-    galleryStatus === 'open'
+    galleryStatus === 'open' || galleryStatus === 'grace'
       ? await convex.query(convexApi.listPhotosForOwner, {
           eventId,
           requesterId: session!.userId,
@@ -108,12 +109,25 @@ export default async function GalleryPage({
             href={(isOrgEvent ? '/pro/billing' : `/events/${eventId}#upgrade`) as never}
           />
         ) : (
-          <OwnerGallery
-            eventId={eventId}
-            initialPhotos={photos}
-            canDownloadZip={canDownloadGalleryZip(event)}
-            faceSearchEnabled={event.faceSearchEnabled === true}
-          />
+          <>
+            {/* Le sursis doit se dire : une galerie qui se referme sans avoir
+                prévenu, c'est le même problème repoussé de deux mois. */}
+            {galleryStatus === 'grace' ? (
+              <p
+                role="status"
+                className="rounded-xl border border-[color:var(--color-gold-700)] bg-[color:var(--color-ivory-100)] px-4 py-3 text-sm leading-relaxed text-[color:var(--color-ink-700)]"
+              >
+                {t('graceNotice', { days: galleryGraceDaysLeft(org, nowMs) })}
+              </p>
+            ) : null}
+            <OwnerGallery
+              eventId={eventId}
+              initialPhotos={photos}
+              canDownloadZip={canDownloadGalleryZip(event)}
+              faceSearchEnabled={event.faceSearchEnabled === true}
+              readOnly={galleryStatus === 'grace'}
+            />
+          </>
         )}
       </div>
     </AppShell>

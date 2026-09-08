@@ -1272,7 +1272,8 @@
     },
     "orgExpiredTitle": "Gallery closed",
     "orgExpiredHint": "Your agency coverage is no longer active. Resume your subscription to reopen your weddings’ galleries.",
-    "orgExpiredCta": "Go to billing"
+    "orgExpiredCta": "Go to billing",
+    "graceNotice": "Your agency's coverage has ended. These photos stay viewable and downloadable for {days} more days — new uploads are closed. Resume a plan to reopen the gallery."
   },
   "Checkin": {
     "title": "Guest check-in",

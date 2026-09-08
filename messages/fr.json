@@ -1276,7 +1276,8 @@
     },
     "orgExpiredTitle": "Galerie fermée",
     "orgExpiredHint": "La couverture de votre agence n'est plus active. Reprenez votre abonnement pour rouvrir les galeries de vos mariages.",
-    "orgExpiredCta": "Voir la facturation"
+    "orgExpiredCta": "Voir la facturation",
+    "graceNotice": "La couverture de votre agence a pris fin. Ces photos restent consultables et téléchargeables pendant encore {days} jours — le dépôt de nouvelles photos est clos. Reprenez un abonnement pour rouvrir la galerie."
   },
   "Checkin": {
     "title": "Check-in des invités",

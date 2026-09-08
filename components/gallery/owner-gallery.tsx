@@ -60,6 +60,13 @@ interface Props {
    * gardée par la même règle (`FACE_SEARCH_DISABLED`).
    */
   faceSearchEnabled?: boolean;
+  /**
+   * Galerie en SURSIS : la couverture de l'agence s'est éteinte, les photos
+   * restent consultables quelques semaines mais le dépôt est clos. Le serveur
+   * rejette de toute façon l'upload (`GALLERY_EXPIRED`) — masquer le
+   * téléversement évite de le proposer pour rien. Défaut `false`.
+   */
+  readOnly?: boolean;
 }
 
 const FILTERS = ['all', 'pending', 'approved', 'rejected'] as const;
@@ -69,6 +76,7 @@ export function OwnerGallery({
   initialPhotos,
   canDownloadZip = true,
   faceSearchEnabled = false,
+  readOnly = false,
 }: Props) {
   const t = useTranslations('Gallery');
   const locale = useLocale();
@@ -134,13 +142,15 @@ export function OwnerGallery({
       <p className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-ivory-100)] px-4 py-3 text-sm leading-relaxed text-[color:var(--color-ink-700)]">
         {t('moderationNotice')}
       </p>
-      <PhotoUploader
-        mode="owner"
-        eventId={eventId}
-        getUploadUrl={createOwnerUploadUrlAction}
-        confirm={confirmOwnerUploadAction}
-        onUploaded={() => router.refresh()}
-      />
+      {readOnly ? null : (
+        <PhotoUploader
+          mode="owner"
+          eventId={eventId}
+          getUploadUrl={createOwnerUploadUrlAction}
+          confirm={confirmOwnerUploadAction}
+          onUploaded={() => router.refresh()}
+        />
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
