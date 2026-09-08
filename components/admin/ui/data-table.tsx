@@ -208,8 +208,16 @@ export function AdminDataTable<T>({
                               onClick={() => toggleSort(column.id)}
                               className={cn(
                                 'focus-ring -mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors',
+                                // Le preflight Tailwind remet `text-transform: none`
+                                // sur les éléments de formulaire : sans ce rappel,
+                                // seuls les en-têtes NON triables restaient en
+                                // capitales et la ligne d'en-tête était bancale.
+                                'uppercase',
                                 'hover:text-[color:var(--color-foreground)]',
                                 active && 'text-[color:var(--color-foreground)]',
+                                // Colonne alignée à droite : la flèche passe à
+                                // gauche pour que le libellé garde le bord droit
+                                // des valeurs qu'il coiffe.
                                 column.align === 'right' && 'flex-row-reverse',
                               )}
                             >

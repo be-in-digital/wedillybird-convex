@@ -171,7 +171,7 @@ export function Sidebar({
         <SheetContent
           side="left"
           showClose={false}
-          aria-label={mobileTitle}
+          label={mobileTitle}
           className="w-[86vw] max-w-[17rem] bg-[color:var(--color-surface)] p-0 md:hidden"
         >
           <div className="group/sidebar flex h-full flex-col" data-state="expanded">

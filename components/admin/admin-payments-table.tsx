@@ -144,7 +144,7 @@ export function AdminPaymentsTable({ payments }: { payments: Payment[] }) {
       header: t('common.colActions'),
       card: 'actions',
       align: 'right',
-      width: 'w-40',
+      className: 'whitespace-nowrap',
       cell: (p) => <PaymentActions payment={p} />,
     },
   ];
@@ -213,7 +213,7 @@ function PaymentActions({ payment: p }: { payment: Payment }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-1">
+    <div className="flex items-center justify-end gap-1">
       {hasInvoice ? (
         <a
           href={`/api/payments/${p._id}/invoice.pdf`}

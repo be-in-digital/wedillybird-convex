@@ -60,12 +60,6 @@ export const TOOLTIP_PROPS = {
   itemStyle: { color: 'var(--color-foreground)', padding: 0 },
 } as const;
 
-export const LEGEND_PROPS = {
-  wrapperStyle: { fontSize: 11, paddingTop: 8, color: 'var(--color-muted-foreground)' },
-  iconType: 'circle' as const,
-  iconSize: 8,
-};
-
 /** « 12 480 » → « 12,5 k ». Un axe Y d'euros non compacté déborde vite en dark dense. */
 export function compactNumber(value: number, locale = 'fr-FR'): string {
   return new Intl.NumberFormat(locale, {

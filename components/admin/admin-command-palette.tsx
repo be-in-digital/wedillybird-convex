@@ -54,7 +54,12 @@ export function AdminCommandPalette({ current }: { current: AdminSection }) {
         </kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t('shell.search')}
+        description={t('shell.commandSections')}
+      >
         <CommandInput placeholder={t('shell.search')} />
         <CommandList>
           <CommandEmpty>{t('shell.commandEmpty')}</CommandEmpty>

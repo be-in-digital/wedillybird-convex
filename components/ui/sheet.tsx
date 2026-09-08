@@ -44,9 +44,19 @@ export function SheetContent({
   children,
   side = 'right',
   showClose = true,
+  label,
   ...props
 }: ComponentProps<typeof DialogPrimitive.Content> &
-  VariantProps<typeof sheetVariants> & { showClose?: boolean }) {
+  VariantProps<typeof sheetVariants> & {
+    showClose?: boolean;
+    /**
+     * Nom du panneau quand il n'affiche pas de `SheetTitle` visible (navigation
+     * mobile, par exemple). Radix exige un `Dialog.Title` : sans lui le panneau
+     * s'annonce « dialog » sans nom aux lecteurs d'écran. Ne pas passer `label`
+     * si le contenu rend déjà un `SheetTitle`, sous peine de deux titres.
+     */
+    label?: string;
+  }) {
   const t = useTranslations('Common');
   const theme = useUiTheme();
   return (
@@ -54,9 +64,13 @@ export function SheetContent({
       <DialogPrimitive.Overlay className="animate-fade-in fixed inset-0 z-50 bg-black/55 backdrop-blur-sm" />
       <DialogPrimitive.Content
         data-theme={theme === 'dark' ? 'dark' : undefined}
+        // Aucune description associée : le dire explicitement à Radix, plutôt
+        // que de le laisser avertir à chaque ouverture.
+        aria-describedby={undefined}
         className={cn(sheetVariants({ side }), className)}
         {...props}
       >
+        {label ? <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title> : null}
         {children}
         {showClose ? (
           <DialogPrimitive.Close

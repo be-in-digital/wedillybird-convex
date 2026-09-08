@@ -126,7 +126,7 @@ export function AdminSubscriptionsTable({ organizations }: { organizations: Org[
       header: t('common.colActions'),
       card: 'actions',
       align: 'right',
-      width: 'w-44',
+      className: 'whitespace-nowrap',
       cell: (o) => <OrgActions org={o} />,
     },
   ];
@@ -155,7 +155,7 @@ function OrgActions({ org: o }: { org: Org }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-1">
+    <div className="flex items-center justify-end gap-1">
       {o.hasStripeCustomer ? <InvoicesDialog org={o} /> : null}
       {hasSub && !isCanceled ? <CancelDialog org={o} /> : null}
       {hasSub && isCanceled ? <ReactivateButton org={o} /> : null}
@@ -276,7 +276,11 @@ function ReactivateButton({ org: o }: { org: Org }) {
       >
         {pending ? t('subscriptions.reactivate.submitting') : t('subscriptions.reactivate.submit')}
       </button>
-      {error ? <span className="text-[10px] text-[color:var(--color-danger)]">{error}</span> : null}
+      {error ? (
+        <span role="alert" className="text-xs text-[color:var(--color-danger)]">
+          {error}
+        </span>
+      ) : null}
     </span>
   );
 }

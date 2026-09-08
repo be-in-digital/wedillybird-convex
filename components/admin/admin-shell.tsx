@@ -93,10 +93,13 @@ function AdminSidebar({ current, adminName }: { current: AdminSection; adminName
 
   return (
     <Sidebar mobileTitle={t('shell.brand')}>
+      {/* Rail replié : la marque cède sa place au bouton de dépli. Reléguer
+          celui-ci au pied de la sidebar l'aurait fait changer de place entre les
+          deux états — on va rechercher un interrupteur là où on l'a laissé. */}
       <SidebarHeader className={cn(!open && 'md:justify-center md:px-0')}>
         <Link
           href={'/admin' as never}
-          className="focus-ring flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1"
+          className="focus-ring flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1 group-data-[state=collapsed]/sidebar:md:hidden"
         >
           <span
             aria-hidden
@@ -104,13 +107,13 @@ function AdminSidebar({ current, adminName }: { current: AdminSection; adminName
           >
             W
           </span>
-          <span className="font-display truncate text-base tracking-tight italic group-data-[state=collapsed]/sidebar:hidden">
+          <span className="font-display truncate text-base tracking-tight italic">
             {t('shell.brand')}
           </span>
         </Link>
         <SidebarToggle
           label={t('shell.toggleNav')}
-          className="ml-auto hidden group-data-[state=collapsed]/sidebar:hidden md:inline-flex"
+          className="ml-auto hidden group-data-[state=collapsed]/sidebar:mx-auto md:inline-flex"
         />
       </SidebarHeader>
 
@@ -141,9 +144,6 @@ function AdminSidebar({ current, adminName }: { current: AdminSection; adminName
       </SidebarContent>
 
       <SidebarFooter>
-        {!open ? (
-          <SidebarToggle label={t('shell.toggleNav')} className="mx-auto hidden md:inline-flex" />
-        ) : null}
         <AdminAccountMenu adminName={adminName} />
       </SidebarFooter>
     </Sidebar>

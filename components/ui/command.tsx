@@ -2,9 +2,9 @@
 
 import { Command as CommandPrimitive } from 'cmdk';
 import { Search } from 'lucide-react';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
-import { Dialog, DialogContent } from './dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from './dialog';
 
 /**
  * Command (shadcn / cmdk) — palette de commandes. Utilisée par le back-office
@@ -26,8 +26,15 @@ export function Command({ className, ...props }: ComponentProps<typeof CommandPr
 export function CommandDialog({
   children,
   className,
+  title,
+  description,
   ...props
-}: ComponentProps<typeof Dialog> & { className?: string }) {
+}: ComponentProps<typeof Dialog> & {
+  className?: string;
+  /** Nom de la palette pour les lecteurs d'écran — le champ seul ne la nomme pas. */
+  title: string;
+  description?: ReactNode;
+}) {
   return (
     <Dialog {...props}>
       <DialogContent
@@ -37,6 +44,10 @@ export function CommandDialog({
           className,
         )}
       >
+        <DialogTitle className="sr-only">{title}</DialogTitle>
+        {description ? (
+          <DialogDescription className="sr-only">{description}</DialogDescription>
+        ) : null}
         <Command loop>{children}</Command>
       </DialogContent>
     </Dialog>

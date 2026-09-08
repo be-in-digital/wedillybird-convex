@@ -15,6 +15,10 @@ import {
   adminSetAffiliateContactAction,
   adminSetAffiliateStatusAction,
 } from '@/app/[locale]/(app)/admin/actions';
+import { formatDate } from '@/lib/admin/format';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminSection } from './ui/section';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 interface Affiliate {
   id: string;
@@ -108,6 +112,15 @@ interface Referral {
 
 // Miroir de MAX_COMBINED_BPS (convex/lib/affiliate.ts) — garde-fou marge côté UI.
 const MAX_COMBINED_BPS = 2500;
+
+/** Tons du ledger : « acquis » attend une action, « reversé » est une annulation. */
+const LEDGER_STATUS_TONE: Record<Referral['status'], StatusTone> = {
+  pending: 'progress',
+  vested: 'warning',
+  paid: 'success',
+  credited: 'success',
+  reversed: 'danger',
+};
 
 const STATUS_LABEL: Record<Referral['status'], string> = {
   pending: 'En attente',
@@ -382,29 +395,236 @@ export function AdminAffiliatesBoard({
     return [...map.values()];
   }, [referrals]);
 
+  const affiliateColumns: AdminColumn<Affiliate>[] = [
+    {
+      id: 'code',
+      header: 'Code',
+      card: 'title',
+      sortValue: (a) => a.code,
+      cell: (a) => <span className="font-mono font-medium">{a.code}</span>,
+    },
+    {
+      id: 'kind',
+      header: 'Type',
+      sortValue: (a) => a.kind,
+      cell: (a) => (a.kind === 'referral' ? 'Parrainage' : 'Partenaire'),
+    },
+    {
+      id: 'reward',
+      header: 'Récompense',
+      sortValue: (a) => a.rewardType,
+      cell: (a) => (a.rewardType === 'credit' ? 'Crédit' : 'Cash'),
+      hideBelow: 'xl',
+    },
+    {
+      id: 'rates',
+      header: 'Comm. / Remise',
+      align: 'right',
+      sortValue: (a) => a.rateBps,
+      cell: (a) => (
+        <span className="font-mono whitespace-nowrap tabular-nums">
+          {a.rateBps / 100}% / {a.buyerDiscountBps / 100}%
+        </span>
+      ),
+    },
+    {
+      id: 'shareCode',
+      header: 'Code partageable',
+      cell: (a) =>
+        a.shareCode ? (
+          <span className="font-mono">{a.shareCode}</span>
+        ) : a.buyerDiscountBps > 0 ? (
+          <button
+            type="button"
+            onClick={() => ensureCoupon(a)}
+            disabled={pending}
+            className="focus-ring rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs disabled:opacity-50"
+          >
+            Créer le code
+          </button>
+        ) : (
+          <span
+            className="text-[color:var(--color-muted-foreground)]"
+            title="Sans remise filleul, il n'y a rien à faire taper au checkout — seul le lien attribue."
+          >
+            lien seul
+          </span>
+        ),
+      hideBelow: 'xl',
+    },
+    {
+      /* Nom ET adresse : n'afficher que le premier des deux laissait un affilié
+         nommé mais sans e-mail paraître complet, et le bouton d'envoi grisé
+         sans raison lisible. */
+      id: 'contact',
+      header: 'Contact',
+      sortValue: (a) => a.displayName ?? a.ownerEmail ?? '',
+      cell: (a) => (
+        <ContactCell affiliate={a} pending={pending} onSave={(next) => setContact(a, next)} />
+      ),
+      hideBelow: 'lg',
+    },
+    {
+      /* Le lien d'invitation n'a de sens que pour un partenaire : le parrainage
+         particulier n'ouvre pas de compte agence. */
+      id: 'invite',
+      header: 'Compte offert',
+      cell: (a) =>
+        a.kind !== 'partner' ? (
+          <span className="text-[color:var(--color-muted-foreground)]">—</span>
+        ) : (
+          <PartnerInviteCell
+            invite={latestInvite.get(a.id) ?? null}
+            pending={pending}
+            onCreate={(kind, grant) => createInvite(a, kind, grant)}
+            onRevoke={revokeInvite}
+            onSend={sendInvite}
+            fallbackEmail={a.ownerEmail ?? null}
+            buildUrl={inviteUrl}
+          />
+        ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      card: 'badge',
+      sortValue: (a) => a.status,
+      cell: (a) => (
+        <StatusPill tone={a.status === 'active' ? 'success' : 'neutral'}>
+          {a.status === 'active' ? 'Actif' : 'Désactivé'}
+        </StatusPill>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      card: 'actions',
+      align: 'right',
+      className: 'whitespace-nowrap',
+      cell: (a) => (
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => toggle(a)}
+            disabled={pending}
+            className="focus-ring rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+          >
+            {a.status === 'active' ? 'Désactiver' : 'Réactiver'}
+          </button>
+          <button
+            type="button"
+            onClick={() => remove(a)}
+            disabled={pending}
+            data-testid="admin-delete-affiliate"
+            className="focus-ring rounded-md px-2 py-1 text-xs text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger-soft)] disabled:opacity-50"
+          >
+            Supprimer
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const ledgerColumns: AdminColumn<Referral>[] = [
+    {
+      id: 'code',
+      header: 'Code',
+      card: 'title',
+      sortValue: (r) => r.code,
+      cell: (r) => <span className="font-mono">{r.code}</span>,
+    },
+    {
+      id: 'net',
+      header: 'Vente (net)',
+      align: 'right',
+      sortValue: (r) => r.netMinor,
+      cell: (r) => (
+        <span className="font-mono whitespace-nowrap tabular-nums">
+          {fmtMinor(r.netMinor, r.currency)}
+        </span>
+      ),
+    },
+    {
+      /* Ce sur quoi la commission a réellement été calculée : c'est ici qu'on
+         tranche un litige sur un montant. */
+      id: 'base',
+      header: 'Assiette HT',
+      align: 'right',
+      sortValue: (r) => r.commissionBaseMinor,
+      cell: (r) => (
+        <span className="font-mono whitespace-nowrap text-[color:var(--color-muted-foreground)] tabular-nums">
+          {r.commissionBaseMinor === null ? '—' : fmtMinor(r.commissionBaseMinor, r.currency)}
+        </span>
+      ),
+      hideBelow: 'xl',
+    },
+    {
+      id: 'reward',
+      header: 'Récompense',
+      align: 'right',
+      sortValue: (r) => r.rewardMinor,
+      cell: (r) => (
+        <span className="font-mono whitespace-nowrap tabular-nums">
+          {fmtMinor(r.rewardMinor, r.currency)}
+          <span className="ml-1 text-[color:var(--color-muted-foreground)]">
+            ({r.rewardType === 'credit' ? 'crédit' : 'cash'})
+          </span>
+        </span>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Statut',
+      card: 'badge',
+      sortValue: (r) => r.status,
+      cell: (r) => (
+        <StatusPill tone={LEDGER_STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</StatusPill>
+      ),
+    },
+    {
+      id: 'vestsAt',
+      header: 'Acquis le',
+      sortValue: (r) => r.vestsAt,
+      cell: (r) => (
+        <span className="whitespace-nowrap text-[color:var(--color-muted-foreground)]">
+          {formatDate(r.vestsAt)}
+        </span>
+      ),
+      hideBelow: 'lg',
+    },
+    {
+      id: 'payout',
+      header: 'Versement',
+      card: 'actions',
+      align: 'right',
+      width: 'w-36',
+      cell: (r) =>
+        // Seules les commissions CASH se versent. Un crédit se dépense à un
+        // achat ; le « verser » le retirerait du solde du parrain sans
+        // contrepartie.
+        r.status === 'vested' && r.rewardType === 'cash' ? (
+          <button
+            type="button"
+            onClick={() => markPaid(r)}
+            disabled={pending}
+            className="focus-ring rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs font-medium transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
+          >
+            Marquer versé
+          </button>
+        ) : (
+          <span className="text-[color:var(--color-muted-foreground)]">—</span>
+        ),
+    },
+  ];
+
   const inputCls =
     'h-9 w-full rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 text-sm text-[color:var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-primary)]';
   const labelCls =
-    'mb-1 block font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-ink-500)] uppercase';
+    'mb-1 block text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase';
 
   return (
-    <div className="flex flex-col gap-8 p-8">
-      <header className="flex items-center gap-3">
-        <Handshake
-          className="h-5 w-5 text-[color:var(--color-accent)]"
-          strokeWidth={1.8}
-          aria-hidden
-        />
-        <div>
-          <h1 className="font-display text-2xl italic">Affiliation</h1>
-          <p className="text-sm text-[color:var(--color-ink-500)]">
-            Affiliés sur invitation. Parrainage particulier = crédit (auto) ; partenaire = cash
-            (payout groupé, acquis à la date de l&apos;event).
-          </p>
-        </div>
-      </header>
-
-      {/* Création */}
+    <div className="flex flex-col gap-8">
       <section className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
         <h2 className="mb-4 text-sm font-semibold">Nouvel affilié</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -520,7 +740,7 @@ export function AdminAffiliatesBoard({
               key={`${t.currency}:${t.status}`}
               className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3"
             >
-              <div className="font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-ink-500)] uppercase">
+              <div className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
                 {STATUS_LABEL[t.status]} · {t.currency}
               </div>
               <div className="text-lg font-semibold">{fmtMinor(t.minor, t.currency)}</div>
@@ -529,203 +749,32 @@ export function AdminAffiliatesBoard({
         </section>
       ) : null}
 
-      {/* Affiliés */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold">Affiliés ({affiliates.length})</h2>
-        <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-[color:var(--color-surface)] text-left font-mono text-[10px] tracking-[0.16em] text-[color:var(--color-ink-500)] uppercase">
-              <tr>
-                <th className="px-4 py-2.5">Code</th>
-                <th className="px-4 py-2.5">Type</th>
-                <th className="px-4 py-2.5">Récompense</th>
-                <th className="px-4 py-2.5">Comm. / Remise</th>
-                <th className="px-4 py-2.5">Code partageable</th>
-                <th className="px-4 py-2.5">Contact</th>
-                <th className="px-4 py-2.5">Compte offert</th>
-                <th className="px-4 py-2.5">Statut</th>
-                <th className="px-4 py-2.5" />
-              </tr>
-            </thead>
-            <tbody>
-              {affiliates.map((a) => (
-                <tr key={a.id} className="border-t border-[color:var(--color-border)]">
-                  <td className="px-4 py-2.5 font-mono font-medium">{a.code}</td>
-                  <td className="px-4 py-2.5">
-                    {a.kind === 'referral' ? 'Parrainage' : 'Partenaire'}
-                  </td>
-                  <td className="px-4 py-2.5">{a.rewardType === 'credit' ? 'Crédit' : 'Cash'}</td>
-                  <td className="px-4 py-2.5">
-                    {a.rateBps / 100}% / {a.buyerDiscountBps / 100}%
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {a.shareCode ? (
-                      <span className="font-mono">{a.shareCode}</span>
-                    ) : a.buyerDiscountBps > 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => ensureCoupon(a)}
-                        disabled={pending}
-                        className="rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs disabled:opacity-50"
-                      >
-                        Créer le code
-                      </button>
-                    ) : (
-                      <span
-                        className="text-[color:var(--color-ink-500)]"
-                        title="Sans remise filleul, il n'y a rien à faire taper au checkout — seul le lien attribue."
-                      >
-                        lien seul
-                      </span>
-                    )}
-                  </td>
-                  {/* Nom ET adresse : n'afficher que le premier des deux
-                      laissait un affilié sans e-mail paraître complet, et le
-                      bouton d'envoi grisé sans raison lisible. */}
-                  <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
-                    <ContactCell
-                      affiliate={a}
-                      pending={pending}
-                      onSave={(next) => setContact(a, next)}
-                    />
-                  </td>
-                  {/* Le lien d'invitation n'a de sens que pour un partenaire :
-                      le parrainage particulier n'ouvre pas de compte agence. */}
-                  <td className="px-4 py-2.5">
-                    {a.kind !== 'partner' ? (
-                      <span className="text-[color:var(--color-ink-500)]">—</span>
-                    ) : (
-                      <PartnerInviteCell
-                        invite={latestInvite.get(a.id) ?? null}
-                        pending={pending}
-                        onCreate={(kind, grant) => createInvite(a, kind, grant)}
-                        onRevoke={revokeInvite}
-                        onSend={sendInvite}
-                        fallbackEmail={a.ownerEmail ?? null}
-                        buildUrl={inviteUrl}
-                      />
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span
-                      className={
-                        a.status === 'active'
-                          ? 'text-[color:var(--color-accent)]'
-                          : 'text-[color:var(--color-ink-500)]'
-                      }
-                    >
-                      {a.status === 'active' ? 'Actif' : 'Désactivé'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => toggle(a)}
-                        disabled={pending}
-                        className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
-                      >
-                        {a.status === 'active' ? 'Désactiver' : 'Réactiver'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => remove(a)}
-                        disabled={pending}
-                        data-testid="admin-delete-affiliate"
-                        className="rounded-md px-2 py-1 text-xs text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10 disabled:opacity-50"
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {affiliates.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={9}
-                    className="px-4 py-8 text-center text-sm text-[color:var(--color-ink-500)]"
-                  >
-                    Aucun affilié. Créez-en un ci-dessus (invitation-only).
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <AdminSection title={`Affiliés (${affiliates.length})`} bare>
+        <AdminDataTable
+          rows={affiliates}
+          columns={affiliateColumns}
+          getRowId={(a) => a.id}
+          searchable={(a) =>
+            `${a.code} ${a.shareCode ?? ''} ${a.displayName ?? ''} ${a.ownerEmail ?? ''}`
+          }
+          emptyTitle="Aucun affilié"
+          emptyDescription="Créez-en un ci-dessus (invitation-only)."
+          emptyIcon={Handshake}
+        />
+      </AdminSection>
 
-      {/* Ledger détaillé */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold">Ledger ({referrals.length})</h2>
-        <div className="overflow-x-auto rounded-xl border border-[color:var(--color-border)]">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-[color:var(--color-surface)] text-left font-mono text-[10px] tracking-[0.16em] text-[color:var(--color-ink-500)] uppercase">
-              <tr>
-                <th className="px-4 py-2.5">Code</th>
-                <th className="px-4 py-2.5">Vente (net)</th>
-                <th className="px-4 py-2.5">Assiette HT</th>
-                <th className="px-4 py-2.5">Récompense</th>
-                <th className="px-4 py-2.5">Statut</th>
-                <th className="px-4 py-2.5">Acquis le</th>
-                <th className="px-4 py-2.5">Versement</th>
-              </tr>
-            </thead>
-            <tbody>
-              {referrals.map((r) => (
-                <tr key={r.id} className="border-t border-[color:var(--color-border)]">
-                  <td className="px-4 py-2.5 font-mono">{r.code}</td>
-                  <td className="px-4 py-2.5">{fmtMinor(r.netMinor, r.currency)}</td>
-                  {/* Ce sur quoi la commission a réellement été calculée : c'est
-                      ici qu'on tranche un litige sur un montant. */}
-                  <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
-                    {r.commissionBaseMinor === null
-                      ? '—'
-                      : fmtMinor(r.commissionBaseMinor, r.currency)}
-                  </td>
-                  <td className="px-4 py-2.5 font-medium">
-                    {fmtMinor(r.rewardMinor, r.currency)}
-                    <span className="ml-1 text-[color:var(--color-ink-500)]">
-                      ({r.rewardType === 'credit' ? 'crédit' : 'cash'})
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5">{STATUS_LABEL[r.status]}</td>
-                  <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
-                    {new Date(r.vestsAt).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {/* Seules les commissions CASH se versent. Un crédit se
-                        dépense à un achat ; le « verser » le supprimerait du
-                        solde du parrain sans contrepartie. */}
-                    {r.status === 'vested' && r.rewardType === 'cash' ? (
-                      <button
-                        type="button"
-                        onClick={() => markPaid(r)}
-                        disabled={pending}
-                        className="rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs font-medium transition-colors hover:bg-[color:var(--color-surface)] disabled:opacity-50"
-                      >
-                        Marquer versé
-                      </button>
-                    ) : (
-                      <span className="text-[color:var(--color-ink-500)]">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {referrals.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-8 text-center text-sm text-[color:var(--color-ink-500)]"
-                  >
-                    Aucune attribution pour l&apos;instant.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <AdminSection title={`Ledger (${referrals.length})`} bare>
+        <AdminDataTable
+          rows={referrals}
+          columns={ledgerColumns}
+          getRowId={(r) => r.id}
+          searchable={(r) => `${r.code} ${r.status} ${r.rewardType}`}
+          initialSort={{ id: 'vestsAt', dir: 'desc' }}
+          emptyTitle="Aucune attribution"
+          emptyDescription="Les ventes attribuées à un code affilié apparaîtront ici."
+          emptyIcon={Handshake}
+        />
+      </AdminSection>
       {confirmDialog}
     </div>
   );
@@ -955,14 +1004,14 @@ function PartnerInviteCell({
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <span className="text-xs text-[color:var(--color-ink-500)]">
+      <span className="text-xs text-[color:var(--color-muted-foreground)]">
         {INVITE_STATE_LABEL[invite.state]} ·{' '}
         {invite.kind === 'couple'
           ? `personnel · mariage ${invite.grantEventTier === 'premium' ? 'Premium' : 'Essentiel'} offert`
           : `agence · ${invite.grantMonths} mois ${invite.grantTier}`}
       </span>
       {invite.lastSentAt ? (
-        <span className="text-[11px] text-[color:var(--color-ink-500)]">
+        <span className="text-[11px] text-[color:var(--color-muted-foreground)]">
           Envoyé {invite.sendCount > 1 ? `${invite.sendCount}× ` : ''}à {invite.lastSentTo} le{' '}
           {new Date(invite.lastSentAt).toLocaleDateString('fr-FR')}
         </span>
@@ -997,7 +1046,7 @@ function PartnerInviteCell({
             type="button"
             onClick={() => onRevoke(invite.id)}
             disabled={pending}
-            className="rounded-md px-1.5 py-1 text-[11px] text-[color:var(--color-ink-500)] underline underline-offset-2 disabled:opacity-50"
+            className="rounded-md px-1.5 py-1 text-[11px] text-[color:var(--color-muted-foreground)] underline underline-offset-2 disabled:opacity-50"
           >
             Annuler
           </button>
