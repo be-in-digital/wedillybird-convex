@@ -22,7 +22,8 @@ import {
   adminListOrgInvoicesAction,
   type OrgInvoicesResult,
 } from '@/app/[locale]/(app)/admin/actions';
-import { AdminDataTable, StatusPill, type AdminColumn, type StatusTone } from './ui';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Org = {
   _id: string;

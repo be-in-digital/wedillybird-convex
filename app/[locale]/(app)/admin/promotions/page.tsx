@@ -6,7 +6,9 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminPromotionsBoard } from '@/components/admin/admin-promotions-board';
 import { adminListPromotionsAction } from '@/app/[locale]/(app)/admin/actions';
-import { AdminEmptyState, AdminPage, AdminPageHeader } from '@/components/admin/ui';
+import { AdminEmptyState } from '@/components/admin/ui/empty-state';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage } from '@/components/admin/ui/section';
 
 export default async function AdminPromotionsPage({
   params,

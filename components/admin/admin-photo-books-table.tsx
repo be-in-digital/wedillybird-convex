@@ -12,13 +12,9 @@ import {
 import { useServerAction } from '@/components/admin/use-admin-action';
 import { formatDate } from '@/lib/admin/format';
 import { adminUpdatePhotoBookStatusAction } from '@/app/[locale]/(app)/admin/actions';
-import {
-  AdminCardList,
-  AdminFilterOption,
-  AdminFilterSelect,
-  StatusPill,
-  type StatusTone,
-} from './ui';
+import { AdminCardList } from './ui/card-list';
+import { AdminFilterOption, AdminFilterSelect } from './ui/filter-select';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Status = 'requested' | 'in_production' | 'shipped' | 'cancelled';
 

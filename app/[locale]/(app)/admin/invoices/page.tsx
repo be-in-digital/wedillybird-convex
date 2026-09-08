@@ -4,7 +4,8 @@ import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminInvoicesTable } from '@/components/admin/admin-invoices-table';
-import { AdminPage, AdminPageHeader } from '@/components/admin/ui';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage } from '@/components/admin/ui/section';
 
 export default async function AdminInvoicesPage({
   params,

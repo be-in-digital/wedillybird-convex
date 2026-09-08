@@ -18,14 +18,9 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { currencyDivisor, formatDateTime, formatMoneyMinor } from '@/lib/admin/format';
 import { adminRefundPaymentAction } from '@/app/[locale]/(app)/admin/actions';
-import {
-  AdminDataTable,
-  AdminFilterOption,
-  AdminFilterSelect,
-  StatusPill,
-  type AdminColumn,
-  type StatusTone,
-} from './ui';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminFilterOption, AdminFilterSelect } from './ui/filter-select';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Payment = {
   _id: string;

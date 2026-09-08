@@ -41,7 +41,8 @@ import {
   adminChangeUserRoleAction,
   adminSetAffiliateOwnerAction,
 } from '@/app/[locale]/(app)/admin/actions';
-import { AdminDataTable, AdminFilterOption, AdminFilterSelect, type AdminColumn } from './ui';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminFilterOption, AdminFilterSelect } from './ui/filter-select';
 
 type User = {
   _id: string;

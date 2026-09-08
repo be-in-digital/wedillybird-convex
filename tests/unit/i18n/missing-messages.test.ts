@@ -18,7 +18,9 @@ import { routing } from '../../../i18n/routing';
 
 const ROOT = path.resolve(__dirname, '../../..');
 const MESSAGES_DIR = path.join(ROOT, 'messages');
-const SHELL = path.join(ROOT, 'components/admin/admin-shell.tsx');
+// La table de navigation admin a quitté le shell pour `admin-nav.ts`, d'où
+// la sidebar, le fil d'Ariane et la palette ⌘K la lisent toutes les trois.
+const ADMIN_NAV = path.join(ROOT, 'components/admin/admin-nav.ts');
 
 /**
  * Dette résiduelle : namespaces demandés par du code existant mais encore
@@ -101,7 +103,7 @@ describe('namespaces i18n demandés par le code', () => {
 describe('navigation admin — chaque entrée a son libellé', () => {
   const keys = [
     ...new Set(
-      [...fs.readFileSync(SHELL, 'utf-8').matchAll(/labelKey:\s*'([^']+)'/g)].map((m) => m[1]!),
+      [...fs.readFileSync(ADMIN_NAV, 'utf-8').matchAll(/labelKey:\s*'([^']+)'/g)].map((m) => m[1]!),
     ),
   ];
 

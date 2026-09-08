@@ -1,6 +1,6 @@
 'use client';
 
-import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useDeferredValue, useMemo, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
@@ -73,12 +73,12 @@ export function useAdminCollection<T>({
   const total = sorted.length;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
-  // Filtrer/trier peut faire disparaître la page courante sous les pieds.
-  useEffect(() => {
-    setPage((p) => Math.min(p, pageCount - 1));
-  }, [pageCount]);
-
-  const start = page * pageSize;
+  // Filtrer peut faire disparaître la page courante sous les pieds. On borne à
+  // la lecture plutôt que de resynchroniser l'état dans un effet : un effet
+  // ferait rendre une fois la page hors bornes (donc une liste vide) avant de
+  // se corriger, et déclencherait un second rendu en cascade.
+  const safePage = Math.min(page, pageCount - 1);
+  const start = safePage * pageSize;
 
   return {
     query,
@@ -94,8 +94,15 @@ export function useAdminCollection<T>({
         if (current.dir === 'asc') return { id, dir: 'desc' };
         return null;
       }),
-    page,
-    setPage,
+    page: safePage,
+    // L'appelant raisonne sur la page bornée : sans ça, un « page précédente »
+    // depuis une page devenue hors bornes décrémenterait une valeur invisible
+    // et semblerait ne rien faire.
+    setPage: (updater: (page: number) => number) =>
+      setPage((raw) => {
+        const current = Math.min(raw, pageCount - 1);
+        return Math.max(0, Math.min(pageCount - 1, updater(current)));
+      }),
     pageCount,
     start,
     total,

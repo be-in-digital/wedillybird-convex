@@ -7,7 +7,8 @@ import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminNewsletterTable } from '@/components/admin/admin-newsletter-table';
 import { AdminNewsletterComposer } from '@/components/admin/admin-newsletter-composer';
 import { adminListNewsletterCampaignsAction } from '@/app/[locale]/(app)/admin/actions';
-import { AdminPage, AdminPageHeader } from '@/components/admin/ui';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage } from '@/components/admin/ui/section';
 
 export default async function AdminNewsletterPage({
   params,

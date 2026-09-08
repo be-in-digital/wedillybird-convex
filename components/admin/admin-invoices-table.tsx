@@ -4,7 +4,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { FileDown, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { currencyDivisor, formatDate, formatMoneyMinor } from '@/lib/admin/format';
-import { AdminDataTable, StatusPill, type AdminColumn, type StatusTone } from './ui';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Payment = {
   _id: string;

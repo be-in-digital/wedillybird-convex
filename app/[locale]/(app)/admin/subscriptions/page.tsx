@@ -5,7 +5,8 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { formatCount } from '@/lib/admin/format';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminSubscriptionsTable } from '@/components/admin/admin-subscriptions-table';
-import { AdminPage, AdminPageHeader } from '@/components/admin/ui';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage } from '@/components/admin/ui/section';
 
 export default async function AdminSubscriptionsPage({
   params,

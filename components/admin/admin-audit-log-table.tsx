@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { ScrollText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatDateTime } from '@/lib/admin/format';
-import { AdminDataTable, type AdminColumn } from './ui';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
 
 type AuditEntry = {
   _id: string;

@@ -5,7 +5,8 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { formatCount } from '@/lib/admin/format';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminUsersTable } from '@/components/admin/admin-users-table';
-import { AdminPage, AdminPageHeader } from '@/components/admin/ui';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage } from '@/components/admin/ui/section';
 
 export default async function AdminUsersPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

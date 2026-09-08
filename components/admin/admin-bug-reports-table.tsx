@@ -16,13 +16,9 @@ import {
   adminUpdateBugStatusAction,
   adminGetBugScreenshotAction,
 } from '@/app/[locale]/(app)/admin/actions';
-import {
-  AdminCardList,
-  AdminFilterOption,
-  AdminFilterSelect,
-  StatusPill,
-  type StatusTone,
-} from './ui';
+import { AdminCardList } from './ui/card-list';
+import { AdminFilterOption, AdminFilterSelect } from './ui/filter-select';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Status = 'open' | 'triaged' | 'resolved';
 

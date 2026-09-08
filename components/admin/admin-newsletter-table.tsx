@@ -4,13 +4,9 @@ import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
 import { formatDate } from '@/lib/admin/format';
-import {
-  AdminDataTable,
-  AdminFilterOption,
-  AdminFilterSelect,
-  StatusPill,
-  type AdminColumn,
-} from './ui';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminFilterOption, AdminFilterSelect } from './ui/filter-select';
+import { StatusPill } from './ui/status-pill';
 
 type Subscriber = {
   _id: string;

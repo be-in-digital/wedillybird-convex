@@ -1,38 +1,34 @@
 import { setRequestLocale } from 'next-intl/server';
-import {
-  TrendingUp,
-  TrendingDown,
-  Users,
-  CalendarDays,
-  CreditCard,
-  Timer,
-  CalendarClock,
-  Percent,
-} from 'lucide-react';
+import { CalendarClock, CalendarDays, CreditCard, Timer, Users } from 'lucide-react';
 import { redirect } from '@/i18n/navigation';
 import { getSession } from '@/lib/auth/session';
 import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
+import { formatCount, formatEurCompact, formatRatio } from '@/lib/admin/format';
 import { AdminShell } from '@/components/admin/admin-shell';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminCountChart } from '@/components/admin/admin-count-chart';
+import { SERIES } from '@/components/admin/charts/chart-theme';
+import { AdminFunnel, AdminMeter } from '@/components/admin/ui/meter';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage, AdminSection } from '@/components/admin/ui/section';
+import { AdminStat, AdminStatGrid } from '@/components/admin/ui/stat-card';
 
-function formatEur(amountMinor: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amountMinor / 100);
-}
-
-function pct(value: number): string {
-  return `${(value * 100).toFixed(1)} %`;
-}
-
-function delta(current: number, previous: number): { label: string; up: boolean } | null {
-  if (previous === 0) return current > 0 ? { label: 'nouveau', up: true } : null;
+/**
+ * Variation relative sur 30 jours glissants. `null` quand la période précédente
+ * est vide : « +∞ % » ne veut rien dire, on affiche « nouveau ».
+ */
+function delta(
+  current: number,
+  previous: number,
+): { value: string; direction: 'up' | 'down' | 'flat'; good: boolean } | null {
+  if (previous === 0) {
+    return current > 0 ? { value: 'nouveau', direction: 'up', good: true } : null;
+  }
   const change = (current - previous) / previous;
-  return { label: `${change >= 0 ? '+' : ''}${(change * 100).toFixed(0)} %`, up: change >= 0 };
+  return {
+    value: `${change >= 0 ? '+' : ''}${(change * 100).toFixed(0)} %`,
+    direction: change > 0 ? 'up' : change < 0 ? 'down' : 'flat',
+    good: change >= 0,
+  };
 }
 
 const WEEKDAYS = [
@@ -72,10 +68,8 @@ export default async function AdminAnalyticsPage({
     value: a.seasonality.eventsByWeekday[w.idx] ?? 0,
   }));
 
-  const paidDelta = delta(a.trend.paidLast30, a.trend.paidPrev30);
-  const revDelta = delta(a.trend.revenueLast30Minor, a.trend.revenuePrev30Minor);
-  const evDelta = delta(a.trend.newEventsLast30, a.trend.newEventsPrev30);
-
+  const planTotal = a.mix.planMix.essential + a.mix.planMix.premium;
+  const proTotal = a.mix.proTierMix.starter + a.mix.proTierMix.business + a.mix.proTierMix.agency;
   const totalMrr =
     a.subscriptions.mrrByTierMinor.starter +
     a.subscriptions.mrrByTierMinor.business +
@@ -83,442 +77,277 @@ export default async function AdminAnalyticsPage({
 
   return (
     <AdminShell current="analytics" adminName={user?.fullName}>
-      <div className="flex flex-col gap-8">
-        <header>
-          <h1
-            className="font-display italic"
-            style={{
-              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.022em',
-            }}
+      <AdminPage>
+        <AdminPageHeader
+          title="Analytics"
+          description="Conversion, abandon, saisonnalité et cohortes — sur 30 jours glissants."
+        />
+
+        <AdminSection
+          title="Tendance sur 30 jours"
+          description="Comparé aux 30 jours précédents."
+          bare
+        >
+          <AdminStatGrid cols={3}>
+            <AdminStat
+              icon={CreditCard}
+              label="Revenu (30 j)"
+              value={formatEurCompact(a.trend.revenueLast30Minor)}
+              delta={delta(a.trend.revenueLast30Minor, a.trend.revenuePrev30Minor) ?? undefined}
+              hint={`${formatEurCompact(a.trend.revenuePrev30Minor)} avant`}
+            />
+            <AdminStat
+              icon={CreditCard}
+              label="Ventes (30 j)"
+              value={formatCount(a.trend.paidLast30)}
+              delta={delta(a.trend.paidLast30, a.trend.paidPrev30) ?? undefined}
+              hint={`${formatCount(a.trend.paidPrev30)} avant`}
+            />
+            <AdminStat
+              icon={CalendarDays}
+              label="Nouveaux events (30 j)"
+              value={formatCount(a.trend.newEventsLast30)}
+              delta={delta(a.trend.newEventsLast30, a.trend.newEventsPrev30) ?? undefined}
+              hint={`${formatCount(a.trend.newEventsPrev30)} avant`}
+            />
+          </AdminStatGrid>
+        </AdminSection>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <AdminSection
+            title="Funnel de conversion (particuliers)"
+            description="Chaque pourcentage est le passage depuis l'étape précédente."
+            className="lg:col-span-2"
+            contentClassName="p-5"
           >
-            Analytics
-          </h1>
-          <p className="mt-1 text-sm text-[color:var(--color-muted-foreground)]">
-            Conversion, abandon, saisonnalité et cohortes — sur 30 jours glissants.
-          </p>
-        </header>
+            <AdminFunnel
+              steps={[
+                { label: 'Comptes couple', value: a.funnel.couplesSignedUp },
+                { label: 'Events créés', value: a.funnel.eventsCreated },
+                { label: 'Events publiés', value: a.funnel.eventsPublished },
+                { label: 'Checkout démarré', value: a.funnel.checkoutStarted },
+                { label: 'Payé', value: a.funnel.paid },
+              ]}
+            />
+          </AdminSection>
 
-        {/* Tendance 30 j */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <TrendTile
-            icon={<CreditCard className="h-4 w-4" />}
-            label="Revenu (30 j)"
-            value={formatEur(a.trend.revenueLast30Minor)}
-            delta={revDelta}
-            sub={`${formatEur(a.trend.revenuePrev30Minor)} les 30 j précédents`}
-          />
-          <TrendTile
-            icon={<CreditCard className="h-4 w-4" />}
-            label="Ventes (30 j)"
-            value={a.trend.paidLast30.toString()}
-            delta={paidDelta}
-            sub={`${a.trend.paidPrev30} les 30 j précédents`}
-          />
-          <TrendTile
-            icon={<CalendarDays className="h-4 w-4" />}
-            label="Nouveaux events (30 j)"
-            value={a.trend.newEventsLast30.toString()}
-            delta={evDelta}
-            sub={`${a.trend.newEventsPrev30} les 30 j précédents`}
-          />
-        </div>
-
-        {/* Funnel + abandon */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base font-medium">
-                Funnel de conversion (particuliers)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Funnel
-                steps={[
-                  {
-                    label: 'Comptes couple',
-                    value: a.funnel.couplesSignedUp,
-                    icon: <Users className="h-4 w-4" />,
-                  },
-                  { label: 'Events créés', value: a.funnel.eventsCreated },
-                  { label: 'Events publiés', value: a.funnel.eventsPublished },
-                  { label: 'Checkout démarré', value: a.funnel.checkoutStarted },
-                  { label: 'Payé', value: a.funnel.paid },
-                ]}
+          <AdminSection title="Abandon de checkout" contentClassName="p-5">
+            <p className="text-3xl leading-none font-semibold tracking-tight text-[color:var(--color-warning)] tabular-nums">
+              {formatRatio(a.checkout.abandonmentRate, locale)}
+            </p>
+            <p className="mt-1.5 text-xs text-[color:var(--color-muted-foreground)]">
+              {formatCount(a.checkout.intentsStarted)} intents démarrés ·{' '}
+              {formatCount(a.checkout.byStatus.succeeded)} aboutis
+            </p>
+            <div className="mt-5 flex flex-col gap-2.5">
+              <AdminMeter
+                label="Réussis"
+                value={a.checkout.byStatus.succeeded}
+                total={a.checkout.intentsStarted}
+                tone="success"
               />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">Abandon de checkout</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-1">
-                <span className="flex items-center gap-2 text-3xl font-semibold tracking-tight text-[color:var(--color-warning)]">
-                  <Percent className="h-5 w-5" />
-                  {pct(a.checkout.abandonmentRate)}
-                </span>
-                <span className="text-xs text-[color:var(--color-muted-foreground)]">
-                  {a.checkout.intentsStarted} intents démarrés · {a.checkout.byStatus.succeeded}{' '}
-                  aboutis
-                </span>
-              </div>
-              <div className="mt-4 flex flex-col gap-2">
-                <StatusBar
-                  label="Réussis"
-                  value={a.checkout.byStatus.succeeded}
-                  total={a.checkout.intentsStarted}
-                  tone="success"
-                />
-                <StatusBar
-                  label="En attente"
-                  value={a.checkout.byStatus.pending}
-                  total={a.checkout.intentsStarted}
-                  tone="warning"
-                />
-                <StatusBar
-                  label="Échoués"
-                  value={a.checkout.byStatus.failed}
-                  total={a.checkout.intentsStarted}
-                  tone="danger"
-                />
-                <StatusBar
-                  label="Annulés"
-                  value={a.checkout.byStatus.cancelled}
-                  total={a.checkout.intentsStarted}
-                  tone="neutral"
-                />
-                <StatusBar
-                  label="Remboursés"
-                  value={a.checkout.byStatus.refunded}
-                  total={a.checkout.intentsStarted}
-                  tone="neutral"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Timing + valeurs */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <MiniTile
-            icon={<Timer className="h-4 w-4" />}
-            label="Durée checkout médiane"
-            value={`${a.timing.medianCheckoutMinutes.toFixed(0)} min`}
-          />
-          <MiniTile
-            icon={<CalendarClock className="h-4 w-4" />}
-            label="Délai création → paiement"
-            value={`${a.timing.medianCreateToPayHours.toFixed(0)} h`}
-          />
-          <MiniTile
-            icon={<CreditCard className="h-4 w-4" />}
-            label="Panier moyen (AOV)"
-            value={formatEur(a.mix.aovMinor)}
-          />
-          <MiniTile
-            icon={<Users className="h-4 w-4" />}
-            label="Invités moyens / event"
-            value={a.mix.avgGuests.toString()}
-          />
-        </div>
-
-        {/* Saisonnalité / rush */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">
-                Rush mariages — events par mois d&apos;événement
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminCountChart data={monthArr(a.seasonality.eventsByEventMonth)} unit="events" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">
-                Croissance — events créés par mois
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminCountChart
-                data={monthArr(a.seasonality.eventsByCreatedMonth)}
-                color="oklch(60% 0.15 270)"
-                unit="events"
+              <AdminMeter
+                label="En attente"
+                value={a.checkout.byStatus.pending}
+                total={a.checkout.intentsStarted}
+                tone="warning"
               />
-            </CardContent>
-          </Card>
+              <AdminMeter
+                label="Échoués"
+                value={a.checkout.byStatus.failed}
+                total={a.checkout.intentsStarted}
+                tone="danger"
+              />
+              <AdminMeter
+                label="Annulés"
+                value={a.checkout.byStatus.cancelled}
+                total={a.checkout.intentsStarted}
+                tone="neutral"
+              />
+              <AdminMeter
+                label="Remboursés"
+                value={a.checkout.byStatus.refunded}
+                total={a.checkout.intentsStarted}
+                tone="neutral"
+              />
+            </div>
+          </AdminSection>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base font-medium">
-                Jour de la semaine des mariages
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminCountChart data={weekdayArr} color="oklch(65% 0.12 145)" unit="events" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">Rush à venir</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-3">
-                <UpcomingRow label="Sous 30 jours" value={a.seasonality.upcoming.next30} />
-                <UpcomingRow label="Sous 60 jours" value={a.seasonality.upcoming.next60} />
-                <UpcomingRow label="Sous 90 jours" value={a.seasonality.upcoming.next90} />
-              </div>
-            </CardContent>
-          </Card>
+        <AdminSection title="Rythme et panier" bare>
+          <AdminStatGrid cols={4}>
+            <AdminStat
+              icon={Timer}
+              label="Durée checkout médiane"
+              value={`${a.timing.medianCheckoutMinutes.toFixed(0)} min`}
+            />
+            <AdminStat
+              icon={CalendarClock}
+              label="Délai création → paiement"
+              value={`${a.timing.medianCreateToPayHours.toFixed(0)} h`}
+            />
+            <AdminStat
+              icon={CreditCard}
+              label="Panier moyen (AOV)"
+              value={formatEurCompact(a.mix.aovMinor)}
+            />
+            <AdminStat
+              icon={Users}
+              label="Invités moyens / event"
+              value={formatCount(a.mix.avgGuests)}
+            />
+          </AdminStatGrid>
+        </AdminSection>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <AdminSection
+            title="Rush mariages — events par mois d'événement"
+            description="Quand les mariages ont lieu : c'est la charge à absorber."
+            contentClassName="p-4"
+          >
+            <AdminCountChart data={monthArr(a.seasonality.eventsByEventMonth)} unit="events" />
+          </AdminSection>
+          <AdminSection
+            title="Croissance — events créés par mois"
+            description="Quand les comptes créent leur mariage : c'est l'acquisition."
+            contentClassName="p-4"
+          >
+            <AdminCountChart
+              data={monthArr(a.seasonality.eventsByCreatedMonth)}
+              color={SERIES.blue}
+              unit="events"
+            />
+          </AdminSection>
         </div>
 
-        {/* Mix d'offres + abonnements */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">Mix des offres</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-2 font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-                Particuliers (events payés)
-              </p>
-              <div className="flex flex-col gap-2">
-                <StatusBar
-                  label="Essentiel"
-                  value={a.mix.planMix.essential}
-                  total={a.mix.planMix.essential + a.mix.planMix.premium}
-                  tone="neutral"
-                />
-                <StatusBar
-                  label="Premium"
-                  value={a.mix.planMix.premium}
-                  total={a.mix.planMix.essential + a.mix.planMix.premium}
-                  tone="success"
-                />
-              </div>
-              <p className="mt-4 mb-2 font-mono text-[10px] tracking-[0.2em] text-[color:var(--color-muted-foreground)] uppercase">
-                Pros (par tier)
-              </p>
-              <div className="flex flex-col gap-2">
-                <StatusBar
-                  label="Starter"
-                  value={a.mix.proTierMix.starter}
-                  total={
-                    a.mix.proTierMix.starter + a.mix.proTierMix.business + a.mix.proTierMix.agency
-                  }
-                  tone="neutral"
-                />
-                <StatusBar
-                  label="Business"
-                  value={a.mix.proTierMix.business}
-                  total={
-                    a.mix.proTierMix.starter + a.mix.proTierMix.business + a.mix.proTierMix.agency
-                  }
-                  tone="success"
-                />
-                <StatusBar
-                  label="Agency"
-                  value={a.mix.proTierMix.agency}
-                  total={
-                    a.mix.proTierMix.starter + a.mix.proTierMix.business + a.mix.proTierMix.agency
-                  }
-                  tone="success"
-                />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-medium">
-                Abonnements pro · MRR {formatEur(totalMrr)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <SubStat label="Actifs" value={a.subscriptions.byStatus.active} />
-                <SubStat label="Essai" value={a.subscriptions.byStatus.trialing} />
-                <SubStat label="Impayés" value={a.subscriptions.byStatus.past_due} tone="danger" />
-                <SubStat label="Annulés" value={a.subscriptions.byStatus.canceled} />
-                <SubStat label="Non réglés" value={a.subscriptions.byStatus.unpaid} tone="danger" />
-              </div>
-              <div className="mt-4 flex flex-col gap-2 border-t border-[color:var(--color-border)] pt-4">
-                <MrrRow label="Starter" value={a.subscriptions.mrrByTierMinor.starter} />
-                <MrrRow label="Business" value={a.subscriptions.mrrByTierMinor.business} />
-                <MrrRow label="Agency" value={a.subscriptions.mrrByTierMinor.agency} />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <AdminSection
+            title="Jour de la semaine des mariages"
+            className="lg:col-span-2"
+            contentClassName="p-4"
+          >
+            <AdminCountChart data={weekdayArr} color={SERIES.gold} unit="events" />
+          </AdminSection>
+          <AdminSection
+            title="Rush à venir"
+            description="Mariages à date, cumulés."
+            contentClassName="divide-y divide-[color:var(--color-border)]"
+          >
+            <UpcomingRow label="Sous 30 jours" value={a.seasonality.upcoming.next30} />
+            <UpcomingRow label="Sous 60 jours" value={a.seasonality.upcoming.next60} />
+            <UpcomingRow label="Sous 90 jours" value={a.seasonality.upcoming.next90} />
+          </AdminSection>
         </div>
-      </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <AdminSection title="Mix des offres" contentClassName="p-5">
+            <p className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
+              Particuliers (events payés)
+            </p>
+            <div className="mt-2.5 flex flex-col gap-2.5">
+              <AdminMeter
+                label="Essentiel"
+                value={a.mix.planMix.essential}
+                total={planTotal}
+                tone="neutral"
+              />
+              <AdminMeter
+                label="Premium"
+                value={a.mix.planMix.premium}
+                total={planTotal}
+                tone="brand"
+              />
+            </div>
+
+            <p className="mt-6 text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
+              Pros (par tier)
+            </p>
+            <div className="mt-2.5 flex flex-col gap-2.5">
+              <AdminMeter
+                label="Starter"
+                value={a.mix.proTierMix.starter}
+                total={proTotal}
+                tone="neutral"
+              />
+              <AdminMeter
+                label="Business"
+                value={a.mix.proTierMix.business}
+                total={proTotal}
+                tone="brand"
+              />
+              <AdminMeter
+                label="Agency"
+                value={a.mix.proTierMix.agency}
+                total={proTotal}
+                tone="success"
+              />
+            </div>
+          </AdminSection>
+
+          <AdminSection
+            title={`Abonnements pro · MRR ${formatEurCompact(totalMrr)}`}
+            contentClassName="p-5"
+          >
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+              <SubStat label="Actifs" value={a.subscriptions.byStatus.active} />
+              <SubStat label="Essai" value={a.subscriptions.byStatus.trialing} />
+              <SubStat label="Impayés" value={a.subscriptions.byStatus.past_due} tone="danger" />
+              <SubStat label="Annulés" value={a.subscriptions.byStatus.canceled} />
+              <SubStat label="Non réglés" value={a.subscriptions.byStatus.unpaid} tone="danger" />
+            </div>
+            <div className="mt-5 flex flex-col gap-2.5 border-t border-[color:var(--color-border)] pt-5">
+              <AdminMeter
+                label="Starter"
+                value={a.subscriptions.mrrByTierMinor.starter}
+                total={totalMrr}
+                valueLabel={`${formatEurCompact(a.subscriptions.mrrByTierMinor.starter)}/mois`}
+                tone="neutral"
+              />
+              <AdminMeter
+                label="Business"
+                value={a.subscriptions.mrrByTierMinor.business}
+                total={totalMrr}
+                valueLabel={`${formatEurCompact(a.subscriptions.mrrByTierMinor.business)}/mois`}
+                tone="brand"
+              />
+              <AdminMeter
+                label="Agency"
+                value={a.subscriptions.mrrByTierMinor.agency}
+                total={totalMrr}
+                valueLabel={`${formatEurCompact(a.subscriptions.mrrByTierMinor.agency)}/mois`}
+                tone="success"
+              />
+            </div>
+          </AdminSection>
+        </div>
+      </AdminPage>
     </AdminShell>
   );
 }
 
-function TrendTile({
-  icon,
-  label,
-  value,
-  delta,
-  sub,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  delta: { label: string; up: boolean } | null;
-  sub: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between text-[color:var(--color-muted-foreground)]">
-          <span className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] uppercase">
-            {icon}
-            {label}
-          </span>
-          {delta ? (
-            <span
-              className={`flex items-center gap-1 text-xs font-medium ${delta.up ? 'text-[color:var(--color-success)]' : 'text-[color:var(--color-danger)]'}`}
-            >
-              {delta.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-              {delta.label}
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-        <p className="mt-1 text-xs text-[color:var(--color-muted-foreground)]">{sub}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MiniTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-[color:var(--color-muted-foreground)]">
-          {icon}
-          <span className="font-mono text-[10px] tracking-[0.18em] uppercase">{label}</span>
-        </div>
-        <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Funnel({ steps }: { steps: { label: string; value: number; icon?: React.ReactNode }[] }) {
-  const max = Math.max(...steps.map((s) => s.value), 1);
-  return (
-    <div className="flex flex-col gap-3">
-      {steps.map((s, i) => {
-        const widthPct = Math.max((s.value / max) * 100, 2);
-        const prev = i > 0 ? steps[i - 1]!.value : null;
-        const conv = prev && prev > 0 ? (s.value / prev) * 100 : null;
-        return (
-          <div key={s.label} className="flex flex-col gap-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 font-medium">
-                {s.icon}
-                {s.label}
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="font-mono">{s.value}</span>
-                {conv != null ? (
-                  <span className="font-mono text-[10px] text-[color:var(--color-muted-foreground)]">
-                    {conv.toFixed(0)} %
-                  </span>
-                ) : null}
-              </span>
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-[color:var(--color-surface-elevated)]">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${widthPct}%`, background: 'oklch(65% 0.15 22)' }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-const TONE_BG: Record<string, string> = {
-  success: 'oklch(65% 0.12 145)',
-  warning: 'oklch(70% 0.14 78)',
-  danger: 'oklch(60% 0.18 22)',
-  neutral: 'oklch(55% 0.03 280)',
-};
-
-function StatusBar({
-  label,
-  value,
-  total,
-  tone,
-}: {
-  label: string;
-  value: number;
-  total: number;
-  tone: 'success' | 'warning' | 'danger' | 'neutral';
-}) {
-  const widthPct = total > 0 ? (value / total) * 100 : 0;
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-[color:var(--color-muted-foreground)]">{label}</span>
-        <span className="font-mono">
-          {value}
-          {total > 0 ? (
-            <span className="ml-1 text-[color:var(--color-muted-foreground)]">
-              ({widthPct.toFixed(0)} %)
-            </span>
-          ) : null}
-        </span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-[color:var(--color-surface-elevated)]">
-        <div
-          className="h-full rounded-full"
-          style={{ width: `${Math.max(widthPct, value > 0 ? 2 : 0)}%`, background: TONE_BG[tone] }}
-        />
-      </div>
-    </div>
-  );
-}
-
+/** Ligne de la liste « rush à venir » — sans encadré : elle vit déjà dans une carte. */
 function UpcomingRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2.5">
+    <div className="flex items-center justify-between px-5 py-3.5">
       <span className="text-sm text-[color:var(--color-muted-foreground)]">{label}</span>
-      <span className="font-mono text-lg font-semibold">{value}</span>
+      <span className="font-mono text-lg font-semibold tabular-nums">{formatCount(value)}</span>
     </div>
   );
 }
 
 function SubStat({ label, value, tone }: { label: string; value: number; tone?: 'danger' }) {
   return (
-    <div className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3">
-      <p className="font-mono text-[10px] tracking-[0.18em] text-[color:var(--color-muted-foreground)] uppercase">
+    <div>
+      <p className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
         {label}
       </p>
       <p
-        className={`mt-1 text-xl font-semibold ${tone === 'danger' && value > 0 ? 'text-[color:var(--color-danger)]' : ''}`}
+        className={`mt-0.5 text-xl font-semibold tabular-nums ${
+          tone === 'danger' && value > 0 ? 'text-[color:var(--color-danger)]' : ''
+        }`}
       >
-        {value}
+        {formatCount(value)}
       </p>
-    </div>
-  );
-}
-
-function MrrRow({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-[color:var(--color-muted-foreground)]">{label}</span>
-      <span className="font-mono">{formatEur(value)}/mois</span>
     </div>
   );
 }

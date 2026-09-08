@@ -4,9 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ComponentProps,
   type ReactNode,
 } from 'react';
@@ -28,12 +28,48 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tool
  *    sidebar sur mobile. `useIsMobile` ne sert donc qu'à refermer le tiroir.
  * 2. **L'état replié est persisté en `localStorage`**, pas en cookie : la zone
  *    admin est entièrement cliente pour la navigation, aucun rendu serveur n'a
- *    besoin de connaître l'état.
+ *    besoin de connaître l'état. Il est lu via `useSyncExternalStore` — le
+ *    serveur ne connaît pas la préférence, et resynchroniser dans un effet
+ *    ferait rendre une fois la mauvaise largeur avant de se corriger.
  */
 
 const SIDEBAR_WIDTH = '15.5rem';
 const SIDEBAR_WIDTH_ICON = '3.5rem';
 const STORAGE_KEY = 'wbb:sidebar:collapsed';
+
+/**
+ * `localStorage` vu comme un store externe : un abonnement, un instantané
+ * client, un instantané serveur. L'événement `storage` synchronise en prime les
+ * autres onglets, et `wbb:sidebar` le reste de cet onglet.
+ */
+const collapsedListeners = new Set<() => void>();
+
+function subscribeCollapsed(onChange: () => void): () => void {
+  collapsedListeners.add(onChange);
+  window.addEventListener('storage', onChange);
+  return () => {
+    collapsedListeners.delete(onChange);
+    window.removeEventListener('storage', onChange);
+  };
+}
+
+function getCollapsedSnapshot(): boolean {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) === '1';
+  } catch {
+    // localStorage indisponible (mode privé strict) : on retombe sur le défaut.
+    return false;
+  }
+}
+
+function writeCollapsed(collapsed: boolean): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+  } catch {
+    /* idem : la préférence ne sera simplement pas mémorisée. */
+  }
+  for (const listener of collapsedListeners) listener();
+}
 
 type SidebarContextValue = {
   open: boolean;
@@ -57,30 +93,18 @@ export function SidebarProvider({
   defaultOpen = true,
   ...props
 }: ComponentProps<'div'> & { defaultOpen?: boolean }) {
-  const [open, setOpenState] = useState(defaultOpen);
   const [openMobile, setOpenMobile] = useState(false);
 
-  // Relecture après montage : au SSR on ne connaît pas la préférence, donc on
-  // rend l'état par défaut puis on rectifie — sans faire dépendre le layout de JS.
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored !== null) setOpenState(stored !== '1');
-    } catch {
-      /* localStorage indisponible (mode privé strict) : on garde le défaut. */
-    }
-  }, []);
+  const collapsed = useSyncExternalStore(
+    subscribeCollapsed,
+    getCollapsedSnapshot,
+    // Instantané serveur : la préférence est inconnue, on rend le défaut.
+    () => !defaultOpen,
+  );
+  const open = !collapsed;
 
-  const setOpen = useCallback((next: boolean) => {
-    setOpenState(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next ? '0' : '1');
-    } catch {
-      /* idem */
-    }
-  }, []);
-
-  const toggleSidebar = useCallback(() => setOpen(!open), [open, setOpen]);
+  const setOpen = useCallback((next: boolean) => writeCollapsed(!next), []);
+  const toggleSidebar = useCallback(() => writeCollapsed(open), [open]);
 
   const value = useMemo<SidebarContextValue>(
     () => ({ open, setOpen, openMobile, setOpenMobile, toggleSidebar }),

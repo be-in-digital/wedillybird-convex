@@ -5,7 +5,8 @@ import { convexApi, getConvexServerClient } from '@/lib/auth/convex-server';
 import { formatCount } from '@/lib/admin/format';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminModerationPanel } from '@/components/admin/admin-moderation-panel';
-import { AdminPage, AdminPageHeader } from '@/components/admin/ui';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage } from '@/components/admin/ui/section';
 
 export default async function AdminModerationPage({
   params,

@@ -5,14 +5,10 @@ import { Check, ImageOff, MessageSquare, X } from 'lucide-react';
 import { useServerAction } from '@/components/admin/use-admin-action';
 import { formatDate } from '@/lib/admin/format';
 import { adminModeratePhotoAction } from '@/app/[locale]/(app)/admin/actions';
-import {
-  AdminDataTable,
-  AdminEmptyState,
-  AdminSection,
-  StatusPill,
-  type AdminColumn,
-  type StatusTone,
-} from './ui';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminEmptyState } from './ui/empty-state';
+import { AdminSection } from './ui/section';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Photo = {
   _id: string;

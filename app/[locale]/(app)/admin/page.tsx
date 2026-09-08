@@ -17,13 +17,9 @@ import { AdminShell } from '@/components/admin/admin-shell';
 import { AdminRevenueChart } from '@/components/admin/admin-revenue-chart';
 import { AdminUsersChart } from '@/components/admin/admin-users-chart';
 import { AdminBreakdown } from '@/components/admin/admin-breakdown';
-import {
-  AdminPage,
-  AdminPageHeader,
-  AdminSection,
-  AdminStat,
-  AdminStatGrid,
-} from '@/components/admin/ui';
+import { AdminPageHeader } from '@/components/admin/ui/page-header';
+import { AdminPage, AdminSection } from '@/components/admin/ui/section';
+import { AdminStat, AdminStatGrid } from '@/components/admin/ui/stat-card';
 
 export default async function AdminDashboardPage({
   params,

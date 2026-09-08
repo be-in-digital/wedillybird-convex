@@ -23,14 +23,9 @@ import {
   adminGrantEventPlanAction,
   adminRevokeEventPlanAction,
 } from '@/app/[locale]/(app)/admin/actions';
-import {
-  AdminDataTable,
-  AdminFilterOption,
-  AdminFilterSelect,
-  StatusPill,
-  type AdminColumn,
-  type StatusTone,
-} from './ui';
+import { AdminDataTable, type AdminColumn } from './ui/data-table';
+import { AdminFilterOption, AdminFilterSelect } from './ui/filter-select';
+import { StatusPill, type StatusTone } from './ui/status-pill';
 
 type Event = {
   _id: string;
