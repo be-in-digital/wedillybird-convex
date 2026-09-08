@@ -148,6 +148,24 @@ L'ordre est l'ordre d'exécution : on mesure avant de changer, on rend la page h
 
 ---
 
+## 4 bis. Ce qui a été implémenté (9 septembre 2026, même PR)
+
+Points du plan livrés dans le code, sur la branche de cet audit :
+
+| # | Action | Livré |
+|---|---|---|
+| 1 | Vercel Web Analytics | `@vercel/analytics` monté dans `app/[locale]/layout.tsx`. **Reste à activer sur le projet Vercel** (Project → Analytics → Enable), sinon le composant est inerte. |
+| 3 | Bannière cookies conforme | Finalités nommées (mesure d'audience PostHog, pixel Meta), barre compacte en bas d'écran qui ne recouvre plus le hero, page `/legal/cookies` et politique de confidentialité mises à jour (7 locales). |
+| 4 | Sitemap | `/demo`, `/templates`, `/guide` ajoutés. La propriété Search Console et la redirection `www → apex` restent à faire côté Vercel/Google. |
+| 5 | Preuve sociale inventée | Retirée : trust strip du hero, trois stats et « source » du manifeste, section Témoignages (composant supprimé, lien de nav retiré), trust line du CTA final, « 92 % des grands‑parents » de la FAQ. Remplacée par des garanties vérifiables (paiement unique, remboursement 7 jours, données en Europe, report gratuit). |
+| 6 | Contradictions et liens | FAQ 100/250 invitations ; « Créer mon invitation » (sans « gratuitement ») ; footer : « API & intégrations », « Lieux de réception », « Agences » retirés, « Démo » pointe vers `/demo`, journal retiré et page `/blog` placeholder supprimée (aucun article réel). |
+| 7 | Hero | Promesse concrète (« Vos invitations de mariage, envoyées sur WhatsApp. » + ce que fait le produit), CTA visible sans scroller à 1440×900, 1280×720 et 390×844 bannière comprise (test e2e dédié), CTA secondaire → démo. |
+| 8 | Démo publique | `/demo` : la vraie page d'invitation (shell, cinématique, compte à rebours, RSVP) avec un couple fictif, sans compte ni Convex ; RSVP accepté localement (`demo_rsvp_submitted`), `?cinematic=` et `?replay=1` supportés. Indexable, dans le sitemap, testée e2e. |
+| 9 | Forfait propagé | Les cartes pricing envoient `/sign-up?plan=essential|premium`. |
+| 10 | Poids | `posthog-js` n'est plus chargé que si le visiteur a consenti (ou au clic « Accepter ») : JS de la landing 1 316 → ≈ 1 100 ko non compressé pour un visiteur sans consentement. Le reste est React/Next, Motion, Convex client et Lenis. |
+
+Non livré dans le code, à faire avec les accès fondateur : clés PostHog en Production (2), Search Console et redirection `www` (4), articles réels (11), prospection wedding planners et réseaux (12), test Meta (13), question du nom (14).
+
 ## 5. À vérifier côté fondateur (accès requis)
 
 - Vercel → Project → Settings → Environment Variables : présence de `NEXT_PUBLIC_POSTHOG_KEY`, `POSTHOG_KEY`, `POSTHOG_PERSONAL_API_KEY`, `NEXT_PUBLIC_META_PIXEL_ID` en Production.
