@@ -83,7 +83,10 @@ test.describe('Parcours partenaire', () => {
     // l'admin doit le savoir explicitement. C'est le comportement conçu — le
     // lien attribue déjà, seul le code saisissable manque.
     await expect(page.getByText(/code promo Stripe NON créé/i)).toBeVisible();
-    await expect(page.getByText('SARAH12').first()).toBeVisible();
+    // `visible: true` n'est pas un détail : le tableau du back-office monte les
+    // DEUX rendus, cartes (sous `md`) et lignes, et laisse le CSS trancher. Sans
+    // le filtre, `.first()` tombe sur la carte masquée à cette largeur.
+    await expect(page.getByText('SARAH12').filter({ visible: true }).first()).toBeVisible();
 
     // On simule ce que Stripe aurait renvoyé, pour dérouler la suite.
     const affiliates = await callConvex<
