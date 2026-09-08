@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * Helpers pour la pile de test « backend Convex en mémoire ».
@@ -29,6 +29,43 @@ export const MEM_BACKEND_REQUIRED =
 export async function resetBackend(): Promise<void> {
   const res = await fetch(`${MEM_BACKEND_URL}/__test__/reset`, { method: 'POST' });
   if (!res.ok) throw new Error(`reset failed: ${res.status}`);
+}
+
+/**
+ * Branche une suite sur le backend en mémoire : exécution SÉQUENTIELLE, saut
+ * propre s'il n'est pas là, base vierge avant chaque test.
+ *
+ * Le mode `default` n'est pas un détail de confort : il annule le
+ * `fullyParallel` de la config pour cette suite. Il n'existe qu'UN backend
+ * pour tout le run, et `resetBackend()` en vide la base — deux tests
+ * concurrents se l'effacent donc mutuellement en plein vol. Le symptôme ne
+ * ressemble en rien à sa cause : la page admin s'affiche (l'admin existe
+ * encore), puis l'action suivante repart en `FORBIDDEN: admin role required`
+ * parce que le `beforeEach` d'un test voisin vient de supprimer ce compte.
+ *
+ * `default` plutôt que `serial` : on veut l'ordre, pas la cascade. En `serial`,
+ * un échec saute tous les tests suivants du groupe — un gate de CI qui masque
+ * six résultats sur sept dès la première rougeur.
+ */
+export function useMemBackend(): void {
+  test.describe.configure({ mode: 'default' });
+
+  let backendUp = false;
+
+  test.beforeAll(async () => {
+    backendUp = !(await memBackendUnavailable());
+    // En CI, se sauter EST la panne : un `describe` entier absent du rapport
+    // s'y lit comme un succès. C'est ce qui a laissé passer une régression sur
+    // la création d'affilié pendant que le tableau de bord restait vert. Le
+    // backend y est donc un prérequis (`CONVEX_MEM=1`), jamais une option ; en
+    // local, il reste opt-in et le saut garde son sens.
+    if (!backendUp && process.env.CI) throw new Error(MEM_BACKEND_REQUIRED);
+  });
+
+  test.beforeEach(async () => {
+    test.skip(!backendUp, MEM_BACKEND_REQUIRED);
+    await resetBackend();
+  });
 }
 
 interface CapturedEmail {

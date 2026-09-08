@@ -37,7 +37,17 @@ export default defineConfig({
   // les tests sensibles au timing sur webkit-Linux (scroll-spy `aria-current`,
   // focus après collage OTP) même après retries. Sérialiser supprime la
   // contention au prix d'un job plus lent — fiabilité > vitesse pour ce gate.
-  workers: isCI ? 1 : undefined,
+  //
+  // `CONVEX_MEM` impose la même sérialisation, pour une raison plus dure : le
+  // backend en mémoire est UNIQUE pour tout le run et `resetBackend()` en vide
+  // la base. Deux tests concurrents s'effacent mutuellement leur état en plein
+  // vol — et le symptôme ne ressemble pas à sa cause (une page admin qui
+  // s'affiche, puis l'action suivante en `FORBIDDEN: admin role required`).
+  // Le helper de spec `useMemBackend()` (`tests/e2e/utils/mem-backend.ts`)
+  // sérialise déjà sa suite, mais rien au niveau d'un `describe` ne peut
+  // coordonner deux PROJETS (chromium et webkit) : seul le nombre de workers
+  // le peut.
+  workers: isCI || useMemBackend ? 1 : undefined,
   reporter: isCI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL,
