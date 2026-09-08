@@ -331,6 +331,16 @@ export function AdminAffiliatesBoard({
   const [error, setError] = useState<string | null>(null);
   /** Adresse effectivement servie par le dernier envoi, pour confirmation. */
   const [sent, setSent] = useState<string | null>(null);
+  /** Code du dernier affilié créé — la modale se ferme, le retour doit rester. */
+  const [created, setCreated] = useState<string | null>(null);
+  /** Le formulaire de création vit en modale : la page garde ses trois blocs. */
+  const [createOpen, setCreateOpen] = useState(false);
+  /**
+   * Erreur de saisie, montrée DANS la modale et distincte de `error`.
+   * `error` porte les retours de toute la page (envoi d'invitation, suppression) :
+   * l'enfermer dans la modale le rendrait invisible une fois celle-ci fermée.
+   */
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const [code, setCode] = useState('');
   const [kind, setKind] = useState<'referral' | 'partner'>('partner');
@@ -353,12 +363,22 @@ export function AdminAffiliatesBoard({
     setRewardType(next === 'referral' ? 'credit' : 'cash');
   }
 
+  function openCreate(open: boolean) {
+    setCreateOpen(open);
+    // Rouvrir sur le refus précédent n'apprendrait rien de la nouvelle saisie.
+    if (open) setCreateError(null);
+  }
+
   function create() {
+    setCreateError(null);
     setError(null);
+    setCreated(null);
+    setSent(null);
     if (!codeValid || overCap) return;
+    const wanted = code.trim();
     startTransition(async () => {
       const res = await adminCreateAffiliateAction({
-        code: code.trim(),
+        code: wanted,
         kind,
         rewardType,
         rateBps: Math.round(ratePct * 100),
@@ -367,16 +387,21 @@ export function AdminAffiliatesBoard({
         ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
       });
       if (!res.ok) {
-        setError(res.error);
+        // La modale reste ouverte : la saisie est encore là, à corriger.
+        setCreateError(res.error);
         return;
       }
       // Affilié créé mais coupon Stripe en échec : le lien attribue déjà, seul
       // le code saisissable manque. On le dit plutôt que d'afficher un succès
-      // qui laisserait croire que le code est partageable.
+      // qui laisserait croire que le code est partageable. Le message se pose
+      // sur la PAGE, pas dans la modale : celle-ci se ferme sur un succès.
+      setCreateOpen(false);
       if (res.couponError) {
         setError(
-          `Affilié créé, mais code promo Stripe NON créé (${res.couponError}). Relance « Créer le code ».`,
+          `Affilié ${wanted} créé, mais code promo Stripe NON créé (${res.couponError}). Relance « Créer le code ».`,
         );
+      } else {
+        setCreated(wanted);
       }
       setCode('');
       setOwnerEmail('');
@@ -850,172 +875,179 @@ export function AdminAffiliatesBoard({
         />
       </AdminStatGrid>
 
-      {/* Création — volontairement en place et non derrière une modale : ouvrir
-          un partenariat est le geste principal de cet écran. */}
-      <AdminSection
-        title="Nouvel affilié"
-        description="Programme sur invitation. Le type décide de la récompense : partenaire = cash versé à la main, parrainage = crédit appliqué automatiquement au prochain achat du parrain."
-        contentClassName="p-5"
-      >
-        <div className="flex flex-col gap-5">
-          <FieldGroup title="Identité">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Code"
-                htmlFor="affiliate-code"
-                hint="3 à 24 caractères, lettres et chiffres. C'est lui qui attribue la vente."
-              >
-                <Input
-                  id="affiliate-code"
-                  className="h-10 font-mono tracking-wide"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="NORAH10"
-                  aria-invalid={code.length > 0 && !codeValid}
-                  data-testid="affiliate-code"
-                />
-              </Field>
-              <Field
-                label="Type"
-                hint={
-                  kind === 'partner'
-                    ? 'Récompense : cash. Le partenaire peut recevoir un compte agence offert.'
-                    : 'Récompense : crédit, appliqué au prochain achat du parrain.'
-                }
-              >
-                <Select
-                  value={kind}
-                  onValueChange={(v) => onKindChange(v as 'referral' | 'partner')}
+      {/* La création est une modale : sept champs posés en permanence sous les
+          KPI repoussaient les affiliés — ce qu'on vient lire — sous la ligne de
+          flottaison. */}
+      <Dialog open={createOpen} onOpenChange={openCreate}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Nouvel affilié</DialogTitle>
+            <DialogDescription>
+              Programme sur invitation. Le type décide de la récompense : partenaire = cash versé à
+              la main, parrainage = crédit appliqué automatiquement au prochain achat du parrain.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-5">
+            <FieldGroup title="Identité">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field
+                  label="Code"
+                  htmlFor="affiliate-code"
+                  hint="3 à 24 caractères, lettres et chiffres. C'est lui qui attribue la vente."
                 >
-                  <SelectTrigger className="h-10" aria-label="Type d'affilié">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="partner">Partenaire</SelectItem>
-                    <SelectItem value="referral">Parrainage</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-          </FieldGroup>
-
-          <FieldGroup title="Économie">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Commission"
-                htmlFor="affiliate-rate"
-                hint={`${commissionOn100.toLocaleString('fr-FR')} € pour 100 € HT encaissés.`}
-              >
-                <div className="relative max-w-[9rem]">
                   <Input
-                    id="affiliate-rate"
-                    type="number"
-                    min={0}
-                    max={25}
-                    className="h-10 pr-8 font-mono tabular-nums"
-                    value={ratePct}
-                    onChange={(e) => setRatePct(Number(e.target.value))}
-                    data-testid="affiliate-rate"
+                    id="affiliate-code"
+                    className="h-10 font-mono tracking-wide"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    placeholder="NORAH10"
+                    aria-invalid={code.length > 0 && !codeValid}
+                    data-testid="affiliate-code"
                   />
-                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-muted-foreground)]">
-                    %
-                  </span>
-                </div>
-              </Field>
-              <Field
-                label="Remise filleul"
-                htmlFor="affiliate-discount"
-                hint={
-                  discountPct > 0
-                    ? 'Un code promo Stripe est créé : le filleul peut le taper au checkout.'
-                    : 'À 0, aucun code saisissable — seul le lien attribue la vente.'
-                }
+                </Field>
+                <Field
+                  label="Type"
+                  hint={
+                    kind === 'partner'
+                      ? 'Récompense : cash. Le partenaire peut recevoir un compte agence offert.'
+                      : 'Récompense : crédit, appliqué au prochain achat du parrain.'
+                  }
+                >
+                  <Select
+                    value={kind}
+                    onValueChange={(v) => onKindChange(v as 'referral' | 'partner')}
+                  >
+                    <SelectTrigger className="h-10" aria-label="Type d'affilié">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="partner">Partenaire</SelectItem>
+                      <SelectItem value="referral">Parrainage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+            </FieldGroup>
+
+            <FieldGroup title="Économie">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field
+                  label="Commission"
+                  htmlFor="affiliate-rate"
+                  hint={`${commissionOn100.toLocaleString('fr-FR')} € pour 100 € HT encaissés.`}
+                >
+                  <div className="relative max-w-[9rem]">
+                    <Input
+                      id="affiliate-rate"
+                      type="number"
+                      min={0}
+                      max={25}
+                      className="h-10 pr-8 font-mono tabular-nums"
+                      value={ratePct}
+                      onChange={(e) => setRatePct(Number(e.target.value))}
+                      data-testid="affiliate-rate"
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-muted-foreground)]">
+                      %
+                    </span>
+                  </div>
+                </Field>
+                <Field
+                  label="Remise filleul"
+                  htmlFor="affiliate-discount"
+                  hint={
+                    discountPct > 0
+                      ? 'Un code promo Stripe est créé : le filleul peut le taper au checkout.'
+                      : 'À 0, aucun code saisissable — seul le lien attribue la vente.'
+                  }
+                >
+                  <div className="relative max-w-[9rem]">
+                    <Input
+                      id="affiliate-discount"
+                      type="number"
+                      min={0}
+                      max={25}
+                      className="h-10 pr-8 font-mono tabular-nums"
+                      value={discountPct}
+                      onChange={(e) => setDiscountPct(Number(e.target.value))}
+                      data-testid="affiliate-discount"
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-muted-foreground)]">
+                      %
+                    </span>
+                  </div>
+                </Field>
+              </div>
+
+              <div
+                className={cn(
+                  'flex flex-col gap-2 rounded-lg border px-4 py-3 transition-colors',
+                  overCap
+                    ? 'border-[color:var(--color-danger)]/40 bg-[color:var(--color-danger-soft)]/40'
+                    : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)]/40',
+                )}
               >
-                <div className="relative max-w-[9rem]">
+                <CapMeter combinedBps={combinedBps} />
+                {overCap ? (
+                  <p className="flex items-start gap-1.5 text-xs text-[color:var(--color-danger)]">
+                    <AlertTriangle
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                    Au-delà de 25 %, la marge de l&apos;Essentiel ne tient plus.
+                  </p>
+                ) : null}
+              </div>
+            </FieldGroup>
+
+            <FieldGroup title="Contact">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field
+                  label="Nom affiché"
+                  htmlFor="affiliate-display-name"
+                  hint="Tel qu'il apparaît dans le back-office et sur l'invitation."
+                >
                   <Input
-                    id="affiliate-discount"
-                    type="number"
-                    min={0}
-                    max={25}
-                    className="h-10 pr-8 font-mono tabular-nums"
-                    value={discountPct}
-                    onChange={(e) => setDiscountPct(Number(e.target.value))}
-                    data-testid="affiliate-discount"
+                    id="affiliate-display-name"
+                    className="h-10"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Norah — @norah"
+                    data-testid="affiliate-display-name"
                   />
-                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-muted-foreground)]">
-                    %
-                  </span>
-                </div>
-              </Field>
-            </div>
-
-            <div
-              className={cn(
-                'flex flex-col gap-2 rounded-lg border px-4 py-3 transition-colors',
-                overCap
-                  ? 'border-[color:var(--color-danger)]/40 bg-[color:var(--color-danger-soft)]/40'
-                  : 'border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)]/40',
-              )}
-            >
-              <CapMeter combinedBps={combinedBps} />
-              {overCap ? (
-                <p className="flex items-start gap-1.5 text-xs text-[color:var(--color-danger)]">
-                  <AlertTriangle
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                    strokeWidth={2}
-                    aria-hidden
+                </Field>
+                <Field
+                  label="E-mail (payout)"
+                  htmlFor="affiliate-owner-email"
+                  hint="Sans adresse, le lien d'invitation ne pourra être que copié, pas envoyé."
+                >
+                  <Input
+                    id="affiliate-owner-email"
+                    type="email"
+                    className="h-10"
+                    value={ownerEmail}
+                    onChange={(e) => setOwnerEmail(e.target.value)}
+                    placeholder="norah@exemple.com"
+                    data-testid="affiliate-owner-email"
                   />
-                  Au-delà de 25 %, la marge de l&apos;Essentiel ne tient plus.
-                </p>
-              ) : null}
-            </div>
-          </FieldGroup>
+                </Field>
+              </div>
+            </FieldGroup>
 
-          <FieldGroup title="Contact">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Nom affiché"
-                htmlFor="affiliate-display-name"
-                hint="Tel qu'il apparaît dans le back-office et sur l'invitation."
-              >
-                <Input
-                  id="affiliate-display-name"
-                  className="h-10"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Norah — @norah"
-                  data-testid="affiliate-display-name"
-                />
-              </Field>
-              <Field
-                label="E-mail (payout)"
-                htmlFor="affiliate-owner-email"
-                hint="Sans adresse, le lien d'invitation ne pourra être que copié, pas envoyé."
-              >
-                <Input
-                  id="affiliate-owner-email"
-                  type="email"
-                  className="h-10"
-                  value={ownerEmail}
-                  onChange={(e) => setOwnerEmail(e.target.value)}
-                  placeholder="norah@exemple.com"
-                  data-testid="affiliate-owner-email"
-                />
-              </Field>
-            </div>
-          </FieldGroup>
+            {createError ? <Banner tone="danger">{createError}</Banner> : null}
+          </div>
 
-          <div className="flex flex-col gap-3 border-t border-[color:var(--color-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 space-y-1.5">
-              {error ? <Banner tone="danger">{error}</Banner> : null}
-              {sent ? <Banner tone="success">Invitation envoyée à {sent}.</Banner> : null}
-            </div>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <DialogClose className="focus-ring inline-flex h-10 w-full items-center justify-center rounded-lg border border-[color:var(--color-border)] px-4 text-sm font-medium transition-colors hover:bg-[color:var(--color-surface-elevated)] sm:w-auto">
+              Annuler
+            </DialogClose>
             <button
               type="button"
               onClick={create}
               data-testid="affiliate-create"
               disabled={pending || !codeValid || overCap}
-              className="focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[color:var(--color-primary)] px-4 text-sm font-medium text-[color:var(--color-primary-foreground)] transition-colors hover:bg-[color:var(--color-primary-hover)] disabled:pointer-events-none disabled:opacity-50"
+              className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[color:var(--color-primary)] px-4 text-sm font-medium text-[color:var(--color-primary-foreground)] transition-colors hover:bg-[color:var(--color-primary-hover)] disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
             >
               {pending ? (
                 <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden />
@@ -1024,14 +1056,36 @@ export function AdminAffiliatesBoard({
               )}
               Créer l&apos;affilié
             </button>
-          </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Retours de la page — création, envoi d'invitation, suppression. Ils
+          vivaient dans le pied du formulaire ; la modale fermée, ils n'auraient
+          plus rien eu où s'afficher. */}
+      {error || created || sent ? (
+        <div className="flex flex-col gap-2">
+          {error ? <Banner tone="danger">{error}</Banner> : null}
+          {created ? <Banner tone="success">Affilié {created} créé.</Banner> : null}
+          {sent ? <Banner tone="success">Invitation envoyée à {sent}.</Banner> : null}
         </div>
-      </AdminSection>
+      ) : null}
 
       <AdminSection
         title="Affiliés"
         description="Un code par affilié. Le lien attribue la vente ; le code partageable, lui, se tape au checkout."
         bare
+        actions={
+          <button
+            type="button"
+            onClick={() => openCreate(true)}
+            data-testid="affiliate-new"
+            className="focus-ring inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[color:var(--color-primary)] px-3.5 text-sm font-medium text-[color:var(--color-primary-foreground)] transition-colors hover:bg-[color:var(--color-primary-hover)]"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Nouvel affilié
+          </button>
+        }
       >
         <AdminDataTable
           rows={affiliates}
@@ -1041,7 +1095,7 @@ export function AdminAffiliatesBoard({
             `${a.code} ${a.shareCode ?? ''} ${a.displayName ?? ''} ${a.ownerEmail ?? ''}`
           }
           emptyTitle="Aucun affilié"
-          emptyDescription="Créez-en un ci-dessus (invitation-only)."
+          emptyDescription="Ouvrez « Nouvel affilié » — le programme est sur invitation."
           emptyIcon={Handshake}
         />
       </AdminSection>

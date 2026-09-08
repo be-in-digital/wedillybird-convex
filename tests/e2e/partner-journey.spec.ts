@@ -68,7 +68,10 @@ test.describe('Parcours partenaire', () => {
     /* ---------------- 1. L'admin ouvre le partenariat ---------------- */
     await signInByEmail(page, ADMIN_EMAIL);
     await page.goto('/admin/affiliates');
-    await expect(page.getByText('Nouvel affilié')).toBeVisible();
+    // La création se fait dans une modale : les champs n'existent pas tant
+    // qu'elle n'est pas ouverte.
+    await page.getByTestId('affiliate-new').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
 
     await page.getByTestId('affiliate-code').fill('SARAH12');
     await page.getByTestId('affiliate-rate').fill('10');
