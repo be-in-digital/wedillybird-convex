@@ -88,7 +88,19 @@
       "delete_event": "حذف فعالية",
       "moderate_photo": "الإشراف على صورة",
       "delete_user": "حذف حساب",
-      "delete_affiliate": "حذف شريك تسويق"
+      "delete_affiliate": "حذف شريك تسويق",
+      "unsuspend_user": "إعادة تفعيل مستخدم",
+      "refund_payment": "استرداد كامل",
+      "partial_refund_payment": "استرداد جزئي",
+      "cancel_subscription": "إلغاء اشتراك",
+      "reactivate_subscription": "إعادة تفعيل اشتراك",
+      "grant_event_plan": "منح باقة",
+      "revoke_event_plan": "سحب باقة",
+      "update_photo_book_status": "تغيير حالة الطلب",
+      "create_partner_invite": "إنشاء دعوة شريك",
+      "revoke_partner_invite": "إبطال دعوة شريك",
+      "set_affiliate_contact": "تحديث بيانات المسوّق",
+      "mark_referral_paid": "صرف عمولة"
     },
     "auditLog": {
       "colDate": "التاريخ",

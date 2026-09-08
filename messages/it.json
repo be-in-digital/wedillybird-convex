@@ -88,7 +88,19 @@
       "delete_event": "Eliminazione evento",
       "moderate_photo": "Moderazione foto",
       "delete_user": "Eliminazione account",
-      "delete_affiliate": "Eliminazione affiliato"
+      "delete_affiliate": "Eliminazione affiliato",
+      "unsuspend_user": "Riattivazione utente",
+      "refund_payment": "Rimborso totale",
+      "partial_refund_payment": "Rimborso parziale",
+      "cancel_subscription": "Annullamento abbonamento",
+      "reactivate_subscription": "Riattivazione abbonamento",
+      "grant_event_plan": "Piano offerto",
+      "revoke_event_plan": "Piano revocato",
+      "update_photo_book_status": "Cambio stato ordine",
+      "create_partner_invite": "Invito partner creato",
+      "revoke_partner_invite": "Invito partner revocato",
+      "set_affiliate_contact": "Contatto affiliato aggiornato",
+      "mark_referral_paid": "Commissione liquidata"
     },
     "auditLog": {
       "colDate": "Data",
