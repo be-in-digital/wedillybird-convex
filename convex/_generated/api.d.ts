@@ -47,6 +47,7 @@ import type * as lib_orgAuth from "../lib/orgAuth.js";
 import type * as lib_otp from "../lib/otp.js";
 import type * as lib_partnerInvite from "../lib/partnerInvite.js";
 import type * as lib_phone from "../lib/phone.js";
+import type * as lib_purge from "../lib/purge.js";
 import type * as lib_qrToken from "../lib/qrToken.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_rsvpAuth from "../lib/rsvpAuth.js";
@@ -133,6 +134,7 @@ declare const fullApi: ApiFromModules<{
   "lib/otp": typeof lib_otp;
   "lib/partnerInvite": typeof lib_partnerInvite;
   "lib/phone": typeof lib_phone;
+  "lib/purge": typeof lib_purge;
   "lib/qrToken": typeof lib_qrToken;
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/rsvpAuth": typeof lib_rsvpAuth;

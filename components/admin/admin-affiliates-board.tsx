@@ -3,13 +3,16 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Handshake, Loader2, Plus } from 'lucide-react';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import {
   adminCreateAffiliateAction,
   adminCreatePartnerInviteAction,
+  adminDeleteAffiliateAction,
   adminEnsureAffiliateCouponAction,
   adminMarkReferralPaidAction,
   adminRevokePartnerInviteAction,
   adminSendPartnerInviteAction,
+  adminSetAffiliateContactAction,
   adminSetAffiliateStatusAction,
 } from '@/app/[locale]/(app)/admin/actions';
 
@@ -135,6 +138,7 @@ export function AdminAffiliatesBoard({
   invites?: PartnerInvite[];
 }) {
   const router = useRouter();
+  const { confirm, confirmDialog } = useConfirm();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   /** Adresse effectivement servie par le dernier envoi, pour confirmation. */
@@ -201,6 +205,44 @@ export function AdminAffiliatesBoard({
   }
 
   /**
+   * Efface un affilié — le seul moyen de rendre son `code`, qui est unique.
+   * Convex refuse dès qu'une commission existe : le message le dit, plutôt
+   * que d'échouer en silence sur un tableau qui ne bouge pas.
+   */
+  function remove(a: Affiliate) {
+    setError(null);
+    void (async () => {
+      const ok = await confirm({
+        title: `Supprimer l'affilié ${a.code} ?`,
+        description:
+          "Le code redevient libre, son lien d'invitation est coupé et sa remise Stripe désactivée. Irréversible. Un affilié qui a déjà généré une commission ne peut pas être supprimé — désactivez-le.",
+        confirmLabel: 'Supprimer',
+        destructive: true,
+      });
+      if (!ok) return;
+      startTransition(async () => {
+        const res = await adminDeleteAffiliateAction(a.id);
+        if (!res.ok) {
+          setError(
+            res.error === 'AFFILIATE_HAS_REFERRALS'
+              ? `${a.code} a déjà des commissions au ledger : il se désactive, il ne se supprime pas.`
+              : res.error,
+          );
+          return;
+        }
+        // Supprimé côté Convex mais coupon Stripe encore debout : le code
+        // resterait saisissable au checkout alors que plus rien ne l'attribue.
+        if (res.stripeError) {
+          setError(
+            `Affilié supprimé, mais code promo Stripe NON désactivé (${res.stripeError}). Coupez-le depuis Stripe.`,
+          );
+        }
+        router.refresh();
+      });
+    })();
+  }
+
+  /**
    * Rattrapage : crée le code promo Stripe d'un affilié qui n'en a pas encore
    * (échec réseau à la création, ou affilié ouvert avant que la création
    * automatique n'existe).
@@ -259,6 +301,21 @@ export function AdminAffiliatesBoard({
   function inviteUrl(token: string): string {
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
     return `${origin}/rejoindre/${token}`;
+  }
+
+  function setContact(
+    a: Affiliate,
+    next: { ownerEmail: string | null; displayName: string | null },
+  ) {
+    setError(null);
+    startTransition(async () => {
+      const res = await adminSetAffiliateContactAction(a.id, next);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      router.refresh();
+    });
   }
 
   function createInvite(a: Affiliate, kind: 'pro' | 'couple', grant: InviteGrantOptions) {
@@ -522,8 +579,15 @@ export function AdminAffiliatesBoard({
                       </span>
                     )}
                   </td>
+                  {/* Nom ET adresse : n'afficher que le premier des deux
+                      laissait un affilié sans e-mail paraître complet, et le
+                      bouton d'envoi grisé sans raison lisible. */}
                   <td className="px-4 py-2.5 text-[color:var(--color-ink-500)]">
-                    {a.displayName ?? a.ownerEmail ?? '—'}
+                    <ContactCell
+                      affiliate={a}
+                      pending={pending}
+                      onSave={(next) => setContact(a, next)}
+                    />
                   </td>
                   {/* Le lien d'invitation n'a de sens que pour un partenaire :
                       le parrainage particulier n'ouvre pas de compte agence. */}
@@ -554,14 +618,25 @@ export function AdminAffiliatesBoard({
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => toggle(a)}
-                      disabled={pending}
-                      className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
-                    >
-                      {a.status === 'active' ? 'Désactiver' : 'Réactiver'}
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggle(a)}
+                        disabled={pending}
+                        className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
+                      >
+                        {a.status === 'active' ? 'Désactiver' : 'Réactiver'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove(a)}
+                        disabled={pending}
+                        data-testid="admin-delete-affiliate"
+                        className="rounded-md px-2 py-1 text-xs text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger)]/10 disabled:opacity-50"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -651,6 +726,106 @@ export function AdminAffiliatesBoard({
           </table>
         </div>
       </section>
+      {confirmDialog}
+    </div>
+  );
+}
+
+/**
+ * Contact d'un affilié : nom affiché et adresse d'envoi, lisibles et corrigibles.
+ *
+ * La cellule ne montrait que `displayName ?? ownerEmail`. Un affilié nommé mais
+ * sans adresse paraissait donc complet, pendant que « Envoyer par e-mail »
+ * restait grisé — le tableau disait le contraire du bouton. Elle montre
+ * maintenant les deux, et nomme l'absence : c'est ce manque précis qui bloque
+ * l'envoi.
+ */
+function ContactCell({
+  affiliate,
+  pending,
+  onSave,
+}: {
+  affiliate: Affiliate;
+  pending: boolean;
+  onSave: (next: { ownerEmail: string | null; displayName: string | null }) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [email, setEmail] = useState(affiliate.ownerEmail ?? '');
+  const [name, setName] = useState(affiliate.displayName ?? '');
+
+  const fieldCls =
+    'h-7 w-40 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-1.5 text-[11px] text-[color:var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-primary)] disabled:opacity-50';
+
+  if (editing) {
+    return (
+      <div className="flex flex-col items-start gap-1">
+        <input
+          aria-label="Nom affiché du partenaire"
+          className={fieldCls}
+          value={name}
+          disabled={pending}
+          placeholder="Nom affiché"
+          onChange={(e) => setName(e.target.value)}
+        />
+        <input
+          aria-label="Adresse e-mail du partenaire"
+          className={fieldCls}
+          type="email"
+          value={email}
+          disabled={pending}
+          placeholder="sarah@exemple.com"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              onSave({ ownerEmail: email.trim() || null, displayName: name.trim() || null });
+              setEditing(false);
+            }}
+            className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)] px-2 py-0.5 text-[11px] font-medium disabled:opacity-50"
+          >
+            Enregistrer
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              setEmail(affiliate.ownerEmail ?? '');
+              setName(affiliate.displayName ?? '');
+              setEditing(false);
+            }}
+            className="rounded-md px-1.5 py-0.5 text-[11px] underline underline-offset-2 disabled:opacity-50"
+          >
+            Annuler
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <span>{affiliate.displayName ?? '—'}</span>
+      {affiliate.ownerEmail ? (
+        <span className="text-[11px]">{affiliate.ownerEmail}</span>
+      ) : (
+        <span
+          className="text-[11px] text-[color:var(--color-warning)]"
+          title="Sans adresse, le lien d'invitation ne peut pas être envoyé — seulement copié."
+        >
+          aucune adresse
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        disabled={pending}
+        className="text-[11px] underline underline-offset-2 disabled:opacity-50"
+      >
+        Modifier
+      </button>
     </div>
   );
 }

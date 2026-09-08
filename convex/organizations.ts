@@ -11,6 +11,7 @@ import type { Doc, Id } from './_generated/dataModel';
 import { BUDGET_CURRENCY } from './lib/currency';
 import { pickUniqueSlug, slugifyOrgName } from './lib/uniqueSlug';
 import { seatLimitForTier } from './lib/entitlements';
+import { newPurge, purgeOrganization } from './lib/purge';
 
 const ROLE = v.union(
   v.literal('owner'),
@@ -244,9 +245,19 @@ export const transferOwnership = mutation({
 
 /**
  * Zone de danger — suppression définitive de l'organisation et de ses données.
- * Réservé au propriétaire ; exige la saisie exacte du nom de l'agence. Cascade
- * sur les tables rattachées (événements + enfants, clients, prestataires,
- * budget, planning, devis, contrats, membres).
+ * Réservé au propriétaire ; exige la saisie exacte du nom de l'agence.
+ *
+ * La cascade est celle de `convex/lib/purge.ts`, partagée avec la suppression
+ * de compte côté admin. Écrite ici à la main, elle ne descendait qu'aux
+ * invités et aux photos : plan de table, espace couple, prestataires,
+ * paiements de budget, journaux de devis et de contrats, achats PAYG et
+ * modèles de rétroplanning restaient en base, orphelins — et les fichiers S3
+ * des galeries continuaient de coûter. Deux cascades pour un même objet
+ * finissent toujours par diverger ; il n'y en a plus qu'une.
+ *
+ * Ce qui survit : les PAIEMENTS des couples. Ce sont des encaissements
+ * plateforme, pas des données de l'agence — supprimer son compte ne doit pas
+ * effacer le chiffre d'affaires qu'elle a produit (cf. `EVENT_CHILD_TABLES`).
  */
 export const deleteOrganization = mutation({
   args: {
@@ -259,79 +270,9 @@ export const deleteOrganization = mutation({
     if (!org) throw new Error('NOT_FOUND');
     if (org.ownerId !== args.requesterId) throw new Error('OWNER_ONLY');
     if (args.confirmName.trim() !== org.name) throw new Error('NAME_MISMATCH');
-    const orgId = org._id;
 
-    // Événements + enfants par événement.
-    const events = await ctx.db
-      .query('events')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect();
-    for (const ev of events) {
-      for (const g of await ctx.db
-        .query('guests')
-        .withIndex('by_event', (q) => q.eq('eventId', ev._id))
-        .collect())
-        await ctx.db.delete(g._id);
-      for (const ph of await ctx.db
-        .query('photos')
-        .withIndex('by_event', (q) => q.eq('eventId', ev._id))
-        .collect())
-        await ctx.db.delete(ph._id);
-      await ctx.db.delete(ev._id);
-    }
-
-    // Clients + notes.
-    const clients = await ctx.db
-      .query('clients')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect();
-    for (const c of clients) {
-      for (const n of await ctx.db
-        .query('clientNotes')
-        .withIndex('by_client', (q) => q.eq('clientId', c._id))
-        .collect())
-        await ctx.db.delete(n._id);
-      await ctx.db.delete(c._id);
-    }
-
-    // Tables org-scoped restantes.
-    for (const vd of await ctx.db
-      .query('vendors')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect())
-      await ctx.db.delete(vd._id);
-    for (const en of await ctx.db
-      .query('vendorEngagements')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect())
-      await ctx.db.delete(en._id);
-    for (const t of await ctx.db
-      .query('planningTasks')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect())
-      await ctx.db.delete(t._id);
-    for (const bl of await ctx.db
-      .query('budgetLines')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect())
-      await ctx.db.delete(bl._id);
-    for (const ct of await ctx.db
-      .query('contracts')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect())
-      await ctx.db.delete(ct._id);
-    for (const qd of await ctx.db
-      .query('quoteDocs')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect())
-      await ctx.db.delete(qd._id);
-    for (const m of await ctx.db
-      .query('organizationMemberships')
-      .withIndex('by_organization', (q) => q.eq('organizationId', orgId))
-      .collect())
-      await ctx.db.delete(m._id);
-
-    await ctx.db.delete(orgId);
+    const purge = newPurge();
+    await purgeOrganization(ctx, purge, org._id);
     return { ok: true as const };
   },
 });

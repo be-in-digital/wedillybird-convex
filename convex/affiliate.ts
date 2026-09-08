@@ -16,6 +16,7 @@ import {
   type QueryCtx,
 } from './_generated/server';
 import type { Doc, Id } from './_generated/dataModel';
+import { isValidEmail } from './lib/email';
 import {
   DEFAULT_PARTNER_COMP_MONTHS,
   DEFAULT_PARTNER_COMP_TIER,
@@ -274,6 +275,62 @@ async function openPartnerComp(
   return { granted: true, expiresAt: comp.expiresAt };
 }
 
+/**
+ * Corrige le contact d'un affilié : adresse d'envoi et nom affiché.
+ *
+ * `ownerEmail` ne s'écrivait qu'à `createAffiliate`. Un partenaire créé sans
+ * adresse — ou avec une faute de frappe — n'avait donc aucune issue : le bouton
+ * « Envoyer par e-mail » restait grisé pour toujours, et la seule sortie était
+ * de supprimer l'affilié et de le recréer, ce qui jette son code, ses
+ * commissions et son historique.
+ *
+ * À ne pas confondre avec `setAffiliateOwner`, qui rattache un COMPTE
+ * utilisateur (et ouvre `/partenaire`). Ici on ne touche qu'à des champs de
+ * contact en texte libre ; deviner l'un depuis l'autre donnerait à quelqu'un
+ * les commissions d'un autre.
+ */
+export const setAffiliateContact = mutation({
+  args: {
+    adminId: v.id('users'),
+    affiliateId: v.id('affiliates'),
+    /** `null` efface l'adresse. */
+    ownerEmail: v.union(v.string(), v.null()),
+    /** `null` efface le nom affiché. */
+    displayName: v.union(v.string(), v.null()),
+  },
+  handler: async (ctx, { adminId, affiliateId, ownerEmail, displayName }) => {
+    await assertAdmin(ctx, adminId);
+    const affiliate = await ctx.db.get(affiliateId);
+    if (!affiliate) throw new Error('AFFILIATE_NOT_FOUND');
+
+    // Même normalisation qu'à la création : une adresse stockée avec une
+    // majuscule ou une espace de bord partirait quand même, mais ne
+    // s'égaliserait plus à elle-même dans les comparaisons.
+    const email = ownerEmail?.trim().toLowerCase() || null;
+    if (email !== null && !isValidEmail(email)) throw new Error('INVALID_EMAIL');
+    const name = displayName?.trim() || null;
+    if (name !== null && name.length > 120) throw new Error('INVALID_NAME');
+
+    const now = Date.now();
+    await ctx.db.patch(affiliateId, {
+      ownerEmail: email ?? undefined,
+      displayName: name ?? undefined,
+      updatedAt: now,
+    });
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'set_affiliate_contact',
+      targetType: 'affiliate',
+      targetId: affiliateId,
+      // L'adresse atterrit dans l'audit : c'est elle qui décide où part un lien
+      // qui ouvre un compte offert.
+      details: JSON.stringify({ code: affiliate.code, ownerEmail: email, displayName: name }),
+      createdAt: now,
+    });
+    return { ok: true as const };
+  },
+});
+
 /** Active/désactive un affilié (admin). */
 export const setAffiliateStatus = mutation({
   args: {
@@ -285,6 +342,68 @@ export const setAffiliateStatus = mutation({
     await assertAdmin(ctx, adminId);
     await ctx.db.patch(affiliateId, { status, updatedAt: Date.now() });
     return null;
+  },
+});
+
+/**
+ * Efface définitivement un affilié (admin).
+ *
+ * Il manquait la sortie : un code ouvert pour tester restait à vie dans le
+ * tableau, et son `code` — unique — restait pris. « Désactiver » suspend
+ * l'attribution, il n'a jamais rendu le code.
+ *
+ * **Le ledger est intouchable.** Dès qu'une ligne de commission existe pour
+ * cet affilié — même annulée, même déjà versée — la suppression est refusée :
+ * une écriture comptable ne s'efface pas avec la fiche qui l'a produite. Le
+ * back-office a `setAffiliateStatus` pour ces cas-là.
+ *
+ * Les liens d'invitation, eux, tombent avec l'affilié : un lien qui rattache
+ * à un affilié disparu n'ouvre plus rien.
+ */
+export const deleteAffiliate = mutation({
+  args: { adminId: v.id('users'), affiliateId: v.id('affiliates') },
+  handler: async (ctx, { adminId, affiliateId }) => {
+    await assertAdmin(ctx, adminId);
+    const affiliate = await ctx.db.get(affiliateId);
+    if (!affiliate) throw new Error('AFFILIATE_NOT_FOUND');
+
+    const referral = await ctx.db
+      .query('affiliateReferrals')
+      .withIndex('by_affiliate', (q) => q.eq('affiliateId', affiliateId))
+      .first();
+    if (referral) throw new Error('AFFILIATE_HAS_REFERRALS');
+
+    const invites = await ctx.db
+      .query('partnerInvites')
+      .withIndex('by_affiliate', (q) => q.eq('affiliateId', affiliateId))
+      .collect();
+    for (const invite of invites) await ctx.db.delete(invite._id);
+
+    await ctx.db.delete(affiliateId);
+    await ctx.db.insert('adminAuditLog', {
+      adminId,
+      action: 'delete_affiliate',
+      targetType: 'affiliate',
+      targetId: affiliateId,
+      details: JSON.stringify({
+        code: affiliate.code,
+        kind: affiliate.kind,
+        displayName: affiliate.displayName ?? null,
+        ownerEmail: affiliate.ownerEmail ?? null,
+        invitesDeleted: invites.length,
+        // Repris par la server action pour couper la remise côté Stripe :
+        // un code promo encore actif resterait saisissable au checkout.
+        stripeCouponId: affiliate.stripeCouponId ?? null,
+        stripePromotionCodeId: affiliate.stripePromotionCodeId ?? null,
+      }),
+      createdAt: Date.now(),
+    });
+    return {
+      ok: true as const,
+      code: affiliate.code,
+      stripeCouponId: affiliate.stripeCouponId ?? null,
+      stripePromotionCodeId: affiliate.stripePromotionCodeId ?? null,
+    };
   },
 });
 

@@ -73,7 +73,9 @@
       "change_role": "Changement de rôle",
       "update_event_status": "Changement statut événement",
       "delete_event": "Suppression événement",
-      "moderate_photo": "Modération photo"
+      "moderate_photo": "Modération photo",
+      "delete_user": "Suppression compte",
+      "delete_affiliate": "Suppression affilié"
     },
     "auditLog": {
       "colDate": "Date",
@@ -103,7 +105,24 @@
       "confirmDetachPartner": "Détacher ce code partenaire de ce compte ?",
       "unsuspend": "Réactiver",
       "confirmUnsuspend": "Réactiver {name} ?",
-      "suspended": "Suspendu"
+      "suspended": "Suspendu",
+      "deleteTitle": "Supprimer {name} ?",
+      "deleteBody": "Suppression définitive : le compte et tout ce qu'il possède disparaissent. Aucun retour en arrière.",
+      "deleteLoading": "Inventaire du compte…",
+      "deleteOrganizations": "Organisations",
+      "deleteEvents": "Mariages",
+      "deleteGuests": "Invités",
+      "deletePhotos": "Photos",
+      "deletePayments": "Paiements",
+      "deleteReassigned": "{count, plural, one {# mariage sera réattribué à son agence.} other {# mariages seront réattribués à leur agence.}}",
+      "deleteDetached": "Codes partenaire détachés, mais conservés : {codes}",
+      "deleteConfirmLabel": "Retapez « {label} » pour confirmer",
+      "deleteCta": "Supprimer définitivement",
+      "deleteDeleting": "Suppression…",
+      "deleteBlockedAdmin": "Un compte administrateur ne se supprime pas. Retirez-lui d'abord le rôle admin.",
+      "deleteBlockedBilled": "Abonnement Stripe encore actif ({orgs}). Annulez-le depuis Abonnements avant de supprimer.",
+      "deleteBlockedTeam": "Cette organisation a une équipe ({orgs}). Transférez sa propriété avant de supprimer.",
+      "deleteError": "Suppression impossible : {code}"
     },
     "events": {
       "searchPlaceholder": "Rechercher un événement…",

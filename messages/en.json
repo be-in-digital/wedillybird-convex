@@ -73,7 +73,9 @@
       "change_role": "Role change",
       "update_event_status": "Event status change",
       "delete_event": "Event deletion",
-      "moderate_photo": "Photo moderation"
+      "moderate_photo": "Photo moderation",
+      "delete_user": "Account deletion",
+      "delete_affiliate": "Affiliate deletion"
     },
     "auditLog": {
       "colDate": "Date",
@@ -103,7 +105,24 @@
       "confirmDetachPartner": "Detach this partner code from this account?",
       "unsuspend": "Reactivate",
       "confirmUnsuspend": "Reactivate {name}?",
-      "suspended": "Suspended"
+      "suspended": "Suspended",
+      "deleteTitle": "Delete {name}?",
+      "deleteBody": "Permanent deletion: the account and everything it owns are erased. There is no way back.",
+      "deleteLoading": "Taking stock of the account…",
+      "deleteOrganizations": "Organizations",
+      "deleteEvents": "Weddings",
+      "deleteGuests": "Guests",
+      "deletePhotos": "Photos",
+      "deletePayments": "Payments",
+      "deleteReassigned": "{count, plural, one {# wedding will be reassigned to its agency.} other {# weddings will be reassigned to their agency.}}",
+      "deleteDetached": "Partner codes detached, but kept: {codes}",
+      "deleteConfirmLabel": "Retype “{label}” to confirm",
+      "deleteCta": "Delete permanently",
+      "deleteDeleting": "Deleting…",
+      "deleteBlockedAdmin": "An administrator account cannot be deleted. Remove the admin role first.",
+      "deleteBlockedBilled": "Stripe subscription still active ({orgs}). Cancel it from Subscriptions before deleting.",
+      "deleteBlockedTeam": "This organization has a team ({orgs}). Transfer ownership before deleting.",
+      "deleteError": "Deletion failed: {code}"
     },
     "events": {
       "searchPlaceholder": "Search an event…",
