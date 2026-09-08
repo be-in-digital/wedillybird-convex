@@ -64,7 +64,10 @@ describe('la cellule Contact ne masque plus une adresse manquante', () => {
   });
 
   it("nomme l'absence d'adresse, qui est ce qui bloque l'envoi", () => {
-    expect(BOARD).toContain('aucune adresse');
+    // Insensible à la casse : ce qui doit tenir, c'est que la cellule NOMME le
+    // manque — pas qu'elle l'écrive en minuscules. Épingler la typographie
+    // ferait échouer le test au moindre passage en capitale initiale.
+    expect(BOARD.toLowerCase()).toContain('aucune adresse');
   });
 
   it('la condition du bouton d’envoi porte bien sur cette adresse', () => {

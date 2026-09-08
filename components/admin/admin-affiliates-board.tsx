@@ -2,8 +2,37 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Handshake, Loader2, Plus } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Handshake,
+  Ban,
+  Link2,
+  Loader2,
+  Mail,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  Users,
+  Wallet,
+} from 'lucide-react';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   adminCreateAffiliateAction,
   adminCreatePartnerInviteAction,
@@ -15,10 +44,132 @@ import {
   adminSetAffiliateContactAction,
   adminSetAffiliateStatusAction,
 } from '@/app/[locale]/(app)/admin/actions';
-import { formatDate } from '@/lib/admin/format';
+import { formatDate, formatMoneyMinor } from '@/lib/admin/format';
+import { cn } from '@/lib/cn';
 import { AdminDataTable, type AdminColumn } from './ui/data-table';
 import { AdminSection } from './ui/section';
+import { AdminStat, AdminStatGrid } from './ui/stat-card';
 import { StatusPill, type StatusTone } from './ui/status-pill';
+
+/**
+ * Champ de formulaire du back-office : libellé au-dessus, aide en dessous.
+ *
+ * Le formulaire de création alignait sept `<input>` bruts sur une grille de six
+ * colonnes, sans un mot d'explication : on y lisait « Remise filleul % » sans
+ * savoir ce que ça coûte ni où est la limite. Chaque champ porte désormais son
+ * aide, et la limite se voit avant d'être franchie (cf. `CapMeter`).
+ */
+type LedgerTotal = { currency: string; status: Referral['status']; minor: number };
+
+/**
+ * Somme d'un statut du ledger, toutes devises confondues.
+ *
+ * Les commissions ne vivent pas toutes en euros : additionner les montants
+ * mineurs de devises différentes donnerait un nombre qui ne veut rien dire. On
+ * rend donc une chaîne par devise, séparées par une puce.
+ */
+function sumLabel(totals: readonly LedgerTotal[], status: Referral['status']): string {
+  const rows = totals.filter((t) => t.status === status);
+  if (rows.length === 0) return '—';
+  return rows.map((t) => fmtMinor(t.minor, t.currency)).join(' · ');
+}
+
+function hasAmount(totals: readonly LedgerTotal[], status: Referral['status']): boolean {
+  return totals.some((t) => t.status === status && t.minor > 0);
+}
+
+/** Message de retour d'action — un `<span>` nu ne se voyait pas. */
+function Banner({ tone, children }: { tone: 'danger' | 'success'; children: React.ReactNode }) {
+  const Icon = tone === 'danger' ? AlertTriangle : CheckCircle2;
+  return (
+    <p
+      role={tone === 'danger' ? 'alert' : 'status'}
+      className={cn(
+        'flex items-start gap-2 rounded-lg px-3 py-2 text-sm',
+        tone === 'danger'
+          ? 'bg-[color:var(--color-danger-soft)] text-[color:color-mix(in_oklab,var(--color-danger),var(--color-foreground)_40%)]'
+          : 'bg-[color:var(--color-success-soft)] text-[color:color-mix(in_oklab,var(--color-success),var(--color-foreground)_42%)]',
+      )}
+    >
+      <Icon className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+      <span className="min-w-0">{children}</span>
+    </p>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  htmlFor,
+  className,
+  children,
+}: {
+  label: string;
+  hint?: React.ReactNode;
+  htmlFor?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
+      <label
+        htmlFor={htmlFor}
+        className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase"
+      >
+        {label}
+      </label>
+      {children}
+      {hint ? (
+        <p className="text-xs leading-snug text-[color:var(--color-muted-foreground)]">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/** Intertitre d'un groupe de champs — sépare identité, économie et contact. */
+function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="flex flex-col gap-3 border-t border-[color:var(--color-border)] pt-5 first:border-0 first:pt-0">
+      <legend className="sr-only">{title}</legend>
+      <p className="text-sm font-semibold text-[color:var(--color-foreground)]">{title}</p>
+      {children}
+    </fieldset>
+  );
+}
+
+/**
+ * Charge combinée commission + remise, rapportée au plafond de marge.
+ *
+ * Le plafond n'existait qu'en message d'erreur, après coup. Le voir monter,
+ * c'est pouvoir s'arrêter avant — et comprendre pourquoi la limite est là.
+ */
+function CapMeter({ combinedBps }: { combinedBps: number }) {
+  const pct = combinedBps / 100;
+  const capPct = MAX_COMBINED_BPS / 100;
+  const over = combinedBps > MAX_COMBINED_BPS;
+  const width = Math.min((combinedBps / MAX_COMBINED_BPS) * 100, 100);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-3 text-xs">
+        <span className="text-[color:var(--color-muted-foreground)]">Charge combinée</span>
+        <span className="font-mono tabular-nums">
+          <span className={over ? 'text-[color:var(--color-danger)]' : undefined}>{pct} %</span>
+          <span className="text-[color:var(--color-muted-foreground)]"> / {capPct} % max</span>
+        </span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--color-surface-elevated)]">
+        <div
+          className={cn(
+            'h-full rounded-full transition-[width] duration-300 ease-[var(--ease-out-quint)]',
+            over ? 'bg-[color:var(--color-danger)]' : 'bg-[color:var(--color-primary)]',
+          )}
+          style={{ width: `${width}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 interface Affiliate {
   id: string;
@@ -130,8 +281,17 @@ const STATUS_LABEL: Record<Referral['status'], string> = {
   reversed: 'Annulé',
 };
 
+/**
+ * Montant d'une commission.
+ *
+ * La récompense est une proportion du `netMinor` du paiement : elle porte donc
+ * la convention de sa devise. Cette fonction divisait toujours par 100, ce qui
+ * affichait une commission en XOF (zéro-décimale) cent fois trop petite, et une
+ * commission en TND (millimes) dix fois trop grande — sur un écran de payout.
+ * Le formateur partagé porte la seule table de décimales du projet.
+ */
 function fmtMinor(minor: number, currency: string): string {
-  return `${(minor / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} ${currency}`;
+  return formatMoneyMinor(minor, currency);
 }
 
 const INVITE_STATE_LABEL: Record<PartnerInvite['state'], string> = {
@@ -397,68 +557,74 @@ export function AdminAffiliatesBoard({
 
   const affiliateColumns: AdminColumn<Affiliate>[] = [
     {
-      id: 'code',
-      header: 'Code',
+      // Code et nom dans la même colonne : ils désignent la même personne, et
+      // les séparer forçait à balayer la ligne pour savoir qui est « NORAH10 ».
+      id: 'affiliate',
+      header: 'Affilié',
       card: 'title',
       sortValue: (a) => a.code,
-      cell: (a) => <span className="font-mono font-medium">{a.code}</span>,
-    },
-    {
-      id: 'kind',
-      header: 'Type',
-      sortValue: (a) => a.kind,
-      cell: (a) => (a.kind === 'referral' ? 'Parrainage' : 'Partenaire'),
-    },
-    {
-      id: 'reward',
-      header: 'Récompense',
-      sortValue: (a) => a.rewardType,
-      cell: (a) => (a.rewardType === 'credit' ? 'Crédit' : 'Cash'),
-      hideBelow: 'xl',
-    },
-    {
-      id: 'rates',
-      header: 'Comm. / Remise',
-      align: 'right',
-      sortValue: (a) => a.rateBps,
       cell: (a) => (
-        <span className="font-mono whitespace-nowrap tabular-nums">
-          {a.rateBps / 100}% / {a.buyerDiscountBps / 100}%
-        </span>
+        <div className="min-w-0">
+          <p className="font-mono font-medium tracking-wide">{a.code}</p>
+          <p className="truncate text-xs text-[color:var(--color-muted-foreground)]">
+            {a.displayName ?? 'Sans nom affiché'}
+          </p>
+          <p className="mt-1">
+            {a.shareCode ? (
+              <span
+                className="inline-flex items-center gap-1 rounded bg-[color:var(--color-surface-elevated)] px-1.5 py-0.5 font-mono text-[0.6875rem]"
+                title="Code saisissable au checkout"
+              >
+                <Link2 className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+                {a.shareCode}
+              </span>
+            ) : a.buyerDiscountBps > 0 ? (
+              <button
+                type="button"
+                onClick={() => ensureCoupon(a)}
+                disabled={pending}
+                className="focus-ring inline-flex h-6 items-center rounded border border-[color:var(--color-border)] px-1.5 text-[0.6875rem] font-medium transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50"
+              >
+                Créer le code
+              </button>
+            ) : (
+              <span
+                className="text-[0.6875rem] text-[color:var(--color-muted-foreground)]"
+                title="Sans remise filleul, il n'y a rien à faire taper au checkout — seul le lien attribue."
+              >
+                lien seul
+              </span>
+            )}
+          </p>
+        </div>
       ),
     },
     {
-      id: 'shareCode',
-      header: 'Code partageable',
-      cell: (a) =>
-        a.shareCode ? (
-          <span className="font-mono">{a.shareCode}</span>
-        ) : a.buyerDiscountBps > 0 ? (
-          <button
-            type="button"
-            onClick={() => ensureCoupon(a)}
-            disabled={pending}
-            className="focus-ring rounded-md border border-[color:var(--color-border)] px-2 py-1 text-xs disabled:opacity-50"
+      id: 'program',
+      header: 'Programme',
+      sortValue: (a) => a.kind,
+      cell: (a) => (
+        <div className="min-w-0 whitespace-nowrap">
+          <p className="text-sm">
+            {a.kind === 'referral' ? 'Parrainage' : 'Partenaire'}
+            <span className="text-[color:var(--color-muted-foreground)]">
+              {' · '}
+              {a.rewardType === 'credit' ? 'crédit' : 'cash'}
+            </span>
+          </p>
+          <p
+            className="font-mono text-xs text-[color:var(--color-muted-foreground)] tabular-nums"
+            title="Commission versée à l'affilié / remise accordée au filleul"
           >
-            Créer le code
-          </button>
-        ) : (
-          <span
-            className="text-[color:var(--color-muted-foreground)]"
-            title="Sans remise filleul, il n'y a rien à faire taper au checkout — seul le lien attribue."
-          >
-            lien seul
-          </span>
-        ),
-      hideBelow: 'xl',
+            {a.rateBps / 100} % / {a.buyerDiscountBps / 100} %
+          </p>
+        </div>
+      ),
     },
     {
-      /* Nom ET adresse : n'afficher que le premier des deux laissait un affilié
-         nommé mais sans e-mail paraître complet, et le bouton d'envoi grisé
-         sans raison lisible. */
       id: 'contact',
       header: 'Contact',
-      sortValue: (a) => a.displayName ?? a.ownerEmail ?? '',
+      sortValue: (a) => a.ownerEmail ?? '',
       cell: (a) => (
         <ContactCell affiliate={a} pending={pending} onSave={(next) => setContact(a, next)} />
       ),
@@ -471,7 +637,7 @@ export function AdminAffiliatesBoard({
       header: 'Compte offert',
       cell: (a) =>
         a.kind !== 'partner' ? (
-          <span className="text-[color:var(--color-muted-foreground)]">—</span>
+          <span className="text-xs text-[color:var(--color-muted-foreground)]">—</span>
         ) : (
           <PartnerInviteCell
             invite={latestInvite.get(a.id) ?? null}
@@ -501,27 +667,39 @@ export function AdminAffiliatesBoard({
       header: 'Actions',
       card: 'actions',
       align: 'right',
-      className: 'whitespace-nowrap',
+      width: 'w-16',
       cell: (a) => (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => toggle(a)}
-            disabled={pending}
-            className="focus-ring rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-50"
-          >
-            {a.status === 'active' ? 'Désactiver' : 'Réactiver'}
-          </button>
-          <button
-            type="button"
-            onClick={() => remove(a)}
-            disabled={pending}
-            data-testid="admin-delete-affiliate"
-            className="focus-ring rounded-md px-2 py-1 text-xs text-[color:var(--color-danger)] transition-colors hover:bg-[color:var(--color-danger-soft)] disabled:opacity-50"
-          >
-            Supprimer
-          </button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              disabled={pending}
+              aria-label={`Actions sur ${a.code}`}
+              className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-md text-[color:var(--color-muted-foreground)] transition-colors hover:bg-[color:var(--color-surface-elevated)] hover:text-[color:var(--color-foreground)] disabled:opacity-50"
+            >
+              <MoreHorizontal className="h-4 w-4" strokeWidth={2} aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onSelect={() => toggle(a)}>
+              {a.status === 'active' ? (
+                <Ban strokeWidth={1.75} aria-hidden />
+              ) : (
+                <CheckCircle2 strokeWidth={1.75} aria-hidden />
+              )}
+              {a.status === 'active' ? 'Désactiver' : 'Réactiver'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              data-testid="admin-delete-affiliate"
+              onSelect={() => remove(a)}
+            >
+              <Trash2 strokeWidth={1.75} aria-hidden />
+              Supprimer
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
@@ -618,138 +796,220 @@ export function AdminAffiliatesBoard({
     },
   ];
 
-  const inputCls =
-    'h-9 w-full rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-2.5 text-sm text-[color:var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-primary)]';
-  const labelCls =
-    'mb-1 block text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase';
+  // Ce que coûte réellement le couple commission/remise, sur une base neutre :
+  // 100 € HT encaissés. Dire « 20 % » ne se traduit pas tout seul en euros.
+  const commissionOn100 = (ratePct * 100) / 100;
+
+  const activeCount = affiliates.filter((a) => a.status === 'active').length;
+  const partnerCount = affiliates.filter((a) => a.kind === 'partner').length;
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5">
-        <h2 className="mb-4 text-sm font-semibold">Nouvel affilié</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <div className="col-span-2 sm:col-span-1">
-            <label className={labelCls}>Code</label>
-            <input
-              className={inputCls}
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="NORAH10"
-              data-testid="affiliate-code"
-            />
-          </div>
-          <div>
-            <label className={labelCls}>Type</label>
-            <select
-              className={inputCls}
-              value={kind}
-              onChange={(e) => onKindChange(e.target.value as 'referral' | 'partner')}
-            >
-              <option value="partner">Partenaire</option>
-              <option value="referral">Parrainage</option>
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Récompense</label>
-            <select className={inputCls} value={rewardType} disabled>
-              <option value="cash">Cash</option>
-              <option value="credit">Crédit</option>
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Commission %</label>
-            <input
-              type="number"
-              min={0}
-              max={25}
-              className={inputCls}
-              value={ratePct}
-              onChange={(e) => setRatePct(Number(e.target.value))}
-              data-testid="affiliate-rate"
-            />
-          </div>
-          <div>
-            <label className={labelCls}>Remise filleul %</label>
-            <input
-              type="number"
-              min={0}
-              max={25}
-              className={inputCls}
-              value={discountPct}
-              onChange={(e) => setDiscountPct(Number(e.target.value))}
-              data-testid="affiliate-discount"
-            />
-          </div>
-          <div className="col-span-2 sm:col-span-1">
-            <label className={labelCls}>Email (payout)</label>
-            <input
-              className={inputCls}
-              value={ownerEmail}
-              onChange={(e) => setOwnerEmail(e.target.value)}
-              placeholder="norah@…"
-              data-testid="affiliate-owner-email"
-            />
-          </div>
-          <div className="col-span-2 sm:col-span-2">
-            <label className={labelCls}>Nom affiché</label>
-            <input
-              className={inputCls}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Norah — @norah"
-              data-testid="affiliate-display-name"
-            />
-          </div>
-        </div>
-        <div className="mt-4 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={create}
-            data-testid="affiliate-create"
-            disabled={pending || !codeValid || overCap}
-            className="inline-flex items-center gap-2 rounded-md bg-[color:var(--color-primary)] px-4 py-2 text-sm font-medium text-[color:var(--color-primary-foreground)] disabled:opacity-50"
-          >
-            {pending ? (
-              <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden />
-            ) : (
-              <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-            )}
-            Créer
-          </button>
-          {overCap ? (
-            <span className="text-sm text-[color:var(--color-destructive)]">
-              Commission + remise dépassent 25 % — casse la marge Essentiel.
-            </span>
-          ) : null}
-          {error ? (
-            <span className="text-sm text-[color:var(--color-destructive)]">{error}</span>
-          ) : null}
-          {sent ? (
-            <span className="text-sm text-[color:var(--color-accent)]">
-              Invitation envoyée à {sent}.
-            </span>
-          ) : null}
-        </div>
-      </section>
+      {/* Ce que le programme doit et ce qu'il pèse — avant le détail ligne à ligne. */}
+      <AdminStatGrid cols={4}>
+        <AdminStat
+          icon={Users}
+          label="Affiliés actifs"
+          value={String(activeCount)}
+          hint={`${affiliates.length} au total · ${partnerCount} partenaire${partnerCount > 1 ? 's' : ''}`}
+        />
+        <AdminStat
+          icon={Wallet}
+          label="À verser"
+          value={sumLabel(totals, 'vested')}
+          hint="Commissions acquises, virement manuel"
+          tone={hasAmount(totals, 'vested') ? 'critical' : 'default'}
+        />
+        <AdminStat
+          icon={Handshake}
+          label="En attente"
+          value={sumLabel(totals, 'pending')}
+          hint="Acquises à la date de l'event"
+        />
+        <AdminStat
+          icon={Link2}
+          label="Attributions"
+          value={String(referrals.length)}
+          hint="Ventes rattachées à un code"
+        />
+      </AdminStatGrid>
 
-      {/* Ledger — totaux dus */}
-      {totals.length > 0 ? (
-        <section className="flex flex-wrap gap-3">
-          {totals.map((t) => (
-            <div
-              key={`${t.currency}:${t.status}`}
-              className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-3"
-            >
-              <div className="text-[0.6875rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
-                {STATUS_LABEL[t.status]} · {t.currency}
-              </div>
-              <div className="text-lg font-semibold">{fmtMinor(t.minor, t.currency)}</div>
+      {/* Création — volontairement en place et non derrière une modale : ouvrir
+          un partenariat est le geste principal de cet écran. */}
+      <AdminSection
+        title="Nouvel affilié"
+        description="Programme sur invitation. Le type décide de la récompense : partenaire = cash versé à la main, parrainage = crédit appliqué automatiquement au prochain achat du parrain."
+        contentClassName="p-5"
+      >
+        <div className="flex flex-col gap-5">
+          <FieldGroup title="Identité">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Field
+                label="Code"
+                htmlFor="affiliate-code"
+                hint="3 à 24 caractères, lettres et chiffres. C'est lui qui attribue la vente."
+              >
+                <Input
+                  id="affiliate-code"
+                  className="h-10 font-mono tracking-wide"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  placeholder="NORAH10"
+                  aria-invalid={code.length > 0 && !codeValid}
+                  data-testid="affiliate-code"
+                />
+              </Field>
+              <Field
+                label="Type"
+                hint={
+                  kind === 'partner'
+                    ? 'Récompense : cash. Le partenaire peut recevoir un compte agence offert.'
+                    : 'Récompense : crédit, appliqué au prochain achat du parrain.'
+                }
+              >
+                <Select
+                  value={kind}
+                  onValueChange={(v) => onKindChange(v as 'referral' | 'partner')}
+                >
+                  <SelectTrigger className="h-10" aria-label="Type d'affilié">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="partner">Partenaire</SelectItem>
+                    <SelectItem value="referral">Parrainage</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
             </div>
-          ))}
-        </section>
-      ) : null}
+          </FieldGroup>
 
-      <AdminSection title={`Affiliés (${affiliates.length})`} bare>
+          <FieldGroup title="Économie">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Field
+                label="Commission"
+                htmlFor="affiliate-rate"
+                hint={`${commissionOn100.toLocaleString('fr-FR')} € pour 100 € HT encaissés.`}
+              >
+                <div className="relative">
+                  <Input
+                    id="affiliate-rate"
+                    type="number"
+                    min={0}
+                    max={25}
+                    className="h-10 pr-8 font-mono tabular-nums"
+                    value={ratePct}
+                    onChange={(e) => setRatePct(Number(e.target.value))}
+                    data-testid="affiliate-rate"
+                  />
+                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-muted-foreground)]">
+                    %
+                  </span>
+                </div>
+              </Field>
+              <Field
+                label="Remise filleul"
+                htmlFor="affiliate-discount"
+                hint={
+                  discountPct > 0
+                    ? 'Un code promo Stripe est créé : le filleul peut le taper au checkout.'
+                    : 'À 0, aucun code saisissable — seul le lien attribue la vente.'
+                }
+              >
+                <div className="relative">
+                  <Input
+                    id="affiliate-discount"
+                    type="number"
+                    min={0}
+                    max={25}
+                    className="h-10 pr-8 font-mono tabular-nums"
+                    value={discountPct}
+                    onChange={(e) => setDiscountPct(Number(e.target.value))}
+                    data-testid="affiliate-discount"
+                  />
+                  <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-[color:var(--color-muted-foreground)]">
+                    %
+                  </span>
+                </div>
+              </Field>
+              <div className="flex flex-col justify-center gap-2 sm:col-span-2 lg:col-span-1">
+                <CapMeter combinedBps={combinedBps} />
+                {overCap ? (
+                  <p className="flex items-start gap-1.5 text-xs text-[color:var(--color-danger)]">
+                    <AlertTriangle
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                    Au-delà de 25 %, la marge de l&apos;Essentiel ne tient plus.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </FieldGroup>
+
+          <FieldGroup title="Contact">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Field
+                label="Nom affiché"
+                htmlFor="affiliate-display-name"
+                hint="Tel qu'il apparaît dans le back-office et sur l'invitation."
+              >
+                <Input
+                  id="affiliate-display-name"
+                  className="h-10"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Norah — @norah"
+                  data-testid="affiliate-display-name"
+                />
+              </Field>
+              <Field
+                label="E-mail (payout)"
+                htmlFor="affiliate-owner-email"
+                hint="Sans adresse, le lien d'invitation ne pourra être que copié, pas envoyé."
+                className="sm:col-span-2 lg:col-span-2"
+              >
+                <Input
+                  id="affiliate-owner-email"
+                  type="email"
+                  className="h-10"
+                  value={ownerEmail}
+                  onChange={(e) => setOwnerEmail(e.target.value)}
+                  placeholder="norah@exemple.com"
+                  data-testid="affiliate-owner-email"
+                />
+              </Field>
+            </div>
+          </FieldGroup>
+
+          <div className="flex flex-col gap-3 border-t border-[color:var(--color-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 space-y-1.5">
+              {error ? <Banner tone="danger">{error}</Banner> : null}
+              {sent ? <Banner tone="success">Invitation envoyée à {sent}.</Banner> : null}
+            </div>
+            <button
+              type="button"
+              onClick={create}
+              data-testid="affiliate-create"
+              disabled={pending || !codeValid || overCap}
+              className="focus-ring inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[color:var(--color-primary)] px-4 text-sm font-medium text-[color:var(--color-primary-foreground)] transition-colors hover:bg-[color:var(--color-primary-hover)] disabled:pointer-events-none disabled:opacity-50"
+            >
+              {pending ? (
+                <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} aria-hidden />
+              ) : (
+                <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+              )}
+              Créer l&apos;affilié
+            </button>
+          </div>
+        </div>
+      </AdminSection>
+
+      <AdminSection
+        title="Affiliés"
+        description="Un code par affilié. Le lien attribue la vente ; le code partageable, lui, se tape au checkout."
+        bare
+      >
         <AdminDataTable
           rows={affiliates}
           columns={affiliateColumns}
@@ -763,7 +1023,11 @@ export function AdminAffiliatesBoard({
         />
       </AdminSection>
 
-      <AdminSection title={`Ledger (${referrals.length})`} bare>
+      <AdminSection
+        title="Commissions"
+        description="Chaque vente rattachée à un code. Le versement cash est manuel : « Marquer versé » l’acte au ledger."
+        bare
+      >
         <AdminDataTable
           rows={referrals}
           columns={ledgerColumns}
@@ -802,23 +1066,20 @@ function ContactCell({
   const [email, setEmail] = useState(affiliate.ownerEmail ?? '');
   const [name, setName] = useState(affiliate.displayName ?? '');
 
-  const fieldCls =
-    'h-7 w-40 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-1.5 text-[11px] text-[color:var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-primary)] disabled:opacity-50';
-
   if (editing) {
     return (
-      <div className="flex flex-col items-start gap-1">
-        <input
+      <div className="flex w-56 flex-col gap-2">
+        <Input
           aria-label="Nom affiché du partenaire"
-          className={fieldCls}
+          className="h-8 text-xs"
           value={name}
           disabled={pending}
           placeholder="Nom affiché"
           onChange={(e) => setName(e.target.value)}
         />
-        <input
+        <Input
           aria-label="Adresse e-mail du partenaire"
-          className={fieldCls}
+          className="h-8 text-xs"
           type="email"
           value={email}
           disabled={pending}
@@ -833,7 +1094,7 @@ function ContactCell({
               onSave({ ownerEmail: email.trim() || null, displayName: name.trim() || null });
               setEditing(false);
             }}
-            className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)] px-2 py-0.5 text-[11px] font-medium disabled:opacity-50"
+            className="focus-ring inline-flex h-7 items-center rounded-md bg-[color:var(--color-primary)] px-2.5 text-xs font-medium text-[color:var(--color-primary-foreground)] disabled:opacity-50"
           >
             Enregistrer
           </button>
@@ -845,7 +1106,7 @@ function ContactCell({
               setName(affiliate.displayName ?? '');
               setEditing(false);
             }}
-            className="rounded-md px-1.5 py-0.5 text-[11px] underline underline-offset-2 disabled:opacity-50"
+            className="focus-ring inline-flex h-7 items-center rounded-md px-2 text-xs text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-foreground)] disabled:opacity-50"
           >
             Annuler
           </button>
@@ -855,25 +1116,28 @@ function ContactCell({
   }
 
   return (
-    <div className="flex flex-col items-start gap-0.5">
-      <span>{affiliate.displayName ?? '—'}</span>
-      {affiliate.ownerEmail ? (
-        <span className="text-[11px]">{affiliate.ownerEmail}</span>
-      ) : (
-        <span
-          className="text-[11px] text-[color:var(--color-warning)]"
-          title="Sans adresse, le lien d'invitation ne peut pas être envoyé — seulement copié."
-        >
-          aucune adresse
-        </span>
-      )}
+    <div className="group/contact flex min-w-0 items-start gap-1.5">
+      <div className="min-w-0">
+        {affiliate.ownerEmail ? (
+          <p className="truncate text-sm">{affiliate.ownerEmail}</p>
+        ) : (
+          <p
+            className="inline-flex items-center gap-1 text-xs text-[color:var(--color-warning)]"
+            title="Sans adresse, le lien d'invitation ne peut pas être envoyé — seulement copié."
+          >
+            <Mail className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+            Aucune adresse
+          </p>
+        )}
+      </div>
       <button
         type="button"
         onClick={() => setEditing(true)}
         disabled={pending}
-        className="text-[11px] underline underline-offset-2 disabled:opacity-50"
+        aria-label={`Modifier le contact de ${affiliate.code}`}
+        className="focus-ring inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--color-muted-foreground)] opacity-0 transition-opacity group-hover/contact:opacity-100 hover:text-[color:var(--color-foreground)] focus-visible:opacity-100 disabled:opacity-50"
       >
-        Modifier
+        <Pencil className="h-3 w-3" strokeWidth={2} aria-hidden />
       </button>
     </div>
   );
@@ -919,10 +1183,9 @@ function PartnerInviteCell({
   // savoir s'il y a une adresse à servir, et laquelle annoncer au survol.
   const recipient = invite?.inviteeEmail ?? fallbackEmail;
 
-  const selectCls =
-    'h-7 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-1.5 text-[11px] text-[color:var(--color-foreground)] focus:outline-none focus:ring-1 focus:ring-[color:var(--color-primary)] disabled:opacity-50';
+  const selectCls = 'h-8 w-auto min-w-0 gap-1.5 px-2 text-xs';
   const createBtnCls =
-    'rounded-md border border-[color:var(--color-border)] px-2.5 py-1 text-xs whitespace-nowrap disabled:opacity-50';
+    'focus-ring inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-[color:var(--color-border)] px-2.5 text-xs font-medium whitespace-nowrap transition-colors hover:bg-[color:var(--color-surface-elevated)] disabled:opacity-50';
 
   /**
    * Les deux offres, chacune avec ses propres réglages.
@@ -935,65 +1198,83 @@ function PartnerInviteCell({
    * la date du mariage.
    */
   const creationControls = (
-    <div className="flex flex-col items-start gap-1.5">
-      <div className="flex flex-wrap items-center gap-1">
-        <select
-          aria-label="Palier offert à l'agence"
-          className={selectCls}
-          value={tier}
-          disabled={pending}
-          onChange={(e) => setTier(e.target.value as typeof tier)}
-        >
-          {TIER_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Durée du compte offert, en mois"
-          className={selectCls}
-          value={months}
-          disabled={pending}
-          onChange={(e) => setMonths(Number(e.target.value))}
-        >
-          {MONTHS_OPTIONS.map((m) => (
-            <option key={m} value={m}>
-              {m} mois
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => onCreate('pro', { grantTier: tier, grantMonths: months })}
-          disabled={pending}
-          className={createBtnCls}
-        >
-          Lien agence
-        </button>
+    <div className="flex min-w-[14rem] flex-col gap-2.5">
+      <div className="flex flex-col gap-1">
+        <span className="text-[0.625rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
+          Compte agence
+        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Select value={tier} disabled={pending} onValueChange={(v) => setTier(v as typeof tier)}>
+            <SelectTrigger className={selectCls} aria-label="Palier offert à l'agence">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIER_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={String(months)}
+            disabled={pending}
+            onValueChange={(v) => setMonths(Number(v))}
+          >
+            <SelectTrigger className={selectCls} aria-label="Durée du compte offert, en mois">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS_OPTIONS.map((m) => (
+                <SelectItem key={m} value={String(m)}>
+                  {m} mois
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            type="button"
+            onClick={() => onCreate('pro', { grantTier: tier, grantMonths: months })}
+            disabled={pending}
+            className={createBtnCls}
+          >
+            <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            Lien agence
+          </button>
+        </div>
       </div>
-      <div className="flex flex-wrap items-center gap-1">
-        <select
-          aria-label="Forfait offert au particulier"
-          className={selectCls}
-          value={eventTier}
-          disabled={pending}
-          onChange={(e) => setEventTier(e.target.value as typeof eventTier)}
-        >
-          {EVENT_TIER_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => onCreate('couple', { grantEventTier: eventTier })}
-          disabled={pending}
-          className={createBtnCls}
-        >
-          Lien personnel
-        </button>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[0.625rem] font-semibold tracking-[0.08em] text-[color:var(--color-muted-foreground)] uppercase">
+          Compte personnel
+        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Select
+            value={eventTier}
+            disabled={pending}
+            onValueChange={(v) => setEventTier(v as typeof eventTier)}
+          >
+            <SelectTrigger className={selectCls} aria-label="Forfait offert au particulier">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EVENT_TIER_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            type="button"
+            onClick={() => onCreate('couple', { grantEventTier: eventTier })}
+            disabled={pending}
+            className={createBtnCls}
+          >
+            <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            Lien personnel
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1002,20 +1283,27 @@ function PartnerInviteCell({
     return creationControls;
   }
 
+  const stateTone: StatusTone =
+    invite.state === 'usable' ? 'success' : invite.state === 'consumed' ? 'info' : 'neutral';
+
   return (
-    <div className="flex flex-col items-start gap-1">
-      <span className="text-xs text-[color:var(--color-muted-foreground)]">
-        {INVITE_STATE_LABEL[invite.state]} ·{' '}
-        {invite.kind === 'couple'
-          ? `personnel · mariage ${invite.grantEventTier === 'premium' ? 'Premium' : 'Essentiel'} offert`
-          : `agence · ${invite.grantMonths} mois ${invite.grantTier}`}
-      </span>
-      {invite.lastSentAt ? (
-        <span className="text-[11px] text-[color:var(--color-muted-foreground)]">
-          Envoyé {invite.sendCount > 1 ? `${invite.sendCount}× ` : ''}à {invite.lastSentTo} le{' '}
-          {new Date(invite.lastSentAt).toLocaleDateString('fr-FR')}
+    <div className="flex min-w-[14rem] flex-col items-start gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <StatusPill tone={stateTone}>{INVITE_STATE_LABEL[invite.state]}</StatusPill>
+        <span className="text-xs text-[color:var(--color-muted-foreground)]">
+          {invite.kind === 'couple'
+            ? `mariage ${invite.grantEventTier === 'premium' ? 'Premium' : 'Essentiel'} offert`
+            : `${invite.grantMonths} mois ${invite.grantTier}`}
         </span>
+      </div>
+
+      {invite.lastSentAt ? (
+        <p className="text-xs text-[color:var(--color-muted-foreground)]">
+          Envoyé {invite.sendCount > 1 ? `${invite.sendCount}× ` : ''}à {invite.lastSentTo} le{' '}
+          {formatDate(invite.lastSentAt)}
+        </p>
       ) : null}
+
       {invite.state === 'usable' && invite.token ? (
         <div className="flex flex-wrap items-center gap-1.5">
           <button
@@ -1027,9 +1315,10 @@ function PartnerInviteCell({
                 ? `Envoyer le lien à ${recipient}`
                 : "Aucune adresse connue : renseignez l'e-mail de l'affilié pour pouvoir envoyer."
             }
-            className="rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface-elevated)] px-2.5 py-1 text-[11px] font-medium disabled:opacity-50"
+            className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-md bg-[color:var(--color-primary)] px-2.5 text-xs font-medium text-[color:var(--color-primary-foreground)] transition-colors hover:bg-[color:var(--color-primary-hover)] disabled:opacity-50"
           >
-            {invite.lastSentAt ? 'Renvoyer' : 'Envoyer par e-mail'}
+            <Mail className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            {invite.lastSentAt ? 'Renvoyer' : 'Envoyer'}
           </button>
           <button
             type="button"
@@ -1038,15 +1327,20 @@ function PartnerInviteCell({
               setCopied(true);
               window.setTimeout(() => setCopied(false), 2000);
             }}
-            className="rounded-md border border-[color:var(--color-border)] px-2.5 py-1 font-mono text-[11px]"
+            className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-md border border-[color:var(--color-border)] px-2.5 text-xs font-medium transition-colors hover:bg-[color:var(--color-surface-elevated)]"
           >
+            {copied ? (
+              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            ) : (
+              <Link2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+            )}
             {copied ? 'Copié' : 'Copier le lien'}
           </button>
           <button
             type="button"
             onClick={() => onRevoke(invite.id)}
             disabled={pending}
-            className="rounded-md px-1.5 py-1 text-[11px] text-[color:var(--color-muted-foreground)] underline underline-offset-2 disabled:opacity-50"
+            className="focus-ring inline-flex h-8 items-center rounded-md px-2 text-xs text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-foreground)] disabled:opacity-50"
           >
             Annuler
           </button>
