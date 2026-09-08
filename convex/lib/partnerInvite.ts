@@ -131,9 +131,72 @@ export function addMonthsUtc(from: number, months: number): number {
   return target.getTime();
 }
 
-/** Échéance d'un cadeau accordé à `grantedAt` pour `months` mois. */
+/**
+ * Haute saison des mariages, en mois UTC 0-indexés : mai à septembre inclus.
+ *
+ * C'est la fenêtre où une agence enchaîne les événements — et donc la pire
+ * pour lui demander quoi que ce soit.
+ */
+const HIGH_SEASON_FIRST_MONTH = 4; // mai
+const HIGH_SEASON_LAST_MONTH = 8; // septembre
+
+/**
+ * Mois d'atterrissage hors saison : janvier. Le cadeau expire le dernier jour
+ * de ce mois, quand une planneuse arbitre réellement ses outils pour la saison
+ * qui vient.
+ */
+const OFF_SEASON_LANDING_MONTH = 0; // janvier
+
+/** Le jour tombe-t-il en pleine haute saison ? */
+export function isHighSeason(at: number): boolean {
+  const month = new Date(at).getUTCMonth();
+  return month >= HIGH_SEASON_FIRST_MONTH && month <= HIGH_SEASON_LAST_MONTH;
+}
+
+/**
+ * Dernier instant du mois d'atterrissage qui suit `at` — 31 janvier, 23:59:59.999 UTC.
+ */
+function nextOffSeasonEnd(at: number): number {
+  const d = new Date(at);
+  // Le janvier « suivant » est toujours celui de l'année d'après, puisqu'on
+  // n'appelle cette fonction que sur une date de haute saison (mai-septembre).
+  const year = d.getUTCFullYear() + 1;
+  return Date.UTC(year, OFF_SEASON_LANDING_MONTH + 1, 0, 23, 59, 59, 999);
+}
+
+/**
+ * Échéance d'un cadeau accordé à `grantedAt` pour `months` mois.
+ *
+ * ## Pourquoi l'échéance n'est pas simplement `grantedAt + months`
+ *
+ * Le produit se juge **au mariage** : les RSVP qui tombent, le check-in à la
+ * porte, la galerie partagée. Or une planneuse ne bascule pas dans un nouvel
+ * outil un mariage dont les invitations sont parties : le premier qu'elle y
+ * fera vraiment passer est à quatre mois au moins, donc en pratique la saison
+ * suivante. Un cadeau qui s'arrête avant ne lui a montré qu'un CRM.
+ *
+ * Compter en mois depuis l'inscription fait pire encore quand le partenaire
+ * s'inscrit entre mai et septembre — c'est-à-dire quand il entend parler de
+ * nous, en pleine saison : douze mois plus tard, l'échéance retombe en pleine
+ * saison. Au plus mauvais moment sur deux plans. D'abord parce qu'on lui
+ * demande d'arbitrer un abonnement la semaine où il enchaîne trois mariages.
+ * Ensuite parce que `galleryAccessFor` ferme les galeries d'une agence sans
+ * couverture : ce ne sont pas ses photos qui disparaissent, ce sont celles de
+ * ses clients, en pleine livraison.
+ *
+ * L'échéance est donc **repoussée** — jamais avancée, ce qui trahirait la durée
+ * promise — au 31 janvier suivant lorsqu'elle tombe en haute saison. Le cadeau
+ * couvre alors une saison entière, laisse les galeries ouvertes pendant toute
+ * la traîne d'automne, et pose la question de l'abonnement quand elle peut
+ * s'entendre.
+ *
+ * Conséquence assumée : la durée réelle varie selon le mois d'inscription
+ * (12 mois pour une inscription d'octobre à décembre, jusqu'à ~20 pour une
+ * inscription de mai). C'est la DATE qui est choisie ici, pas la durée.
+ */
 export function compExpiresAt(grantedAt: number, months = DEFAULT_PARTNER_COMP_MONTHS): number {
-  return addMonthsUtc(grantedAt, months);
+  const raw = addMonthsUtc(grantedAt, months);
+  return isHighSeason(raw) ? nextOffSeasonEnd(raw) : raw;
 }
 
 /** Échéance du LIEN lui-même (délai pour l'utiliser). */
