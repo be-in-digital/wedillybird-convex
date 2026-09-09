@@ -11,6 +11,7 @@ import { Toaster } from '@/components/ui/toast';
 import { CookieConsent } from '@/components/layout/cookie-consent';
 import { MetaPixel } from '@/components/analytics/meta-pixel';
 import { LocaleSuggestionBanner } from '@/components/layout/locale-suggestion-banner';
+import { Analytics } from '@vercel/analytics/next';
 import '../globals.css';
 
 // Body / UI — Geist Sans (Vercel, OFL). Successeur d'Inter recommandé en 2025+.
@@ -146,6 +147,14 @@ export default async function LocaleLayout({
             <MetaPixel />
           </ConvexClientProvider>
         </NextIntlClientProvider>
+        {/* Vercel Web Analytics — mesure d'audience SANS cookie ni identifiant
+            persistant (hash quotidien), donc hors du périmètre du consentement
+            (exemption CNIL « mesure d'audience »). C'est la vérité terrain sur
+            les volumes : PostHog, lui, ne voit que les visiteurs qui acceptent
+            la bannière. Script servi en same-origin (/_vercel/insights), déjà
+            couvert par la CSP `'self'`. Inerte tant que Web Analytics n'est pas
+            activé sur le projet Vercel. */}
+        <Analytics />
       </body>
     </html>
   );

@@ -21,6 +21,25 @@ const PROJECT_ID = process.env.POSTHOG_PROJECT_ID ?? '469980';
 
 export type NamedValue = { label: string; value: number };
 
+/**
+ * Comportement sur la landing — ce qu'il faut regarder pour décider quoi
+ * améliorer : jusqu'où les visiteurs descendent (`section_viewed`), quelles
+ * objections ils ouvrent (`faq_opened`), quelles pages ils voient, et s'ils
+ * essaient la démo (`demo_rsvp_submitted`).
+ */
+export type LandingBehavior = {
+  /** Visiteurs uniques ayant atteint chaque section (ordre du scroll). */
+  sectionsReached: NamedValue[];
+  /** Questions FAQ ouvertes (signal d'objection). */
+  faqOpened: NamedValue[];
+  /** Pages vues par chemin (top 8). */
+  pagesByPath: NamedValue[];
+  /** RSVP de démonstration envoyés (engagement avec la preuve produit). */
+  demoRsvp: number;
+  /** Part des pages vues capturées sans cookie (visiteurs sans consentement). */
+  cookielessShare: number | null;
+};
+
 export type AcquisitionAnalytics =
   | { state: 'not_configured' }
   | { state: 'error'; message: string }
@@ -32,6 +51,7 @@ export type AcquisitionAnalytics =
       ctaBySource: NamedValue[];
       signupByLocale: NamedValue[];
       planByTier: NamedValue[];
+      landing: LandingBehavior;
     };
 
 type TrendsResultRow = {
@@ -126,11 +146,12 @@ async function fetchBreakdown(
   property: string,
   days: number,
   key: string,
+  math: 'total' | 'dau' = 'total',
 ): Promise<NamedValue[]> {
   const data = await postQuery<{ results: TrendsResultRow[] }>(
     {
       kind: 'TrendsQuery',
-      series: [{ kind: 'EventsNode', event, math: 'total' }],
+      series: [{ kind: 'EventsNode', event, math }],
       breakdownFilter: { breakdowns: [{ property, type: 'event' }] },
       dateRange: { date_from: `-${days}d` },
       interval: 'day',
@@ -146,6 +167,49 @@ async function fetchBreakdown(
     .sort((a, b) => b.value - a.value);
 }
 
+/** Total d'un event sur la période. */
+async function fetchTotal(event: string, days: number, key: string): Promise<number> {
+  const data = await postQuery<{ results: TrendsResultRow[] }>(
+    {
+      kind: 'TrendsQuery',
+      series: [{ kind: 'EventsNode', event, math: 'total' }],
+      dateRange: { date_from: `-${days}d` },
+      interval: 'day',
+    },
+    key,
+  );
+  return rowAggregate(data.results?.[0]);
+}
+
+/** Ordre de lecture des sections de la landing (= ordre du scroll). */
+const LANDING_SECTION_ORDER = ['features', 'pricing', 'faq'] as const;
+
+async function fetchLandingBehavior(days: number, key: string): Promise<LandingBehavior> {
+  const [sections, faqOpened, pagesByPath, demoRsvp, pageviewsByMode] = await Promise.all([
+    // `dau` = visiteurs uniques ayant atteint la section (pas le nombre de
+    // scrolls) : c'est la courbe de fuite qu'on veut lire.
+    fetchBreakdown('section_viewed', 'id', days, key, 'dau'),
+    fetchBreakdown('faq_opened', 'question', days, key),
+    fetchBreakdown('$pageview', '$pathname', days, key),
+    fetchTotal('demo_rsvp_submitted', days, key),
+    fetchBreakdown('$pageview', '$cookieless_mode', days, key),
+  ]);
+  const byId = new Map(sections.map((s) => [s.label, s.value]));
+  const sectionsReached = LANDING_SECTION_ORDER.map((id) => ({
+    label: id,
+    value: byId.get(id) ?? 0,
+  }));
+  const total = pageviewsByMode.reduce((a, r) => a + r.value, 0);
+  const cookieless = pageviewsByMode.find((r) => r.label === 'true')?.value ?? 0;
+  return {
+    sectionsReached,
+    faqOpened: faqOpened.slice(0, 8),
+    pagesByPath: pagesByPath.slice(0, 8),
+    demoRsvp,
+    cookielessShare: total > 0 ? cookieless / total : null,
+  };
+}
+
 /**
  * Point d'entrée unique pour la page admin : renvoie tout le marketing en un
  * objet, ou un état `not_configured` / `error` (jamais de throw vers la page).
@@ -154,14 +218,24 @@ export async function getAcquisitionAnalytics(days = 30): Promise<AcquisitionAna
   const key = process.env.POSTHOG_PERSONAL_API_KEY;
   if (!key) return { state: 'not_configured' };
   try {
-    const [funnel, traffic, ctaBySource, signupByLocale, planByTier] = await Promise.all([
+    const [funnel, traffic, ctaBySource, signupByLocale, planByTier, landing] = await Promise.all([
       fetchFunnel(days, key),
       fetchTraffic(days, key),
       fetchBreakdown('cta_clicked', 'source', days, key),
       fetchBreakdown('signup_completed', 'locale', days, key),
       fetchBreakdown('pricing_plan_selected', 'tier', days, key),
+      fetchLandingBehavior(days, key),
     ]);
-    return { state: 'ok', days, funnel, traffic, ctaBySource, signupByLocale, planByTier };
+    return {
+      state: 'ok',
+      days,
+      funnel,
+      traffic,
+      ctaBySource,
+      signupByLocale,
+      planByTier,
+      landing,
+    };
   } catch (e) {
     return { state: 'error', message: e instanceof Error ? e.message : 'unknown' };
   }

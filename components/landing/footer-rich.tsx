@@ -5,21 +5,20 @@ import { WedillybirdLogo } from '@/components/brand/wedillybird-logo';
 import { LocaleSwitcher } from '@/components/layout/locale-switcher';
 import { CurrencySwitcher } from '@/components/layout/currency-switcher';
 
+// Un lien = une page qui existe et qui tient sa promesse. Les entrées « API &
+// intégrations », « Lieux de réception », « Agences » (toutes vers /pros) et le
+// journal sans articles ont été retirées (audit sept. 2026) ; elles reviendront
+// avec le contenu correspondant.
 const PRODUCT_LINKS = [
   { key: 'features', href: '/#features' as const },
   { key: 'pricing', href: '/#pricing' as const },
-  { key: 'demo', href: '/sign-up' as const },
+  { key: 'demo', href: '/demo' as const },
   { key: 'templates', href: '/templates' as const },
 ] as const;
 
-const PROS_LINKS = [
-  { key: 'planners', href: '/pros' as const },
-  { key: 'venues', href: '/pros' as const },
-  { key: 'agencies', href: '/pros' as const },
-] as const;
+const PROS_LINKS = [{ key: 'planners', href: '/pros' as const }] as const;
 
 const RESOURCES_LINKS = [
-  { key: 'blog', href: '/blog' as const },
   { key: 'guide', href: '/guide' as const },
   { key: 'faq', href: '/faq' as const },
   { key: 'support', href: '/contact' as const },

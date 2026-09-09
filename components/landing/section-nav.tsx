@@ -17,7 +17,6 @@ type SectionItem = {
 // perception de progression.
 const ITEMS: readonly SectionItem[] = [
   { id: 'features', key: 'features' },
-  { id: 'testimonials', key: 'testimonials' },
   { id: 'pricing', key: 'pricing' },
   { id: 'faq', key: 'faq' },
 ];
