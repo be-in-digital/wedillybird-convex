@@ -411,7 +411,7 @@
       "whatTitle": "Cos'è un cookie?",
       "whatBody": "Un cookie è un piccolo file di testo memorizzato sul tuo dispositivo da un sito web. Wedillybird utilizza cookie essenziali al funzionamento del Servizio.",
       "typesTitle": "Cookie utilizzati",
-      "typesBody": "Cookie di sessione (autenticazione, firmato HMAC, scade dopo 30 giorni di inattività). Archiviazione locale IndexedDB (cache offline per il check-in). Solo con il tuo consenso: cookie di misurazione dell'audience PostHog (statistiche di visita, registrazione anonimizzata della sessione) e pixel Meta (misurazione dell'efficacia delle nostre pubblicità). Senza consenso, nessuno di questi cookie viene depositato.",
+      "typesBody": "Cookie di sessione (autenticazione, firmato HMAC, scade dopo 30 giorni di inattività). Archiviazione locale IndexedDB (cache offline per il check-in). Misurazione dell'audience PostHog in modalità senza cookie: nulla viene scritto sul tuo dispositivo, l'identificatore è un hash giornaliero calcolato lato server, senza tracciamento tra siti. Solo con il tuo consenso: cookie PostHog (replay di sessione, mappe di calore, collegamento al tuo account) e pixel Meta (misurazione dell'efficacia delle nostre pubblicità). Senza consenso, nessuno di questi cookie viene depositato.",
       "controlTitle": "Controllare i cookie",
       "controlBody": "Puoi eliminare i cookie tramite le impostazioni del tuo browser. La disattivazione del cookie di sessione ti disconnetterà dal Servizio.",
       "thirdPartiesTitle": "Cookie di terze parti",
@@ -4504,7 +4504,7 @@
   },
   "CookieConsent": {
     "title": "Cookie e misurazione dell'audience",
-    "bodyBefore": "I cookie essenziali (sessione, sicurezza) sono sempre attivi. Con il tuo consenso, misuriamo l'audience del sito con PostHog e l'efficacia delle nostre pubblicità con il pixel Meta. Dettagli nella nostra ",
+    "bodyBefore": "Misuriamo l'audience del sito in modo anonimo, senza cookie (PostHog, modalità senza cookie). Con il tuo consenso registriamo anche la tua navigazione (replay di sessione, mappe di calore) per migliorare il sito e attiviamo il pixel Meta. Dettagli nella nostra ",
     "policyLink": "informativa sui cookie",
     "bodyAfter": ". Puoi cambiare idea in qualsiasi momento.",
     "accept": "Accetta",

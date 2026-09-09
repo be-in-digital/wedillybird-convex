@@ -411,7 +411,7 @@
       "whatTitle": "What is a cookie?",
       "whatBody": "A cookie is a small text file stored on your device by a website. Wedillybird uses cookies that are essential to the operation of the Service.",
       "typesTitle": "Cookies used",
-      "typesBody": "Session cookie (authentication, HMAC-signed, expires after 30 days of inactivity). Local IndexedDB storage (offline cache for check-in). Only with your consent: PostHog analytics cookies (visit statistics, anonymised session recording) and the Meta pixel (measuring the effectiveness of our ads). Without consent, none of these cookies are set.",
+      "typesBody": "Session cookie (authentication, HMAC-signed, expires after 30 days of inactivity). Local IndexedDB storage (offline cache for check-in). PostHog analytics in cookieless mode: nothing is written to your device, the identifier is a daily hash computed server-side, with no cross-site tracking. Only with your consent: PostHog cookies (session replay, heatmaps, linking to your account) and the Meta pixel (measuring the effectiveness of our ads). Without consent, none of these cookies are set.",
       "controlTitle": "Control cookies",
       "controlBody": "You can delete cookies through your browser settings. Disabling the session cookie will sign you out of the Service.",
       "thirdPartiesTitle": "Third-party cookies",
@@ -4500,7 +4500,7 @@
   },
   "CookieConsent": {
     "title": "Cookies and analytics",
-    "bodyBefore": "Essential cookies (session, security) are always on. With your consent, we measure site traffic with PostHog and the effectiveness of our ads with the Meta pixel. Details in our ",
+    "bodyBefore": "We measure site traffic anonymously, without cookies (PostHog, cookieless mode). With your consent, we also record how you browse (session replay, heatmaps) to improve the site, and enable the Meta pixel. Details in our ",
     "policyLink": "cookie policy",
     "bodyAfter": ". You can change your mind at any time.",
     "accept": "Accept",

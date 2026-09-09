@@ -411,7 +411,7 @@
       "whatTitle": "Qu'est-ce qu'un cookie ?",
       "whatBody": "Un cookie est un petit fichier texte stocké sur votre appareil par un site web. Wedillybird utilise des cookies essentiels au fonctionnement du Service.",
       "typesTitle": "Cookies utilisés",
-      "typesBody": "Cookie de session (authentification, signé HMAC, expire après 30 jours d'inactivité). Stockage local IndexedDB (cache offline pour le check-in). Avec votre consentement uniquement : cookies de mesure d'audience PostHog (statistiques de visite, enregistrement anonymisé de session) et pixel Meta (mesure de l'efficacité de nos publicités). Sans consentement, aucun de ces cookies n'est déposé.",
+      "typesBody": "Cookie de session (authentification, signé HMAC, expire après 30 jours d'inactivité). Stockage local IndexedDB (cache offline pour le check-in). Mesure d'audience PostHog en mode sans cookie : rien n'est écrit sur votre appareil, l'identifiant est un hachage quotidien calculé côté serveur, sans suivi entre sites. Avec votre consentement uniquement : cookies PostHog (relecture de session, cartes de chaleur, rattachement à votre compte) et pixel Meta (mesure de l'efficacité de nos publicités). Sans consentement, aucun de ces cookies n'est déposé.",
       "controlTitle": "Contrôler les cookies",
       "controlBody": "Vous pouvez supprimer les cookies via les paramètres de votre navigateur. La désactivation du cookie de session vous déconnectera du Service.",
       "thirdPartiesTitle": "Cookies tiers",
@@ -4504,7 +4504,7 @@
   },
   "CookieConsent": {
     "title": "Cookies et mesure d'audience",
-    "bodyBefore": "Les cookies essentiels (session, sécurité) sont toujours actifs. Avec votre accord, nous mesurons l'audience du site avec PostHog et l'efficacité de nos publicités avec le pixel Meta. Détails dans notre ",
+    "bodyBefore": "Nous mesurons l'audience du site de façon anonyme, sans cookie (PostHog, mode sans cookie). Avec votre accord, nous enregistrons aussi votre navigation (relecture de session, cartes de chaleur) pour améliorer le site, et nous activons le pixel Meta. Détails dans notre ",
     "policyLink": "politique de cookies",
     "bodyAfter": ". Vous pouvez changer d'avis à tout moment.",
     "accept": "Accepter",

@@ -411,7 +411,7 @@
       "whatTitle": "O que é um cookie?",
       "whatBody": "Um cookie é um pequeno ficheiro de texto guardado no teu dispositivo por um sítio web. A Wedillybird utiliza cookies essenciais ao funcionamento do Serviço.",
       "typesTitle": "Cookies utilizados",
-      "typesBody": "Cookie de sessão (autenticação, assinado HMAC, expira após 30 dias de inatividade). Armazenamento local IndexedDB (cache offline para o check-in). Apenas com o seu consentimento: cookies de medição de audiência PostHog (estatísticas de visita, gravação de sessão anonimizada) e pixel da Meta (medição da eficácia dos nossos anúncios). Sem consentimento, nenhum destes cookies é depositado.",
+      "typesBody": "Cookie de sessão (autenticação, assinado HMAC, expira após 30 dias de inatividade). Armazenamento local IndexedDB (cache offline para o check-in). Medição de audiência PostHog em modo sem cookies: nada é escrito no seu dispositivo, o identificador é um hash diário calculado no servidor, sem rastreamento entre sites. Apenas com o seu consentimento: cookies PostHog (reprodução de sessão, mapas de calor, associação à sua conta) e pixel da Meta (medição da eficácia dos nossos anúncios). Sem consentimento, nenhum destes cookies é depositado.",
       "controlTitle": "Controlar os cookies",
       "controlBody": "Podes eliminar os cookies através das definições do teu navegador. Desativar o cookie de sessão termina a tua ligação ao Serviço.",
       "thirdPartiesTitle": "Cookies de terceiros",
@@ -4504,7 +4504,7 @@
   },
   "CookieConsent": {
     "title": "Cookies e medição de audiência",
-    "bodyBefore": "Os cookies essenciais (sessão, segurança) estão sempre ativos. Com o seu consentimento, medimos a audiência do site com o PostHog e a eficácia dos nossos anúncios com o pixel da Meta. Detalhes na nossa ",
+    "bodyBefore": "Medimos a audiência do site de forma anónima, sem cookies (PostHog, modo sem cookies). Com o seu consentimento, gravamos também a sua navegação (reprodução de sessão, mapas de calor) para melhorar o site e ativamos o pixel da Meta. Detalhes na nossa ",
     "policyLink": "política de cookies",
     "bodyAfter": ". Pode mudar de ideias a qualquer momento.",
     "accept": "Aceitar",

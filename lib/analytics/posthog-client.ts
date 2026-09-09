@@ -14,19 +14,28 @@ import { metaTrack, setMetaConsent } from './meta-pixel';
  * Init via `instrumentation-client.ts` (Next.js 15.3+), JAMAIS via un
  * `PostHogProvider` — les deux approches ne se combinent pas.
  *
- * RGPD (société FR) : `opt_out_capturing_by_default` → aucune capture ni
- * cookie de tracking tant que l'utilisateur n'a pas explicitement accepté la
- * bannière de consentement. `setAnalyticsConsent` (appelée par `CookieConsent`)
- * fait l'opt-in / opt-out.
+ * Deux niveaux d'observation (sept. 2026), pilotés par la bannière
+ * `CookieConsent` via `setAnalyticsConsent` :
  *
- * Chargement PAResseux (audit sept. 2026) : `posthog-js` pèse plusieurs
- * centaines de ko et, tant que le visiteur n'a pas consenti, il ne peut de
- * toute façon rien capturer. Le SDK n'est donc importé (`import()` dynamique,
- * chunk séparé) que si le consentement est déjà « accepté » au chargement, ou
- * au moment où l'utilisateur clique « Accepter ». Un visiteur qui refuse ou
- * ignore la bannière ne télécharge jamais PostHog. L'API publique de ce module
+ * 1. **Mesure d'audience sans cookie, pour tout le monde** — `cookieless_mode:
+ *    'on_reject'` + `opt_out_capturing_by_default: true` : tant que le visiteur
+ *    n'a pas accepté (état « en attente » ou refus explicite), PostHog n'écrit
+ *    RIEN sur l'appareil (ni cookie, ni localStorage, ni sessionStorage) ;
+ *    l'identité est un hash quotidien calculé côté serveur PostHog. Pages vues,
+ *    sections scrollées, clics CTA, questions FAQ, démo : tout est observé,
+ *    anonymement. Même base que Vercel Web Analytics (exemption « mesure
+ *    d'audience »). ⚠️ Ce mode doit être ACTIVÉ dans le projet PostHog
+ *    (Settings → « Cookieless server hash mode »), sinon ces events sont
+ *    ignorés à l'ingestion.
+ * 2. **Après « Accepter »** — opt-in classique : cookie/localStorage, session
+ *    replay, heatmaps, profil rattaché à l'inscription (`identifyUser`), et
+ *    pixel Meta. C'est ce niveau qui permet de REGARDER une session.
+ *
+ * Chargement différé : `posthog-js` (~200 ko) est importé dynamiquement (chunk
+ * séparé) quand le navigateur est inactif après le chargement de la page,
+ * pour ne pas concurrencer le LCP du hero. L'API publique de ce module
  * (`track`, `analytics.*`, `identifyUser`…) est inchangée : les appels émis
- * pendant le chargement du SDK sont mis en file d'attente puis rejoués.
+ * avant l'arrivée du SDK sont mis en file d'attente puis rejoués.
  */
 
 /** Clé localStorage du consentement RGPD (cf. components/layout/cookie-consent.tsx). */
@@ -89,8 +98,12 @@ function loadPostHog(): Promise<PostHog | null> {
         person_profiles: 'identified_only',
         // Session replay : démarré seulement à l'opt-in (cf. setAnalyticsConsent).
         disable_session_recording: true,
-        // RGPD : silence total tant que pas de consentement explicite.
+        // RGPD : sans consentement explicite, aucun cookie ni stockage — mais
+        // la mesure d'audience continue en mode sans cookie (hash serveur).
+        // Le refus (`opt_out_capturing`) reste dans ce mode ; l'acceptation
+        // (`opt_in_capturing`) bascule en mode complet.
         opt_out_capturing_by_default: true,
+        cookieless_mode: 'on_reject',
         debug: process.env.NODE_ENV === 'development',
         loaded: (ph) => {
           try {
@@ -123,9 +136,7 @@ function loadPostHog(): Promise<PostHog | null> {
 
 /**
  * Exécute `fn` sur le SDK : tout de suite s'il est chargé, à la fin du
- * chargement s'il est en cours, jamais sinon (pas de consentement → rien à
- * capturer, et on ne déclenche pas le téléchargement pour un event qui serait
- * de toute façon filtré par l'opt-out).
+ * chargement sinon (file d'attente bornée, rejouée dans l'ordre).
  */
 function withPostHog(fn: (ph: PostHog) => void): void {
   if (!initialized || !isBrowser()) return;
@@ -137,20 +148,34 @@ function withPostHog(fn: (ph: PostHog) => void): void {
     }
     return;
   }
-  if (loading && pending.length < PENDING_MAX) pending.push(fn);
+  void loadPostHog();
+  if (pending.length < PENDING_MAX) pending.push(fn);
+}
+
+/** Différe `fn` jusqu'à un moment d'inactivité du navigateur (LCP d'abord). */
+function whenIdle(fn: () => void): void {
+  const w = window as Window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+  };
+  const schedule = () => {
+    if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(fn, { timeout: 3000 });
+    else setTimeout(fn, 1500);
+  };
+  if (document.readyState === 'complete') schedule();
+  else window.addEventListener('load', schedule, { once: true });
 }
 
 /**
  * Initialise l'analytics. Appelé une fois depuis `instrumentation-client.ts`
- * (avant l'hydratation React). Idempotent et no-op côté serveur. Ne charge le
- * SDK que si le visiteur a déjà consenti ; sinon `setAnalyticsConsent(true)`
- * s'en chargera.
+ * (avant l'hydratation React). Idempotent et no-op côté serveur. Le SDK est
+ * chargé pour tout le monde (mesure sans cookie), mais après le chargement de
+ * la page et hors du chemin critique.
  */
 export function initPostHogClient(): void {
   if (initialized || !isBrowser()) return;
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
   initialized = true;
-  if (readStoredConsent() === 'accepted') void loadPostHog();
+  whenIdle(() => void loadPostHog());
 }
 
 /** Attache des propriétés communes (locale courante) à chaque event. */
@@ -187,30 +212,32 @@ export function captureException(error: unknown, props?: Record<string, unknown>
 
 /**
  * Applique le consentement RGPD. Appelée par `CookieConsent`.
- * - accepté → charge le SDK si besoin, opt-in + (ré)active le replay + capture
- *   le pageview courant (sinon perdu, car la page d'atterrissage est chargée
- *   avant l'opt-in).
- * - refusé → opt-out + stoppe le replay (si le SDK avait été chargé).
+ * - accepté → opt-in (cookies + profil), (ré)active le replay, et re-capture
+ *   le pageview courant sous la nouvelle identité (le pageview d'arrivée a été
+ *   compté sous le hash sans cookie ; on marque celui-ci `consent_upgrade`
+ *   pour pouvoir l'exclure des volumes et ne garder que le funnel).
+ * - refusé → opt-out explicite : PostHog reste en mode sans cookie (mesure
+ *   d'audience anonyme), replay stoppé, pixel Meta jamais chargé.
  */
 export function setAnalyticsConsent(granted: boolean): void {
   if (!isBrowser()) return;
   try {
     if (!initialized) initPostHogClient();
-    if (granted) {
-      void loadPostHog().then((ph) => {
-        if (!ph) return;
-        try {
+    void loadPostHog().then((ph) => {
+      if (!ph) return;
+      try {
+        if (granted) {
           ph.opt_in_capturing();
           ph.startSessionRecording?.();
-          ph.capture('$pageview');
-        } catch {
-          /* no-op */
+          ph.capture('$pageview', { consent_upgrade: true });
+        } else {
+          ph.stopSessionRecording?.();
+          ph.opt_out_capturing();
         }
-      });
-    } else if (instance) {
-      instance.stopSessionRecording?.();
-      instance.opt_out_capturing();
-    }
+      } catch {
+        /* no-op */
+      }
+    });
     // Pixel Meta piloté par le même consentement (chargé seulement si accepté).
     setMetaConsent(granted);
   } catch {

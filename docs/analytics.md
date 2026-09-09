@@ -20,13 +20,32 @@ Système de suivi des visiteurs pour **décider quoi optimiser dans le marketing
 | Consentement | `components/layout/cookie-consent.tsx` | Pilote l'opt-in/opt-out PostHog. |
 | Reverse proxy | `next.config.ts` (`/ingest/*`) | Anti-adblock, CSP `connect-src 'self'`. |
 
-## RGPD / consentement (important)
+## RGPD / consentement — deux niveaux d'observation (sept. 2026)
 
-PostHog démarre en **`opt_out_capturing_by_default: true`** → **aucune capture ni cookie** tant que le visiteur n'a pas cliqué « Accepter » dans la bannière (`localStorage['wedillybird-cookie-consent']`). À l'acceptation : opt-in + session replay + capture du pageview courant. Au refus : opt-out. `person_profiles: 'identified_only'` (anonymes = events sans profil).
+| Niveau | Quand | Ce qui est capturé | Ce qui est écrit sur l'appareil |
+|---|---|---|---|
+| **Sans cookie** (`cookieless_mode: 'on_reject'`) | dès l'arrivée, et après « Continuer sans accepter » | `$pageview`, `$pageleave` (scroll, temps), `section_viewed`, `cta_clicked`, `faq_opened`, `pricing_plan_selected`, `demo_rsvp_submitted`, autocapture, web vitals | **rien** — identité = hash quotidien calculé côté serveur PostHog (`$cookieless_mode: true` sur l'event) |
+| **Complet** | après « Accepter » | idem + **session replay**, heatmaps, profil (`identify` à la connexion), pixel Meta | cookie + localStorage PostHog |
 
-**Chargement paresseux (sept. 2026)** : `posthog-js` n'est téléchargé (chunk séparé, `import()` dynamique) que si le consentement est déjà « accepté » au chargement de la page, ou au clic « Accepter ». Un visiteur qui refuse ou ignore la bannière ne charge jamais le SDK. Les appels `track` / `identifyUser` émis pendant le chargement sont mis en file d'attente et rejoués.
+Le niveau « sans cookie » est la même base que Vercel Web Analytics (exemption CNIL « mesure d'audience ») : pas de traceur déposé, pas de suivi inter-sites, finalité limitée. La bannière et `/legal/cookies` le disent explicitement. Le bouton « Continuer sans accepter » refuse le replay, le profil et Meta — pas la mesure anonyme.
 
-**Conséquence à garder en tête** : PostHog ne voit que les visiteurs qui acceptent la bannière (typiquement 30 à 60 % d'une audience française). **Pour les volumes (visites, pages vues, pays, referrers), la vérité terrain est Vercel Web Analytics** (`@vercel/analytics`, monté dans `app/[locale]/layout.tsx`) : sans cookie ni identifiant persistant, donc hors périmètre du consentement. À activer une fois sur le projet Vercel (Project → Analytics → Enable) — sans ça, le composant est inerte. PostHog garde son rôle pour le funnel, les events produit, les heatmaps et le replay des consentants.
+**⚠️ À activer une fois dans PostHog** : Project settings → *Cookieless server hash mode* → **Enable**. Sans ça, les events sans cookie sont **ignorés à l'ingestion** (le SDK les envoie, PostHog les jette). C'est le réglage n° 1 à vérifier si le dashboard reste vide alors que Vercel Analytics compte des visites.
+
+**Chargement** : `posthog-js` est importé dynamiquement quand le navigateur est inactif après le chargement (`requestIdleCallback`, 3 s max) — hors du chemin critique du hero. Les appels `track`/`identifyUser` émis avant sont mis en file puis rejoués. À l'acceptation, un `$pageview` est re-capturé sous la nouvelle identité avec `consent_upgrade: true` : **exclure cette propriété** des insights de volume (elle sert seulement à ce que le funnel de la personne consentante commence par une visite).
+
+**Vercel Web Analytics** (`@vercel/analytics`, `app/[locale]/layout.tsx`) reste la vérité terrain pour les volumes bruts (visites, pays, referrers), y compris les visiteurs sans JavaScript côté PostHog. À activer sur le projet Vercel (Project → Analytics).
+
+## Lire les données — que regarder chaque semaine
+
+Tout est dans **`/admin/acquisition`** (clé `POSTHOG_PERSONAL_API_KEY` requise) ou dans le dashboard PostHog :
+
+1. **Visiteurs uniques par section** (`section_viewed`, dau) — la courbe de fuite du scroll : Fonctionnalités → Tarifs → FAQ. La première marche qui perd plus de la moitié des visiteurs est la section à retravailler.
+2. **Clics CTA par source** (`cta_clicked.source`) — `hero_primary`, `hero_secondary` (démo), `pricing_essential`, `pricing_premium`, `cta_final`, `header`, `nav`, `demo_banner`. Un CTA jamais cliqué est mal placé ou mal formulé.
+3. **Questions FAQ ouvertes** (`faq_opened.question`) — les objections réelles. Si « Combien d'invités maximum ? » domine, la réponse doit remonter dans le pricing.
+4. **Démo** (`demo_rsvp_submitted`) rapporté aux vues de `/demo` — la preuve produit convainc-t-elle ?
+5. **Funnel** visite → CTA → inscription → compte → onboarding → checkout → achat — l'étape qui casse.
+6. **Rejeux de session** (visiteurs consentants) — 5 minutes de replay valent plus qu'un graphique : où hésitent-ils, que survolent-ils, où partent-ils ? Activer le replay dans PostHog → Settings → Session replay.
+7. **Web vitals** (`$web_vitals`) — LCP mobile de la landing ; au-delà de 2,5 s, la perf devient un sujet.
 
 ## Taxonomie des events
 

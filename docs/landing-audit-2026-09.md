@@ -162,9 +162,9 @@ Points du plan livrés dans le code, sur la branche de cet audit :
 | 7 | Hero | Promesse concrète (« Vos invitations de mariage, envoyées sur WhatsApp. » + ce que fait le produit), CTA visible sans scroller à 1440×900, 1280×720 et 390×844 bannière comprise (test e2e dédié), CTA secondaire → démo. |
 | 8 | Démo publique | `/demo` : la vraie page d'invitation (shell, cinématique, compte à rebours, RSVP) avec un couple fictif, sans compte ni Convex ; RSVP accepté localement (`demo_rsvp_submitted`), `?cinematic=` et `?replay=1` supportés. Indexable, dans le sitemap, testée e2e. |
 | 9 | Forfait propagé | Les cartes pricing envoient `/sign-up?plan=essential|premium`. |
-| 10 | Poids | `posthog-js` n'est plus chargé que si le visiteur a consenti (ou au clic « Accepter ») : JS de la landing 1 316 → ≈ 1 100 ko non compressé pour un visiteur sans consentement. Le reste est React/Next, Motion, Convex client et Lenis. |
+| 10 | Poids et observation | `posthog-js` est chargé après le rendu, hors chemin critique (`requestIdleCallback`). Il fonctionne désormais en **mode sans cookie pour tous les visiteurs** (`cookieless_mode: 'on_reject'`, hash côté serveur, rien d'écrit sur l'appareil) : pages vues, sections, CTA, FAQ, démo sont observés pour 100 % du trafic ; replay, heatmaps, profil et pixel Meta seulement après « Accepter ». **À activer dans PostHog** (Settings → Cookieless server hash mode). Une section « Comportement sur la landing » dans `/admin/acquisition` lit ces données (fuite par section, FAQ ouvertes, pages, démo). |
 
-Non livré dans le code, à faire avec les accès fondateur : clés PostHog en Production (2), Search Console et redirection `www` (4), articles réels (11), prospection wedding planners et réseaux (12), test Meta (13), question du nom (14).
+Non livré dans le code, à faire avec les accès fondateur : clés PostHog en Production + activation du mode sans cookie et du replay dans PostHog (2), Search Console et redirection `www` (4), articles réels (11), prospection wedding planners et réseaux (12), test Meta (13), question du nom (14).
 
 ## 5. À vérifier côté fondateur (accès requis)
 

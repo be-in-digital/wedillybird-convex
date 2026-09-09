@@ -411,7 +411,7 @@
       "whatTitle": "Was ist ein Cookie?",
       "whatBody": "Ein Cookie ist eine kleine Textdatei, die von einer Website auf Ihrem Gerät gespeichert wird. Wedillybird verwendet ausschließlich für den Betrieb des Dienstes notwendige Cookies.",
       "typesTitle": "Verwendete Cookies",
-      "typesBody": "Sitzungs-Cookie (Authentifizierung, HMAC-signiert, läuft nach 30 Tagen Inaktivität ab). Lokaler IndexedDB-Speicher (Offline-Cache für Check-in). Nur mit Ihrer Einwilligung: PostHog-Cookies zur Reichweitenmessung (Besuchsstatistiken, anonymisierte Sitzungsaufzeichnung) und Meta-Pixel (Messung der Wirksamkeit unserer Werbung). Ohne Einwilligung wird keiner dieser Cookies gesetzt.",
+      "typesBody": "Sitzungs-Cookie (Authentifizierung, HMAC-signiert, läuft nach 30 Tagen Inaktivität ab). Lokaler IndexedDB-Speicher (Offline-Cache für Check-in). PostHog-Reichweitenmessung im Cookieless-Modus: nichts wird auf Ihrem Gerät gespeichert, die Kennung ist ein täglicher, serverseitig berechneter Hash ohne seitenübergreifendes Tracking. Nur mit Ihrer Einwilligung: PostHog-Cookies (Session-Replay, Heatmaps, Verknüpfung mit Ihrem Konto) und Meta-Pixel (Messung der Wirksamkeit unserer Werbung). Ohne Einwilligung wird keiner dieser Cookies gesetzt.",
       "controlTitle": "Cookies kontrollieren",
       "controlBody": "Sie können Cookies über die Einstellungen Ihres Browsers löschen. Die Deaktivierung des Session-Cookies meldet Sie vom Dienst ab.",
       "thirdPartiesTitle": "Drittanbieter-Cookies",
@@ -4504,7 +4504,7 @@
   },
   "CookieConsent": {
     "title": "Cookies und Reichweitenmessung",
-    "bodyBefore": "Notwendige Cookies (Sitzung, Sicherheit) sind immer aktiv. Mit Ihrer Einwilligung messen wir die Besucherzahlen der Website mit PostHog und die Wirksamkeit unserer Werbung mit dem Meta-Pixel. Details in unserer ",
+    "bodyBefore": "Wir messen die Besucherzahlen der Website anonym und ohne Cookies (PostHog, Cookieless-Modus). Mit Ihrer Einwilligung zeichnen wir zusätzlich Ihre Navigation auf (Session-Replay, Heatmaps), um die Website zu verbessern, und aktivieren das Meta-Pixel. Details in unserer ",
     "policyLink": "Cookie-Richtlinie",
     "bodyAfter": ". Sie können Ihre Meinung jederzeit ändern.",
     "accept": "Akzeptieren",
