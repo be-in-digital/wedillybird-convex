@@ -12,7 +12,6 @@ import { analytics } from '@/lib/analytics/posthog-client';
 
 const SECTION_ITEMS: ReadonlyArray<{ id: string; key: string }> = [
   { id: 'features', key: 'features' },
-  { id: 'testimonials', key: 'testimonials' },
   { id: 'pricing', key: 'pricing' },
   { id: 'faq', key: 'faq' },
 ];

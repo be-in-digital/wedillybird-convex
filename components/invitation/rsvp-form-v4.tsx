@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/cn';
-import { analytics } from '@/lib/analytics/posthog-client';
+import { analytics, track } from '@/lib/analytics/posthog-client';
+import { EVENTS } from '@/lib/analytics/events';
 import {
   normalizeRsvpConfig,
   type RsvpConfig,
@@ -32,6 +33,19 @@ interface Props {
     notes?: string;
     customAnswers?: CustomAnswer[];
   };
+  /**
+   * `live` (défaut) : la réponse part vers Convex via `submitRsvpAction`.
+   * `demo` : page `/demo` publique — aucune écriture, la réponse est acceptée
+   * localement après un court délai pour que le visiteur vive le parcours
+   * complet (confettis compris). Trace `demo_rsvp_submitted`, jamais
+   * `rsvp_submitted`.
+   */
+  mode?: 'live' | 'demo';
+}
+
+/** Simule l'aller-retour serveur de la démo (ressenti réaliste, sans réseau). */
+function submitDemo(): Promise<RsvpActionResult> {
+  return new Promise((resolve) => setTimeout(() => resolve({ ok: true }), 450));
 }
 
 const STATUS_OPTIONS: Array<{
@@ -51,7 +65,14 @@ const STATUS_OPTIONS: Array<{
  * custom typées. Les réponses custom sont sérialisées en JSON dans le champ
  * `customAnswers` (la mutation Convex re-valide de façon autoritaire).
  */
-export function RsvpFormV4({ token, plusOnesAllowed, accentColor, config, initial }: Props) {
+export function RsvpFormV4({
+  token,
+  plusOnesAllowed,
+  accentColor,
+  config,
+  initial,
+  mode = 'live',
+}: Props) {
   const t = useTranslations('Invitation');
   const tCommon = useTranslations('Common');
   const reduced = useReducedMotion();
@@ -148,11 +169,13 @@ export function RsvpFormV4({ token, plusOnesAllowed, accentColor, config, initia
     formData.set('customAnswers', JSON.stringify(builtAnswers));
 
     startTransition(async () => {
-      const result: RsvpActionResult = await submitRsvpAction(token, formData);
+      const result: RsvpActionResult =
+        mode === 'demo' ? await submitDemo() : await submitRsvpAction(token, formData);
       if (result.ok) {
         setSuccess(true);
         // RSVP enregistré (boucle virale invité) — `status` non-null garanti ci-dessus.
-        analytics.rsvpSubmitted({ status });
+        if (mode === 'demo') track(EVENTS.demoRsvpSubmitted, { status });
+        else analytics.rsvpSubmitted({ status });
         if (status === 'attending') fireConfetti();
         return;
       }

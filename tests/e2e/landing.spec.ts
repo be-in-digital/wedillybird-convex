@@ -7,11 +7,38 @@ test.describe('Landing page', () => {
 
     const hero = page.getByRole('heading', { level: 1 });
     await expect(hero).toBeVisible();
-    // Promesse V4 : "Le mariage se vit dans la conversation. Faites-le exister là."
-    await expect(hero).toContainText(/se vit dans la conversation/i);
+    // Promesse V5 (audit sept. 2026) : concrète, dit ce que fait le produit.
+    await expect(hero).toContainText(/invitations de mariage/i);
 
-    // CTA primary v4 = "Préparer mon mariage".
+    // CTA primary = "Préparer mon mariage".
     await expect(page.getByRole('link', { name: /préparer mon mariage/i }).first()).toBeVisible();
+  });
+
+  test('le CTA principal du hero est visible sans scroller, bannière cookies comprise', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const cta = page.getByRole('link', { name: /préparer mon mariage/i }).first();
+    // Laisse la bannière cookies apparaître (1,5 s) : elle ne doit pas
+    // recouvrir le CTA.
+    await expect(page.getByRole('region', { name: /cookies/i })).toBeVisible();
+    const box = await cta.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    const banner = await page.getByRole('region', { name: /cookies/i }).boundingBox();
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+    // Le CTA se termine au-dessus du haut de la bannière.
+    expect(box!.y + box!.height).toBeLessThanOrEqual(banner!.y);
+  });
+
+  test("aucune preuve sociale inventée n'est affichée", async ({ page }) => {
+    await page.goto('/');
+    const body = page.locator('body');
+    await expect(body).not.toContainText(/1 240 mariages/i);
+    await expect(body).not.toContainText(/4,9 \/ 5/);
+    await expect(page.locator('#testimonials')).toHaveCount(0);
   });
 
   test('rend les chapitres narratifs V4 (manifesto, cinematic, FAQ)', async ({ page }) => {
@@ -75,9 +102,9 @@ test.describe('Landing page', () => {
     const navLinks = nav.getByRole('link');
 
     // Landing mono-audience couple : le lien "Pour les pros" a été retiré (offre
-    // agence déplacée sur /forfaits-pros et /pros), la nav couple ne garde que
-    // ses 4 sections.
-    await expect(navLinks).toHaveText(['Fonctionnalités', 'Témoignages', 'Tarifs', 'Questions']);
+    // agence déplacée sur /forfaits-pros et /pros) et la section Témoignages
+    // (voix fictives) a été supprimée à l'audit de sept. 2026.
+    await expect(navLinks).toHaveText(['Fonctionnalités', 'Tarifs', 'Questions']);
     await expect(nav.getByRole('link', { name: 'Tarifs' })).toHaveAttribute('href', '/#pricing');
     await expect(nav.getByRole('link', { name: 'Questions' })).toHaveAttribute('href', '/#faq');
 
@@ -101,14 +128,44 @@ test.describe('Landing page', () => {
     expect(lang).toBe('fr');
   });
 
-  test('clic sur CTA secondaire descend à la section pricing', async ({ page }) => {
+  test('clic sur CTA secondaire ouvre la démo publique', async ({ page }) => {
     await page.goto('/');
-    // CTA secondaire v4 = "Voir les formules" qui pointe vers #pricing.
+    // CTA secondaire V5 = "Voir une invitation" → /demo (preuve produit).
     await page
-      .getByRole('link', { name: /voir les formules/i })
+      .getByRole('link', { name: /voir une invitation/i })
       .first()
       .click();
-    await expect(page).toHaveURL(/#pricing$/);
+    await expect(page).toHaveURL(/\/demo$/);
+  });
+});
+
+test.describe('Démo publique /demo', () => {
+  test("rend l'invitation fictive sans compte ni backend", async ({ page }) => {
+    await page.goto('/demo');
+    await expect(page).toHaveTitle(/démo/i);
+    // Le bandeau dit que c'est une démo et propose de créer la sienne.
+    await expect(page.getByText(/invitation de démonstration/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: /créer la mienne/i })).toBeVisible();
+    // Le couple fictif et le formulaire RSVP sont rendus côté serveur (masqués
+    // via aria-hidden tant que la cinématique joue → locator CSS, pas de rôle).
+    await expect(page.locator('h1')).toContainText(/Léa/);
+    await expect(page.getByTestId('rsvp-form')).toBeAttached();
+    // Pas de lien galerie : il n'existe pas de galerie fictive.
+    await expect(page.getByRole('link', { name: /galerie partagée/i })).toHaveCount(0);
+  });
+
+  test('le RSVP de démo est accepté localement', async ({ page }) => {
+    await page.goto('/demo');
+    // Passe la cinématique d'ouverture en la marquant comme déjà vue, puis
+    // re-navigue (un `reload` la rejoue toujours, par conception du shell).
+    await page.evaluate(() => sessionStorage.setItem('wbb-cinematic-seen:demo', '1'));
+    await page.goto('/demo');
+    await expect(page.getByTestId('rsvp-form')).toBeVisible();
+    // L'input radio est `sr-only` : on clique son libellé.
+    await page.getByText('Je confirme', { exact: true }).click();
+    await expect(page.getByTestId('rsvp-option-attending')).toBeChecked();
+    await page.getByTestId('submit-rsvp').click();
+    await expect(page.getByTestId('rsvp-success')).toBeVisible();
   });
 });
 

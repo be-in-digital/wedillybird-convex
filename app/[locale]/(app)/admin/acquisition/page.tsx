@@ -20,6 +20,13 @@ import { AdminPageHeader } from '@/components/admin/ui/page-header';
 import { AdminPage, AdminSection } from '@/components/admin/ui/section';
 import { AdminStat, AdminStatGrid } from '@/components/admin/ui/stat-card';
 
+/** Libellés lisibles des ids de section de la landing (`section_viewed.id`). */
+const SECTION_LABELS: Record<string, string> = {
+  features: 'Fonctionnalités',
+  pricing: 'Tarifs',
+  faq: 'FAQ',
+};
+
 /**
  * Acquisition — analytics MARKETING (PostHog) dans le back-office Super Admin.
  *
@@ -98,6 +105,67 @@ export default async function AdminAcquisitionPage({
               <AdminCountChart data={data.ctaBySource} unit="clics" />
             </AdminSection>
 
+            {/* Comportement sur la landing — ce qui dit quoi améliorer.
+                Mesuré pour TOUS les visiteurs (mode sans cookie), pas
+                seulement ceux qui acceptent la bannière. */}
+            <AdminSection
+              title="Comportement sur la landing"
+              description="Jusqu'où les visiteurs descendent, quelles objections ils ouvrent, s'ils essaient la démo. Une section qui perd la moitié des visiteurs est la prochaine à retravailler."
+              contentClassName="flex flex-col gap-6 p-5"
+            >
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_1fr]">
+                <div className="flex flex-col gap-3">
+                  <h3 className="text-sm font-medium text-[color:var(--color-foreground)]">
+                    Visiteurs uniques ayant atteint chaque section
+                  </h3>
+                  <AdminFunnel
+                    steps={data.landing.sectionsReached.map((s) => ({
+                      label: SECTION_LABELS[s.label] ?? s.label,
+                      value: s.value,
+                    }))}
+                  />
+                </div>
+                <div className="flex flex-col gap-3">
+                  <h3 className="text-sm font-medium text-[color:var(--color-foreground)]">
+                    Questions FAQ ouvertes
+                  </h3>
+                  <AdminCountChart
+                    data={data.landing.faqOpened}
+                    color={SERIES.gold}
+                    unit="ouvertures"
+                  />
+                </div>
+              </div>
+              <AdminStatGrid cols={2}>
+                <AdminStat
+                  icon={PlayCircle}
+                  label={`RSVP de démonstration envoyés (${data.days} j)`}
+                  value={formatCount(data.landing.demoRsvp)}
+                  hint="Visiteurs qui ont joué la démo /demo jusqu'au bout."
+                />
+                <AdminStat
+                  icon={Eye}
+                  label="Pages vues sans cookie"
+                  value={
+                    data.landing.cookielessShare === null
+                      ? '—'
+                      : `${Math.round(data.landing.cookielessShare * 100)} %`
+                  }
+                  hint={
+                    data.landing.cookielessShare === null
+                      ? 'Aucune page vue sur la période, ou mode sans cookie non activé dans PostHog.'
+                      : 'Part des visiteurs observés sans consentement (mode sans cookie). Le reste a accepté la bannière : replay disponible.'
+                  }
+                />
+              </AdminStatGrid>
+              <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-medium text-[color:var(--color-foreground)]">
+                  Pages vues par chemin
+                </h3>
+                <AdminCountChart data={data.landing.pagesByPath} color={SERIES.blue} unit="vues" />
+              </div>
+            </AdminSection>
+
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <AdminSection title="Inscriptions par langue" contentClassName="p-4">
                 <AdminCountChart data={data.signupByLocale} color={SERIES.blue} unit="signups" />
@@ -127,7 +195,10 @@ export default async function AdminAcquisitionPage({
         </AdminSection>
 
         <p className="text-xs text-[color:var(--color-muted-foreground)]">
-          Données capturées côté visiteur (consentement RGPD requis) + events serveur fiables.
+          Pages vues, sections, CTA, FAQ et démo sont mesurés pour tous les visiteurs, sans cookie
+          (mode « cookieless » à activer dans PostHog → Settings). Replay, heatmaps et profils
+          n&apos;existent que pour les visiteurs qui ont accepté la bannière. Les events de paiement
+          sont envoyés côté serveur.
         </p>
       </AdminPage>
     </AdminShell>

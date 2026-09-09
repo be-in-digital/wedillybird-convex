@@ -10,7 +10,7 @@ import { InvitationCard3D } from './invitation-card-3d';
 import { MagneticCta } from './magnetic-cta';
 
 /**
- * Landing — Hero V4.
+ * Landing — Hero V5.
  *
  * Composition éditoriale asymétrique inspirée Adovasio (SOTD wedding éditorial)
  * et Mercury (rigueur compositionnelle). Pas de téléphone — la figure héroïque
@@ -19,14 +19,18 @@ import { MagneticCta } from './magnetic-cta';
  * Layout :
  * - Photo hero plein cadre derrière, floutée + overlay ivoire 65 % pour
  *   garantir la lisibilité tout en posant l'émotion mariage
- * - Copy géant gauche (clamp 3rem → 7rem), titre split italique + roman
+ * - Copy gauche : promesse concrète (« Vos invitations de mariage, envoyées
+ *   sur WhatsApp. ») + sous-titre qui liste ce que fait le produit
  * - Carte d'invitation 3D droite, ratio 5:7, rotation suit le curseur
- * - Trust strip mono caps en bas
- * - Magnetic CTA primary + canvas-confetti au hover
+ * - Trust strip : garanties vraies (paiement unique, remboursement 7 j,
+ *   données en Europe) — aucun chiffre de preuve sociale tant qu'il n'est pas
+ *   mesuré sur de vrais mariages
+ * - Magnetic CTA primary + canvas-confetti au hover ; CTA secondaire vers la
+ *   démo publique `/demo`
  *
- * Eyebrow "CHAPITRE 01 — L'INVITATION" (mono caps tracking large).
- *
- * Promesse retenue après brainstorming : "Le mariage se vit dans la conversation."
+ * Contrainte d'audit (sept. 2026) : le CTA principal doit rester visible SANS
+ * scroller à 1440×900 et 390×844, bannière cookies comprise — d'où les
+ * espacements resserrés et l'absence d'eyebrow décoratif.
  */
 export function LandingHero() {
   const t = useTranslations('Landing.hero');
@@ -76,28 +80,23 @@ export function LandingHero() {
       <div aria-hidden className="paper-grain pointer-events-none absolute inset-0 -z-10" />
 
       <motion.div
-        className="container-wide relative grid min-h-[100svh] items-center gap-16 py-24 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12 lg:py-32"
+        className="container-wide relative grid min-h-[calc(100svh-4.75rem)] items-center gap-12 py-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12 lg:py-10"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
         {/* Copy column */}
         <div className="flex flex-col">
-          <motion.span
-            variants={itemVariants}
-            className="mb-10 font-mono text-[11px] tracking-[0.32em] text-[color:var(--color-ink-500)] uppercase"
-          >
-            {t('chapter')}
-          </motion.span>
-
           <motion.h1
             variants={itemVariants}
             className="text-balance"
             style={{
               fontFamily: 'var(--font-sans)',
               fontWeight: 400,
-              fontSize: 'clamp(2.75rem, 7.5vw, 5.75rem)',
-              lineHeight: 0.97,
+              // Borné pour qu'un titre sur 4 lignes + sous-titre + CTA tiennent
+              // dans un viewport laptop de 720 px de haut (cf. e2e landing).
+              fontSize: 'clamp(2.25rem, 5vw, 4.25rem)',
+              lineHeight: 0.96,
               letterSpacing: '-0.035em',
               color: 'var(--color-ink-900)',
             }}
@@ -119,14 +118,14 @@ export function LandingHero() {
 
           <motion.p
             variants={itemVariants}
-            className="mt-9 max-w-xl text-base leading-relaxed text-pretty text-[color:var(--color-ink-700)] sm:text-lg"
+            className="mt-6 max-w-xl text-base leading-relaxed text-pretty text-[color:var(--color-ink-700)] sm:text-lg"
           >
             {t('subtitle')}
           </motion.p>
 
           <motion.div
             variants={itemVariants}
-            className="mt-12 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+            className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center"
           >
             <MagneticCta
               href="/sign-up"
@@ -146,49 +145,38 @@ export function LandingHero() {
               />
             </MagneticCta>
             <MagneticCta
-              href="/#pricing"
+              href="/demo"
               variant="outline"
               size="xl"
               className="w-full justify-center sm:w-auto sm:min-w-52"
               wrapperClassName="block w-full sm:inline-block sm:w-auto"
               onClick={() =>
-                analytics.ctaClicked({ source: 'hero_secondary', destination: '#pricing' })
+                analytics.ctaClicked({ source: 'hero_secondary', destination: '/demo' })
               }
             >
               {t('ctaSecondary')}
             </MagneticCta>
           </motion.div>
 
-          {/* Trust strip — mono caps */}
-          <motion.div
+          {/* Trust strip — garanties vérifiables, mono caps */}
+          <motion.ul
             variants={itemVariants}
-            className="mt-16 flex flex-col gap-3 border-t border-[color:var(--color-border)] pt-6 font-mono text-[10px] font-semibold tracking-[0.28em] text-[color:var(--color-ink-700)] uppercase sm:flex-row sm:items-center sm:gap-8 sm:pt-7"
+            className="mt-8 flex flex-wrap gap-x-6 gap-y-2 border-t border-[color:var(--color-border)] pt-5 font-mono text-[10px] font-semibold tracking-[0.24em] text-[color:var(--color-ink-700)] uppercase sm:mt-10 sm:gap-x-8 sm:pt-6"
           >
-            <span className="inline-flex items-center gap-2">
-              <span
-                aria-hidden
-                className="inline-block h-1 w-1 rounded-full bg-[color:var(--color-gold-500)]"
-              />
-              {t('trust.stat')}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <span
-                aria-hidden
-                className="inline-block h-1 w-1 rounded-full bg-[color:var(--color-gold-500)]"
-              />
-              {t('trust.rating')}
-            </span>
-            <span className="hidden items-center gap-2 lg:inline-flex">
-              <span
-                aria-hidden
-                className="inline-block h-1 w-1 rounded-full bg-[color:var(--color-gold-500)]"
-              />
-              {t('trust.regions')}
-            </span>
-          </motion.div>
+            {(['noSubscription', 'refund', 'dataEu'] as const).map((key) => (
+              <li key={key} className="inline-flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="inline-block h-1 w-1 rounded-full bg-[color:var(--color-gold-500)]"
+                />
+                {t(`trust.${key}`)}
+              </li>
+            ))}
+          </motion.ul>
         </div>
 
-        {/* Carte invitation 3D column */}
+        {/* Carte invitation 3D column — sous la copy sur mobile, donc jamais
+            entre le titre et le CTA. */}
         <motion.div
           variants={itemVariants}
           className="flex items-center justify-center lg:justify-end"

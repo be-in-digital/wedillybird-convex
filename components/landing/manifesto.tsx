@@ -1,14 +1,11 @@
 'use client';
 
-import { motion, useInView } from 'motion/react';
+import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
 import { inViewOnce, scrollReveal, scrollRevealParent } from '@/lib/motion/presets';
 
-const STAT_KEYS = ['openRate', 'rsvpSpeed', 'memory'] as const;
-
 /**
- * Landing — Manifesto V4 enrichi.
+ * Landing — Manifesto V5.
  *
  * Absorbe les anciennes sections Stats + Comparison en un seul chapitre
  * éditorial qui raconte le « pourquoi » de Wedillybird :
@@ -16,14 +13,17 @@ const STAT_KEYS = ['openRate', 'rsvpSpeed', 'memory'] as const;
  * 1. Lede long-format Migra italic (la conviction)
  * 2. Diptyque "Hier / Désormais" en prose éditoriale (pas un tableau)
  * 3. Pull-quote géant climax (promesse B "Six mois après...")
- * 4. Trois stats inline (98 %, 30 s, 5 ans) en grand chiffre + label
- * 5. Source / attribution sectorielle en bas de page
+ *
+ * Les « trois stats » (98 % d'ouverture, 73 % de RSVP en 24 h…) et leur
+ * mention « mesuré sur 1 240 mariages » ont été retirées (audit sept. 2026) :
+ * aucune de ces valeurs n'a été mesurée sur de vrais mariages Wedillybird.
+ * Elles reviendront le jour où elles sortiront du dashboard produit.
  *
  * Inspiration : Aesop product story + Atelier Isabey "atelier" page +
  * Mercury "Why Mercury" section éditoriale.
  *
  * Pattern : asymétrie volontaire (lede gauche large, diptyque pleine largeur,
- * pull-quote centré, stats en filet horizontal). Pas de bento, pas de cards.
+ * pull-quote centré). Pas de bento, pas de cards.
  */
 export function LandingManifesto() {
   const t = useTranslations('Landing.manifesto');
@@ -128,86 +128,7 @@ export function LandingManifesto() {
             {t('pullquote')}
           </blockquote>
         </motion.figure>
-
-        {/* Trois stats inline */}
-        <motion.dl
-          initial="hidden"
-          whileInView="visible"
-          viewport={inViewOnce}
-          variants={scrollRevealParent}
-          className="mt-32 grid gap-12 border-t border-[color:var(--color-border)] pt-16 sm:grid-cols-3 sm:gap-8"
-        >
-          {STAT_KEYS.map((key) => {
-            const value = t.raw(`stats.${key}.value`) as number;
-            const suffix = t(`stats.${key}.suffix`);
-            return (
-              <motion.div key={key} variants={scrollReveal} className="flex flex-col items-start">
-                <StatTicker target={value} suffix={suffix} />
-                <dt className="mt-4 text-base font-medium text-[color:var(--color-ink-900)]">
-                  {t(`stats.${key}.label`)}
-                </dt>
-                <dd className="mt-1 font-mono text-[10px] tracking-[0.24em] text-[color:var(--color-ink-500)] uppercase">
-                  {t(`stats.${key}.context`)}
-                </dd>
-              </motion.div>
-            );
-          })}
-        </motion.dl>
-
-        {/* Source */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={inViewOnce}
-          className="mt-12 text-center font-mono text-[10px] tracking-[0.24em] text-[color:var(--color-ink-400)] italic"
-        >
-          {t('source')}
-        </motion.p>
       </div>
     </section>
-  );
-}
-
-function StatTicker({ target, suffix }: { target: number; suffix: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-15%' });
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (!inView) return;
-    const duration = 1500;
-    const start = performance.now();
-    let raf: number;
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 4);
-      setValue(Math.round(target * eased * 10) / 10);
-      if (progress < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [inView, target]);
-
-  const display = Number.isInteger(target) ? Math.round(value) : value.toFixed(1);
-
-  return (
-    <span
-      ref={ref}
-      className="tabular-nums"
-      style={{
-        fontFamily: 'var(--font-sans)',
-        fontSize: 'clamp(3rem, 7vw, 5.5rem)',
-        fontWeight: 200,
-        lineHeight: 0.9,
-        letterSpacing: '-0.04em',
-        color: 'var(--color-ink-900)',
-      }}
-    >
-      {display}
-      <span style={{ fontSize: '0.55em', marginLeft: '0.05em', color: 'var(--color-blush-700)' }}>
-        {suffix}
-      </span>
-    </span>
   );
 }
