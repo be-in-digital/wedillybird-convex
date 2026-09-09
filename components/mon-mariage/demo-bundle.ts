@@ -34,6 +34,7 @@ function demoGuests(): MmGuest[] {
     plusOnesAllowed: Math.max(0, g.count - 1),
     rsvpStatus: RSVP_FROM_MOCK[g.status],
     tableId: null,
+    seatNumber: null,
   }));
 }
 
@@ -71,6 +72,13 @@ export function buildDemoBundle(): MmBundle {
         { time: '22 h 00', title: 'Ouverture du bal' },
       ],
       cinematicUnlocked: true,
+      seatingPublication: {
+        published: false,
+        publishedAt: null,
+        numbering: 'seat',
+        showRoomPlan: true,
+        note: null,
+      },
     },
     guests: demoGuests(),
     vendors: MC_VENDORS.map((v) => ({
@@ -183,6 +191,7 @@ export function buildDemoBundle(): MmBundle {
       storageBytes: Math.round(MC_USAGE.storageGo * 1e9),
     },
     referral: { code: 'WBDEMO', availableMinor: 4000 },
+    seatingNotifications: { placedGuests: 0, notified: 0, needsNotify: 0 },
   };
 }
 

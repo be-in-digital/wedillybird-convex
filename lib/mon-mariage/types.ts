@@ -43,6 +43,8 @@ export interface MmEvent {
   ceremonySchedule: CeremonyStep[];
   /** Choix de cinématique + musique + photo débloqués (Premium). */
   cinematicUnlocked: boolean;
+  /** Publication du plan de table côté invités (defaults déjà appliqués). */
+  seatingPublication: MmSeatingPublication;
 }
 
 /** Une étape du déroulé de la journée (guest-facing). */
@@ -75,6 +77,8 @@ export interface MmGuest {
   plusOnesAllowed: number;
   rsvpStatus: MmRsvpStatus;
   tableId: string | null;
+  /** Chaise attribuée à la table, `null` = placement sans numéro. */
+  seatNumber: number | null;
 }
 
 export interface MmAttachment {
@@ -180,6 +184,22 @@ export interface MmReferral {
   availableMinor: number;
 }
 
+/** Publication du plan de table pour les invités (`events.seatingConfig`). */
+export interface MmSeatingPublication {
+  published: boolean;
+  publishedAt: number | null;
+  numbering: 'table' | 'seat';
+  showRoomPlan: boolean;
+  note: string | null;
+}
+
+/** File d'envoi des pass placement. */
+export interface MmSeatingNotifications {
+  placedGuests: number;
+  notified: number;
+  needsNotify: number;
+}
+
 export interface MmBundle {
   event: MmEvent;
   guests: MmGuest[];
@@ -191,4 +211,5 @@ export interface MmBundle {
   invoices: MmInvoice[];
   usage: MmUsage;
   referral: MmReferral;
+  seatingNotifications: MmSeatingNotifications;
 }

@@ -11,6 +11,7 @@ import { Icon } from './icons';
 import { McBtn } from './parts';
 import { McModal, McField, McInput } from './modal';
 import { mcDateShort } from './data';
+import { SeatPublishCard } from './seat-publish-card';
 import { seatGuestsView, useMonMariage } from '@/stores/mon-mariage';
 import {
   BASE_PPM,
@@ -698,6 +699,9 @@ export function SeatingScreen({ onNav }: { onNav?: (k: string) => void }) {
           />
         </div>
       </div>
+
+      {/* Publication du plan aux invités — validation explicite avant tout envoi */}
+      <SeatPublishCard />
 
       {/* fantôme de drag */}
       {drag && (

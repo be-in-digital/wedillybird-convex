@@ -992,7 +992,8 @@
     "otpGroupLabel": "Bestätigungscode",
     "otpDigitLabel": "Ziffer {position} von {total}",
     "title": "Eine Hochzeit lebt vom Gespräch.",
-    "titleAccent": "Lass sie genau dort entstehen."
+    "titleAccent": "Lass sie genau dort entstehen.",
+    "phoneLengthHint": "Diese Nummer scheint unvollständig. Erwartetes Format: {format}."
   },
   "Onboarding": {
     "stepProfile": "Dein Profil",
@@ -1035,7 +1036,9 @@
       "sendFailed": "Senden des Codes fehlgeschlagen. Versuch es erneut.",
       "network": "Netzwerkfehler. Prüfe deine Verbindung.",
       "emailTaken": "Diese Adresse wird bereits von einem anderen Konto verwendet.",
-      "submit": "Etwas ist schiefgelaufen. Versuche es erneut."
+      "submit": "Etwas ist schiefgelaufen. Versuche es erneut.",
+      "whatsappUndeliverable": "Diese Nummer kann den Code nicht über WhatsApp empfangen. Prüfe, ob ein aktives WhatsApp-Konto damit verknüpft ist, oder gib eine andere Nummer ein.",
+      "sessionExpired": "Ihre Sitzung ist abgelaufen. Melden Sie sich erneut an und versuchen Sie es noch einmal."
     },
     "stepPrefix": "SCHRITT",
     "eyebrow": {
@@ -1175,7 +1178,9 @@
     "booleanNo": "Nein",
     "requiredMark": "Erforderlich",
     "openInvitation": "Einladung öffnen",
-    "tapSeal": "Auf das Siegel tippen"
+    "tapSeal": "Auf das Siegel tippen",
+    "seatPassCta": "Meinen Platz ansehen",
+    "seatPassHint": "Der Sitzplan ist veröffentlicht."
   },
   "OrgPublic": {
     "poweredBy": "Bereitgestellt von",
@@ -1295,7 +1300,10 @@
     "undo": "Rückgängig",
     "pendingQueue": "{count, plural, =1 {1 Check-in wartet auf Synchronisierung} other {# Check-ins warten auf Synchronisierung}}",
     "pendingQueueSyncNow": "Jetzt synchronisieren",
-    "pendingQueueSynced": "{count, plural, =1 {1 Check-in synchronisiert} other {# Check-ins synchronisiert}}"
+    "pendingQueueSynced": "{count, plural, =1 {1 Check-in synchronisiert} other {# Check-ins synchronisiert}}",
+    "toastSeat": "{table} · Platz {seat}",
+    "toastTable": "{table}",
+    "toastNoSeat": "Kein Tisch zugewiesen"
   },
   "Pro": {
     "onboardingTitle": "Erstelle deine Organisation",
@@ -4449,6 +4457,19 @@
       "introCouple": "Wir würden Sie gerne als Partner gewinnen. Hier ist ein persönlicher Link, um Ihr Wedillybird-Konto zu eröffnen: Ihre Hochzeit wird kostenlos auf Premium gehoben — Einladungen, RSVP und geteilte Galerie inklusive.",
       "ctaLabelCouple": "Mein Konto eröffnen (Premium gratis)",
       "linkExpiryCouple": "Dieser Link ist bis zum {date} gültig. Der Tarif gilt für die Hochzeit, die Sie anlegen."
+    },
+    "seatPass": {
+      "subject": "Ihr Sitzplatz — Hochzeit von {coupleNames}",
+      "preheader": "Ihr Tisch und Ihr Platz für die Hochzeit von {coupleNames}.",
+      "intro": "Der Sitzplan für die Hochzeit von {coupleNames} am {eventDate} steht. Hier sitzen Sie:",
+      "introVenue": "Der Sitzplan für die Hochzeit von {coupleNames} am {eventDate} in {venue} steht. Hier sitzen Sie:",
+      "memberSeat": "{name} — {table}, Platz {seat}",
+      "memberTable": "{name} — {table}",
+      "memberUnplaced": "{name} — Platz noch offen",
+      "callToAction": "Öffnen Sie Ihren Pass für den Saalplan und den Code für den Einlass:",
+      "ctaLabel": "Meinen Platz ansehen",
+      "closing": "Bis ganz bald!",
+      "footer": "Sie erhalten diese E-Mail, weil Sie zu dieser Hochzeit eingeladen sind."
     }
   },
   "Metadata": {
@@ -4550,7 +4571,41 @@
     "print": "Drucken",
     "shapeToggle": "Form ändern (rund/rechteckig)",
     "clickToUnassign": "Zum Entfernen vom Tisch klicken",
-    "guestOf": "Gast von {host}"
+    "guestOf": "Gast von {host}",
+    "seatColumnLabel": "Platz",
+    "seatOf": "Platz {n}",
+    "seatNone": "Ohne Nummer",
+    "autoNumber": "Plätze nummerieren",
+    "autoNumberDone": "{count, plural, =0 {Alle Plätze waren bereits nummeriert} =1 {1 Platz nummeriert} other {# Plätze nummeriert}}",
+    "renumber": "Alles neu nummerieren",
+    "renumberConfirm": "Alle Plätze ab 1 neu nummerieren? Von Hand vergebene Nummern werden überschrieben.",
+    "seatConflictBadge": "Doppelter Platz",
+    "seatConflictWarning": "{count, plural, =1 {1 doppelte Platznummer zu korrigieren} other {# doppelte Platznummern zu korrigieren}}",
+    "unnumberedWarning": "{count, plural, =1 {1 Person ohne Platznummer} other {# Personen ohne Platznummer}}",
+    "publishTitle": "Plan für Gäste veröffentlichen",
+    "publishHint": "Solange der Plan nicht veröffentlicht ist, sieht kein Gast seinen Platz — auch nicht mit seinem Link. Veröffentlichen Sie, wenn Sie bereit sind.",
+    "publishCta": "Plan veröffentlichen",
+    "unpublishCta": "Zurückziehen",
+    "publishedBadge": "Veröffentlicht",
+    "draftBadge": "Entwurf",
+    "publishedAt": "Veröffentlicht am {date}",
+    "numberingTitle": "Was der Gast sieht",
+    "numberingSeat": "Tisch + Platznummer",
+    "numberingTable": "Nur den Tisch",
+    "showRoomPlan": "Saalplan beilegen",
+    "noteLabel": "Ein Wort an Ihre Gäste (optional)",
+    "notePlaceholder": "z. B. Das Dinner beginnt um 20 Uhr, bitte nehmen Sie ab 19.45 Uhr Platz.",
+    "notifyTitle": "Plätze versenden",
+    "notifyHint": "Jeder Gast erhält seinen persönlichen Link über den Kanal seiner Einladung (WhatsApp, SMS oder E-Mail).",
+    "notifyCta": "{count, plural, =0 {Alle wurden benachrichtigt} =1 {An 1 Gast senden} other {An # Gäste senden}}",
+    "notifyForce": "An alle erneut senden",
+    "notifyForceConfirm": "Den Pass an alle platzierten Gäste erneut senden, auch an bereits benachrichtigte?",
+    "notifyDone": "{sent, plural, =0 {Nichts gesendet} =1 {1 Pass gesendet} other {# Pässe gesendet}}",
+    "notifyFailed": "{count, plural, =1 {1 Versand fehlgeschlagen} other {# Versände fehlgeschlagen}}",
+    "notifySkipped": "{count, plural, =1 {1 Gast ohne Kontaktkanal} other {# Gäste ohne Kontaktkanal}}",
+    "notifyNotPublished": "Veröffentlichen Sie den Plan, bevor Sie die Plätze versenden.",
+    "notifiedCount": "{notified} / {total} Gäste benachrichtigt",
+    "previewLink": "Gästepass ansehen"
   },
   "Marketing": {
     "guide": {
@@ -5154,7 +5209,8 @@
       "preview": "Vorschau",
       "qrTitle": "QR-Code der Einladung",
       "qrDesc": "Zum Ausdrucken oder Anzeigen am großen Tag.",
-      "planTitle": "Planung"
+      "planTitle": "Planung",
+      "countryCodeAria": "Ländervorwahl"
     },
     "planning": {
       "eyebrow": "Organisation",
@@ -5804,5 +5860,68 @@
     "guestName": "Mia",
     "venueName": "Domaine des Lilas",
     "venueAddress": "Route de Gordes, 84220 Provence, Frankreich"
+  },
+  "SeatPass": {
+    "summary": {
+      "seatOne": "Platz {seat}",
+      "seatMany": "Plätze {seats}",
+      "join": " und "
+    },
+    "sms": {
+      "body": "{name}, Ihr Platz auf der Hochzeit von {couple}: {seat}.",
+      "optOut": "STOP zum Abbestellen."
+    },
+    "metaTitle": "Ihr Platz",
+    "eyebrow": "Sitzplan",
+    "title": "Ihr Platz",
+    "greeting": "Hallo {name}",
+    "tableLabel": "Tisch",
+    "seatLabel": "Platz",
+    "seatFree": "Freie Platzwahl an diesem Tisch",
+    "partyTitle": "Ihre Tischgruppe",
+    "youBadge": "Sie",
+    "noteTitle": "Ein Wort des Brautpaars",
+    "roomTitle": "Saalplan",
+    "roomHint": "Ihr Tisch ist hervorgehoben. Der Plan ist vom Eingang aus ausgerichtet.",
+    "roomYourTable": "Ihr Tisch",
+    "roomOtherTable": "Andere Tische",
+    "roomSeatHint": "Ihr Stuhl ist mit einem goldenen Punkt markiert.",
+    "roomDimensions": "{width} × {length} m",
+    "qrTitle": "Ihr Eintrittscode",
+    "qrHint": "Zeigen Sie diesen Code am Eingang: Er bestätigt Ihre Ankunft und zeigt Ihren Platz.",
+    "qrCodeLabel": "Code",
+    "qrAlt": "Eintritts-QR-Code von {name}",
+    "checkedInTitle": "Ankunft bereits bestätigt",
+    "checkedInAt": "Eingecheckt um {time}",
+    "backToInvitation": "Zurück zur Einladung",
+    "addToCalendar": "Einladung ansehen",
+    "unpublishedTitle": "Der Sitzplan ist noch nicht fertig",
+    "unpublishedBody": "Das Brautpaar stellt die Sitzordnung fertig. Ihr Platz erscheint hier, sobald er bestätigt ist — dieser Link bleibt gültig.",
+    "notAttendingTitle": "Bitte bestätigen Sie zuerst Ihre Teilnahme",
+    "notAttendingBody": "Antworten Sie auf die Einladung, um Ihren Platz zu erhalten.",
+    "notAttendingCta": "Auf die Einladung antworten",
+    "unplacedTitle": "Ihr Platz kommt gleich",
+    "unplacedBody": "Ihr Tisch ist noch nicht zugewiesen. Schauen Sie etwas später wieder vorbei — dieser Link bleibt gültig.",
+    "elements": {
+      "dancefloor": "Tanzfläche",
+      "stage": "Bühne",
+      "dj": "DJ",
+      "bar": "Bar",
+      "buffet": "Buffet",
+      "cake": "Torte",
+      "photobooth": "Fotobox",
+      "gifts": "Geschenke",
+      "guestbook": "Gästebuch",
+      "entrance": "Eingang",
+      "arch": "Bogen",
+      "plant": "Grün"
+    },
+    "floors": {
+      "parquet": "Parkett",
+      "marble": "Marmor",
+      "carpet": "Teppich",
+      "grass": "Rasen",
+      "concrete": "Beton"
+    }
   }
 }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Heart, UserPlus, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/auth/phone-input';
 import { toast } from '@/components/ui/toast';
 import { linkCoupleAction, unlinkCoupleAction } from '@/app/[locale]/(app)/pro/actions';
 
@@ -106,12 +106,12 @@ export function CoupleLinkCard({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+33 6 12 34 56 78"
-          inputMode="tel"
-          className="max-w-xs flex-1"
+        {/* Sélecteur pays + numéro local : l'agence n'a pas à connaître
+            l'indicatif du couple qu'elle rattache. */}
+        <PhoneInput
+          defaultValue={phone}
+          onValueChange={setPhone}
+          className="max-w-xs"
           aria-label={t('coupleLink.phoneAria')}
         />
         <Button

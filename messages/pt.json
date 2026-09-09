@@ -992,7 +992,8 @@
     "otpGroupLabel": "Código de verificação",
     "otpDigitLabel": "Dígito {position} de {total}",
     "title": "Um casamento vive-se na conversa.",
-    "titleAccent": "Faz com que aconteça aí."
+    "titleAccent": "Faz com que aconteça aí.",
+    "phoneLengthHint": "Este número parece incompleto. Formato esperado: {format}."
   },
   "Onboarding": {
     "stepProfile": "O teu perfil",
@@ -1035,7 +1036,9 @@
       "sendFailed": "Falha no envio do código. Tenta de novo.",
       "network": "Erro de rede. Verifica a tua ligação.",
       "emailTaken": "Este endereço já está em uso por outra conta.",
-      "submit": "Algo correu mal. Tenta de novo."
+      "submit": "Algo correu mal. Tenta de novo.",
+      "whatsappUndeliverable": "Este número não pode receber o código por WhatsApp. Verifica se tem uma conta WhatsApp ativa, ou introduz outro número.",
+      "sessionExpired": "A sua sessão expirou. Inicie sessão novamente e tente outra vez."
     },
     "stepPrefix": "PASSO",
     "eyebrow": {
@@ -1175,7 +1178,9 @@
     "booleanNo": "Não",
     "requiredMark": "Obrigatório",
     "openInvitation": "Abrir o convite",
-    "tapSeal": "Toque no selo"
+    "tapSeal": "Toque no selo",
+    "seatPassCta": "Ver o meu lugar",
+    "seatPassHint": "O plano de mesas está publicado."
   },
   "OrgPublic": {
     "poweredBy": "Com tecnologia",
@@ -1295,7 +1300,10 @@
     "undo": "Anular",
     "pendingQueue": "{count, plural, =1 {1 check-in à espera de sincronização} other {# check-ins à espera de sincronização}}",
     "pendingQueueSyncNow": "Sincronizar agora",
-    "pendingQueueSynced": "{count, plural, =1 {1 check-in sincronizado} other {# check-ins sincronizados}}"
+    "pendingQueueSynced": "{count, plural, =1 {1 check-in sincronizado} other {# check-ins sincronizados}}",
+    "toastSeat": "{table} · lugar {seat}",
+    "toastTable": "{table}",
+    "toastNoSeat": "Sem mesa atribuída"
   },
   "Pro": {
     "onboardingTitle": "Cria a tua organização",
@@ -4449,6 +4457,19 @@
       "introCouple": "Gostaríamos de o contar entre os nossos parceiros. Aqui está um link pessoal para abrir a sua conta Wedillybird: o seu casamento passa a Premium, grátis — convites, RSVP e galeria partilhada incluídos.",
       "ctaLabelCouple": "Abrir a minha conta (Premium grátis)",
       "linkExpiryCouple": "Este link é válido até {date}. O plano aplica-se ao casamento que criar."
+    },
+    "seatPass": {
+      "subject": "O seu lugar à mesa — casamento de {coupleNames}",
+      "preheader": "A sua mesa e o seu lugar para o casamento de {coupleNames}.",
+      "intro": "O plano de mesas do casamento de {coupleNames} de {eventDate} está pronto. Este é o seu lugar:",
+      "introVenue": "O plano de mesas do casamento de {coupleNames} de {eventDate} em {venue} está pronto. Este é o seu lugar:",
+      "memberSeat": "{name} — {table}, lugar {seat}",
+      "memberTable": "{name} — {table}",
+      "memberUnplaced": "{name} — lugar por confirmar",
+      "callToAction": "Abra o seu passe para ver a planta da sala e o código a mostrar à entrada:",
+      "ctaLabel": "Ver o meu lugar",
+      "closing": "Até muito breve!",
+      "footer": "Recebe este e-mail porque está convidado para este casamento."
     }
   },
   "Metadata": {
@@ -4550,7 +4571,41 @@
     "print": "Imprimir",
     "shapeToggle": "Mudar forma (redonda/retangular)",
     "clickToUnassign": "Clique para remover da mesa",
-    "guestOf": "convidado(a) de {host}"
+    "guestOf": "convidado(a) de {host}",
+    "seatColumnLabel": "Lugar",
+    "seatOf": "Lugar {n}",
+    "seatNone": "Sem número",
+    "autoNumber": "Numerar os lugares",
+    "autoNumberDone": "{count, plural, =0 {Todos os lugares já estavam numerados} =1 {1 lugar numerado} other {# lugares numerados}}",
+    "renumber": "Renumerar tudo",
+    "renumberConfirm": "Renumerar todos os lugares a partir de 1? Os números atribuídos à mão serão substituídos.",
+    "seatConflictBadge": "Lugar duplicado",
+    "seatConflictWarning": "{count, plural, =1 {1 número de lugar duplicado a corrigir} other {# números de lugar duplicados a corrigir}}",
+    "unnumberedWarning": "{count, plural, =1 {1 pessoa sem número de lugar} other {# pessoas sem número de lugar}}",
+    "publishTitle": "Publicar o plano aos convidados",
+    "publishHint": "Enquanto o plano não estiver publicado, nenhum convidado vê o seu lugar, mesmo com o seu link. Publique quando estiver pronto.",
+    "publishCta": "Publicar o plano",
+    "unpublishCta": "Retirar publicação",
+    "publishedBadge": "Publicado",
+    "draftBadge": "Rascunho",
+    "publishedAt": "Publicado a {date}",
+    "numberingTitle": "O que o convidado vê",
+    "numberingSeat": "Mesa + número de lugar",
+    "numberingTable": "Apenas a mesa",
+    "showRoomPlan": "Juntar a planta da sala",
+    "noteLabel": "Uma palavra para os seus convidados (opcional)",
+    "notePlaceholder": "Ex. O jantar é servido às 20h, ocupem o vosso lugar a partir das 19h45.",
+    "notifyTitle": "Enviar os lugares",
+    "notifyHint": "Cada convidado recebe o seu link pessoal no canal usado para o convite (WhatsApp, SMS ou e-mail).",
+    "notifyCta": "{count, plural, =0 {Toda a gente foi avisada} =1 {Enviar a 1 convidado} other {Enviar a # convidados}}",
+    "notifyForce": "Reenviar a todos",
+    "notifyForceConfirm": "Reenviar o passe a todos os convidados sentados, incluindo os já avisados?",
+    "notifyDone": "{sent, plural, =0 {Nenhum envio} =1 {1 passe enviado} other {# passes enviados}}",
+    "notifyFailed": "{count, plural, =1 {1 envio falhou} other {# envios falharam}}",
+    "notifySkipped": "{count, plural, =1 {1 convidado sem canal de contacto} other {# convidados sem canal de contacto}}",
+    "notifyNotPublished": "Publique o plano antes de enviar os lugares.",
+    "notifiedCount": "{notified} / {total} convidados avisados",
+    "previewLink": "Pré-visualizar o passe"
   },
   "Marketing": {
     "guide": {
@@ -5154,7 +5209,8 @@
       "preview": "Pré-visualizar",
       "qrTitle": "Código QR do convite",
       "qrDesc": "Imprimam-no ou mostrem-no no dia do casamento.",
-      "planTitle": "Planeamento"
+      "planTitle": "Planeamento",
+      "countryCodeAria": "Indicativo do país"
     },
     "planning": {
       "eyebrow": "Organização",
@@ -5804,5 +5860,68 @@
     "guestName": "Inês",
     "venueName": "Domaine des Lilas",
     "venueAddress": "Route de Gordes, 84220 Provença, França"
+  },
+  "SeatPass": {
+    "summary": {
+      "seatOne": "lugar {seat}",
+      "seatMany": "lugares {seats}",
+      "join": " e "
+    },
+    "sms": {
+      "body": "{name}, o seu lugar no casamento de {couple}: {seat}.",
+      "optOut": "Responda STOP para cancelar."
+    },
+    "metaTitle": "O seu lugar",
+    "eyebrow": "Plano de mesas",
+    "title": "O seu lugar",
+    "greeting": "Olá {name}",
+    "tableLabel": "Mesa",
+    "seatLabel": "Lugar",
+    "seatFree": "Lugar livre nesta mesa",
+    "partyTitle": "A sua mesa",
+    "youBadge": "Você",
+    "noteTitle": "Uma palavra dos noivos",
+    "roomTitle": "Planta da sala",
+    "roomHint": "A sua mesa está destacada. A planta está orientada a partir da entrada.",
+    "roomYourTable": "A sua mesa",
+    "roomOtherTable": "Outras mesas",
+    "roomSeatHint": "A sua cadeira está marcada com um ponto dourado.",
+    "roomDimensions": "{width} × {length} m",
+    "qrTitle": "O seu código de entrada",
+    "qrHint": "Mostre este código à entrada: confirma a sua chegada e indica o seu lugar.",
+    "qrCodeLabel": "Código",
+    "qrAlt": "Código QR de entrada de {name}",
+    "checkedInTitle": "Chegada já confirmada",
+    "checkedInAt": "Registado às {time}",
+    "backToInvitation": "Voltar ao convite",
+    "addToCalendar": "Ver o convite",
+    "unpublishedTitle": "O plano de mesas ainda não está pronto",
+    "unpublishedBody": "Os noivos estão a finalizar a disposição. O seu lugar aparecerá aqui assim que for confirmado — este link continuará válido.",
+    "notAttendingTitle": "Confirme primeiro a sua presença",
+    "notAttendingBody": "Responda ao convite para receber o seu lugar à mesa.",
+    "notAttendingCta": "Responder ao convite",
+    "unplacedTitle": "O seu lugar está a caminho",
+    "unplacedBody": "A sua mesa ainda não foi atribuída. Volte um pouco mais tarde — este link continuará válido.",
+    "elements": {
+      "dancefloor": "Pista de dança",
+      "stage": "Palco",
+      "dj": "DJ",
+      "bar": "Bar",
+      "buffet": "Bufê",
+      "cake": "Bolo",
+      "photobooth": "Cabine de fotos",
+      "gifts": "Presentes",
+      "guestbook": "Livro de honra",
+      "entrance": "Entrada",
+      "arch": "Arco",
+      "plant": "Vegetação"
+    },
+    "floors": {
+      "parquet": "Parquete",
+      "marble": "Mármore",
+      "carpet": "Alcatifa",
+      "grass": "Relva",
+      "concrete": "Betão"
+    }
   }
 }

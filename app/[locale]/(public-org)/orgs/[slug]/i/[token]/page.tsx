@@ -66,6 +66,7 @@ export default async function PublicOrgInvitationPage({
           token={token}
           locale={locale}
           accentColor={accentColor}
+          seatPassAvailable={event.seatingPublished}
           guest={guest}
           event={event}
         />

@@ -11,6 +11,7 @@ export {
   type ProNotificationInput,
   type ProNotificationKind,
 } from './pro-notification';
+export { renderSeatPass, type SeatPassInput, type SeatPassMemberInput } from './seat-pass';
 export { renderStripeInvoice, type StripeInvoiceInput } from './stripe-invoice';
 export {
   renderWhatsappTemplateStatusEmail,

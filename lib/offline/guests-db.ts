@@ -9,6 +9,9 @@ export interface CachedGuest {
   plusOnesAllowed: number;
   rsvpStatus: 'pending' | 'attending' | 'declined' | 'maybe';
   checkedInAt?: number;
+  /** Placement figé au dernier sync — affiché au scan même sans réseau. */
+  tableName?: string | null;
+  seatNumber?: number | null;
   cachedAt: number;
 }
 
@@ -25,6 +28,16 @@ class GuestsOfflineDB extends Dexie {
   constructor() {
     super('wedillybird-checkin');
     this.version(1).stores({
+      guests: '[eventId+qrCodeToken], eventId, checkedInAt',
+      meta: 'eventId',
+    });
+    // v2 : ajout de `tableName` / `seatNumber` sur les lignes invités. Aucun
+    // index nouveau (on ne requête jamais par table côté check-in), donc le
+    // schéma d'index est identique — la montée de version suffit à faire
+    // accepter les champs supplémentaires par Dexie, sans migration de données
+    // (les anciennes lignes gardent des champs absents = « placement inconnu »,
+    // et le prochain sync les réécrit).
+    this.version(2).stores({
       guests: '[eventId+qrCodeToken], eventId, checkedInAt',
       meta: 'eventId',
     });
@@ -51,6 +64,8 @@ export async function cacheGuestsForEvent(
     rsvpStatus: 'pending' | 'attending' | 'declined' | 'maybe';
     qrCodeToken: string;
     checkedInAt?: number;
+    tableName?: string | null;
+    seatNumber?: number | null;
   }>,
 ): Promise<void> {
   const now = Date.now();
@@ -64,6 +79,8 @@ export async function cacheGuestsForEvent(
     plusOnesAllowed: g.plusOnesAllowed,
     rsvpStatus: g.rsvpStatus,
     checkedInAt: g.checkedInAt,
+    tableName: g.tableName ?? null,
+    seatNumber: g.seatNumber ?? null,
     cachedAt: now,
   }));
 

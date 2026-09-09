@@ -12,6 +12,7 @@ import {
   renderNewsletterCampaign,
   renderPartnerInvite,
   renderProNotification,
+  renderSeatPass,
   renderStripeInvoice,
   type ProNotificationKind,
 } from '../lib/email/templates';
@@ -134,6 +135,54 @@ export const sendGuestReminder = internalAction({
       console.error(
         `[email] failed to send guest reminder ${args.tier} to ${args.to}: ${result.error}`,
       );
+    }
+    return result;
+  },
+});
+
+/**
+ * « Votre place à table » — envoyé quand l'organisateur publie (ou re-publie)
+ * son plan de placement. Marque `guests.seatNotifiedAt` au succès pour que la
+ * file d'envoi ne repropose pas l'invité tant que sa place ne bouge pas.
+ */
+export const sendSeatPass = internalAction({
+  args: {
+    guestId: v.id('guests'),
+    to: v.string(),
+    guestName: v.string(),
+    coupleNames: v.string(),
+    eventDate: v.string(),
+    venueName: v.optional(v.string()),
+    seatUrl: v.string(),
+    members: v.array(
+      v.object({
+        fullName: v.string(),
+        tableName: v.union(v.string(), v.null()),
+        seatNumber: v.union(v.number(), v.null()),
+      }),
+    ),
+    note: v.optional(v.string()),
+    locale: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const rendered = renderSeatPass({
+      guestName: args.guestName,
+      coupleNames: args.coupleNames,
+      eventDate: args.eventDate,
+      venueName: args.venueName ?? null,
+      seatUrl: args.seatUrl,
+      members: args.members,
+      note: args.note ?? null,
+      locale: args.locale,
+    });
+    const result = await dispatch(args.to, rendered);
+    if (result.ok) {
+      await ctx.runMutation(internal.seatingGuest.markSeatNotified, {
+        guestId: args.guestId,
+        channel: 'email' as const,
+      });
+    } else {
+      console.error(`[email] failed to send seat pass to ${args.to}: ${result.error}`);
     }
     return result;
   },

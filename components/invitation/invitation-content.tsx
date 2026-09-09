@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { Calendar, MapPin, Camera } from 'lucide-react';
+import { Calendar, MapPin, Camera, Armchair } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import type { RsvpConfig } from '@/lib/rsvp/questions';
 import { WeddingCountdown } from './wedding-countdown';
@@ -13,6 +13,12 @@ interface InvitationContentProps {
   accentColor: string;
   /** Afficher le footer marque Wedillybird (page publique) — masqué en marque blanche. */
   showFooter?: boolean;
+  /**
+   * Le plan de table est publié par l'organisateur → on propose le pass
+   * placement. Le lien n'apparaît que pour un invité `attending` : les autres
+   * n'ont pas de place et tomberaient sur un écran d'attente.
+   */
+  seatPassAvailable?: boolean;
   /**
    * Page `/demo` : RSVP simulé (aucune écriture) et pas de lien galerie —
    * il n'existe pas de galerie fictive et un lien mort casserait la démo.
@@ -51,6 +57,7 @@ export async function InvitationContent({
   locale,
   accentColor,
   showFooter = false,
+  seatPassAvailable = false,
   demo = false,
   guest,
   event,
@@ -199,6 +206,34 @@ export async function InvitationContent({
             />
           </section>
         </Reveal>
+
+        {/* Pass placement — visible une fois le plan de table publié */}
+        {seatPassAvailable && guest.rsvpStatus === 'attending' ? (
+          <Reveal>
+            <Link
+              href={`/i/${token}/place`}
+              className="focus-ring group flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--color-border)] bg-white px-6 py-5 transition-all hover:border-[color:var(--color-border-strong)] hover:shadow-[var(--shadow-soft)]"
+            >
+              <span className="flex items-center gap-3">
+                <IconChip>
+                  <Armchair className="h-4 w-4" strokeWidth={1.75} />
+                </IconChip>
+                <span className="flex flex-col">
+                  <span className="text-base font-medium text-[color:var(--color-ink-900)]">
+                    {t('seatPassCta')}
+                  </span>
+                  <span className={EYEBROW}>{t('seatPassHint')}</span>
+                </span>
+              </span>
+              <span
+                aria-hidden
+                className="text-lg text-[color:var(--color-ink-500)] transition-transform group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </Link>
+          </Reveal>
+        ) : null}
 
         {/* Lien galerie — absent en démo (pas de galerie fictive) */}
         {demo ? null : (

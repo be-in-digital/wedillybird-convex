@@ -992,7 +992,8 @@
     "stepOneEyebrow": "ÉTAPE 01 — IDENTITÉ",
     "stepTwoEyebrow": "ÉTAPE 02 — VÉRIFICATION",
     "title": "Le mariage se vit dans la conversation.",
-    "titleAccent": "Faites-le exister là."
+    "titleAccent": "Faites-le exister là.",
+    "phoneLengthHint": "Ce numéro semble incomplet. Format attendu : {format}."
   },
   "Onboarding": {
     "stepProfile": "Votre profil",
@@ -1035,7 +1036,9 @@
       "sendFailed": "Échec de l'envoi du code. Réessaie.",
       "network": "Erreur réseau. Vérifie ta connexion.",
       "emailTaken": "Cette adresse est déjà utilisée par un autre compte.",
-      "submit": "Une erreur est survenue. Réessaie."
+      "submit": "Une erreur est survenue. Réessaie.",
+      "whatsappUndeliverable": "Ce numéro ne peut pas recevoir le code par WhatsApp. Vérifie qu'un compte WhatsApp actif y est associé, ou saisis un autre numéro.",
+      "sessionExpired": "Votre session a expiré. Reconnectez-vous puis réessayez."
     },
     "stepPrefix": "ÉTAPE",
     "eyebrow": {
@@ -1175,7 +1178,9 @@
     "booleanNo": "Non",
     "requiredMark": "Obligatoire",
     "openInvitation": "Ouvrir l'invitation",
-    "tapSeal": "Appuyez sur le sceau"
+    "tapSeal": "Appuyez sur le sceau",
+    "seatPassCta": "Voir ma place à table",
+    "seatPassHint": "Le plan de table est publié."
   },
   "OrgPublic": {
     "poweredBy": "Propulsé par",
@@ -1295,7 +1300,10 @@
     "undo": "Annuler",
     "pendingQueue": "{count, plural, =1 {1 check-in en attente de synchronisation} other {# check-ins en attente de synchronisation}}",
     "pendingQueueSyncNow": "Synchroniser maintenant",
-    "pendingQueueSynced": "{count, plural, =1 {1 check-in synchronisé} other {# check-ins synchronisés}}"
+    "pendingQueueSynced": "{count, plural, =1 {1 check-in synchronisé} other {# check-ins synchronisés}}",
+    "toastSeat": "{table} · place {seat}",
+    "toastTable": "{table}",
+    "toastNoSeat": "Sans table attribuée"
   },
   "Pro": {
     "onboardingTitle": "Créer votre organisation",
@@ -4449,6 +4457,19 @@
       "introCouple": "Nous aimerions vous compter parmi nos partenaires. Voici un lien personnel pour ouvrir votre compte Wedillybird : votre mariage passe en Premium, offert — invitations, RSVP et galerie partagée compris.",
       "ctaLabelCouple": "Ouvrir mon compte (Premium offert)",
       "linkExpiryCouple": "Ce lien est valable jusqu'au {date}. Le forfait, lui, s'applique au mariage que vous créerez."
+    },
+    "seatPass": {
+      "subject": "Votre place à table — mariage de {coupleNames}",
+      "preheader": "Votre table et votre place pour le mariage de {coupleNames}.",
+      "intro": "Le plan de table du mariage de {coupleNames} du {eventDate} est prêt. Voici votre placement :",
+      "introVenue": "Le plan de table du mariage de {coupleNames} du {eventDate} à {venue} est prêt. Voici votre placement :",
+      "memberSeat": "{name} — {table}, place {seat}",
+      "memberTable": "{name} — {table}",
+      "memberUnplaced": "{name} — placement à confirmer",
+      "callToAction": "Ouvrez votre pass pour retrouver le plan de la salle et le code à présenter à l’entrée :",
+      "ctaLabel": "Voir ma place",
+      "closing": "À très bientôt !",
+      "footer": "Vous recevez cet e-mail car vous êtes invité·e à ce mariage."
     }
   },
   "Metadata": {
@@ -4550,7 +4571,41 @@
     "print": "Imprimer",
     "shapeToggle": "Changer la forme (ronde/rectangulaire)",
     "clickToUnassign": "Cliquer pour retirer de la table",
-    "guestOf": "invité·e de {host}"
+    "guestOf": "invité·e de {host}",
+    "seatColumnLabel": "Place",
+    "seatOf": "Place {n}",
+    "seatNone": "Sans numéro",
+    "autoNumber": "Numéroter les places",
+    "autoNumberDone": "{count, plural, =0 {Toutes les places étaient déjà numérotées} =1 {1 place numérotée} other {# places numérotées}}",
+    "renumber": "Tout renuméroter",
+    "renumberConfirm": "Renuméroter toutes les places à partir de 1 ? Les numéros attribués à la main seront écrasés.",
+    "seatConflictBadge": "Doublon de place",
+    "seatConflictWarning": "{count, plural, =1 {1 doublon de numéro de place à corriger} other {# doublons de numéro de place à corriger}}",
+    "unnumberedWarning": "{count, plural, =1 {1 personne sans numéro de place} other {# personnes sans numéro de place}}",
+    "publishTitle": "Publier le plan aux invités",
+    "publishHint": "Tant que le plan n’est pas publié, aucun invité ne peut voir sa place, même avec son lien. Publiez quand vous êtes prêt·e.",
+    "publishCta": "Publier le plan",
+    "unpublishCta": "Dépublier",
+    "publishedBadge": "Publié",
+    "draftBadge": "Brouillon",
+    "publishedAt": "Publié le {date}",
+    "numberingTitle": "Ce que voit l’invité",
+    "numberingSeat": "Table + numéro de place",
+    "numberingTable": "Table seulement",
+    "showRoomPlan": "Joindre le plan de la salle",
+    "noteLabel": "Mot pour vos invités (optionnel)",
+    "notePlaceholder": "Ex. Le dîner est servi à 20 h, rejoignez votre table dès 19 h 45.",
+    "notifyTitle": "Envoyer les places",
+    "notifyHint": "Chaque invité reçoit son lien personnel sur le canal utilisé pour son invitation (WhatsApp, SMS ou e-mail).",
+    "notifyCta": "{count, plural, =0 {Tout le monde est prévenu} =1 {Envoyer à 1 invité} other {Envoyer à # invités}}",
+    "notifyForce": "Renvoyer à tous",
+    "notifyForceConfirm": "Renvoyer le pass à tous les invités placés, même ceux déjà prévenus ?",
+    "notifyDone": "{sent, plural, =0 {Aucun envoi} =1 {1 pass envoyé} other {# pass envoyés}}",
+    "notifyFailed": "{count, plural, =1 {1 envoi a échoué} other {# envois ont échoué}}",
+    "notifySkipped": "{count, plural, =1 {1 invité sans canal de contact} other {# invités sans canal de contact}}",
+    "notifyNotPublished": "Publiez le plan avant d’envoyer les places.",
+    "notifiedCount": "{notified} / {total} invités prévenus",
+    "previewLink": "Aperçu du pass invité"
   },
   "Marketing": {
     "guide": {
@@ -5154,7 +5209,8 @@
       "preview": "Aperçu",
       "qrTitle": "QR code de l’invitation",
       "qrDesc": "À imprimer ou afficher le jour J.",
-      "planTitle": "Rétroplanning"
+      "planTitle": "Rétroplanning",
+      "countryCodeAria": "Indicatif pays"
     },
     "planning": {
       "eyebrow": "Organisation",
@@ -5804,5 +5860,68 @@
     "guestName": "Camille",
     "venueName": "Domaine des Lilas",
     "venueAddress": "Route de Gordes, 84220 Provence"
+  },
+  "SeatPass": {
+    "summary": {
+      "seatOne": "place {seat}",
+      "seatMany": "places {seats}",
+      "join": " et "
+    },
+    "sms": {
+      "body": "{name}, votre place au mariage de {couple} : {seat}.",
+      "optOut": "STOP pour vous désabonner."
+    },
+    "metaTitle": "Votre place",
+    "eyebrow": "Plan de table",
+    "title": "Votre place",
+    "greeting": "Bonjour {name}",
+    "tableLabel": "Table",
+    "seatLabel": "Place",
+    "seatFree": "Placement libre à cette table",
+    "partyTitle": "Votre tablée",
+    "youBadge": "Vous",
+    "noteTitle": "Mot des mariés",
+    "roomTitle": "Plan de la salle",
+    "roomHint": "Votre table est mise en évidence. Le plan est orienté depuis l’entrée.",
+    "roomYourTable": "Votre table",
+    "roomOtherTable": "Autres tables",
+    "roomSeatHint": "Votre chaise est marquée d’un point doré.",
+    "roomDimensions": "{width} × {length} m",
+    "qrTitle": "Votre code d’entrée",
+    "qrHint": "Présentez ce code à l’accueil : il confirme votre arrivée et affiche votre place.",
+    "qrCodeLabel": "Code",
+    "qrAlt": "QR code d’entrée de {name}",
+    "checkedInTitle": "Arrivée déjà confirmée",
+    "checkedInAt": "Enregistré à {time}",
+    "backToInvitation": "Revenir à l’invitation",
+    "addToCalendar": "Voir l’invitation",
+    "unpublishedTitle": "Le plan de table n’est pas encore prêt",
+    "unpublishedBody": "Les mariés finalisent le placement. Votre place s’affichera ici dès qu’elle sera validée — ce lien restera valable.",
+    "notAttendingTitle": "Confirmez d’abord votre présence",
+    "notAttendingBody": "Répondez à l’invitation pour recevoir votre place à table.",
+    "notAttendingCta": "Répondre à l’invitation",
+    "unplacedTitle": "Votre place arrive",
+    "unplacedBody": "Votre table n’est pas encore attribuée. Revenez un peu plus tard, ce lien restera valable.",
+    "elements": {
+      "dancefloor": "Piste de danse",
+      "stage": "Scène",
+      "dj": "DJ",
+      "bar": "Bar",
+      "buffet": "Buffet",
+      "cake": "Gâteau",
+      "photobooth": "Photobooth",
+      "gifts": "Cadeaux",
+      "guestbook": "Livre d'or",
+      "entrance": "Entrée",
+      "arch": "Arche",
+      "plant": "Végétation"
+    },
+    "floors": {
+      "parquet": "Parquet",
+      "marble": "Marbre",
+      "carpet": "Moquette",
+      "grass": "Herbe",
+      "concrete": "Béton"
+    }
   }
 }

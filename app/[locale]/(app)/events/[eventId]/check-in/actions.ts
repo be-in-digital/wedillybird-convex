@@ -15,6 +15,9 @@ export type CheckInResult =
         category?: string;
         plusOnesAllowed: number;
         rsvpStatus: 'pending' | 'attending' | 'declined' | 'maybe';
+        /** Placement de l'invité, `null` s'il n'est pas assigné. */
+        tableName: string | null;
+        seatNumber: number | null;
       };
     }
   | { ok: false; error: 'UNAUTHORIZED' | 'GUEST_NOT_FOUND' | 'GUEST_WRONG_EVENT' | 'UNKNOWN' };

@@ -5,6 +5,7 @@
 
 import { useState, useMemo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { COUNTRIES, FR } from '@/lib/phone-countries';
 import { Icon, Mark } from './icons';
 import { McBtn, Fleuron, CoupleNames, McPill, RsvpDonut, QuotaGauge, QrMono } from './parts';
 import {
@@ -204,18 +205,22 @@ function GuestsCard({ guests }: { guests: McGuest[] }) {
   const [filter, setFilter] = useState('all');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  // L'indicatif était figé à `+1` : tout invité ajouté ici repartait avec un
+  // numéro américain, quel que soit son pays. Il se choisit désormais.
+  const [dial, setDial] = useState(FR.dial);
   const list = guests;
 
   const add = () => {
     if (!name.trim()) return;
     void addGuest({
       fullName: name.trim(),
-      ...(phone.trim() ? { phone: `+1 ${phone.trim()}` } : {}),
+      ...(phone.trim() ? { phone: `+${dial} ${phone.trim()}` } : {}),
       plusOnesAllowed: 0,
     });
     setName('');
     setPhone('');
   };
+  const country = COUNTRIES.find((c) => c.dial === dial) ?? FR;
   const shown = useMemo(
     () =>
       list.filter(
@@ -261,14 +266,24 @@ function GuestsCard({ guests }: { guests: McGuest[] }) {
         <div className="mc-qa-phone">
           <span className="cc">
             <Icon name="MessageCircle" size={13} stroke={2} className="wa" />
-            +1
+            <select
+              value={dial}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDial(e.target.value)}
+              aria-label={t('countryCodeAria')}
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.dial}>
+                  {c.flag} +{c.dial}
+                </option>
+              ))}
+            </select>
           </span>
           <input
             value={phone}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
             onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && add()}
             inputMode="tel"
-            placeholder="415 555 0123"
+            placeholder={country.placeholder}
             aria-label={t('whatsappAria')}
           />
         </div>

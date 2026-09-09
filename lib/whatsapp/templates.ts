@@ -174,3 +174,34 @@ export function getReminderTemplateName(
   const value = env[REMINDER_TEMPLATE_ENV_VARS[tier]];
   return value && value.trim().length > 0 ? value : null;
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Template « pass placement » (plan de table publié)                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Env var pointant vers le template Meta « votre place à table », envoyé quand
+ * l'organisateur publie son plan de placement.
+ *
+ * Variables body attendues côté template Meta :
+ *   {{1}} = prénom de l'invité
+ *   {{2}} = prénoms du couple ("Aminata & Mamadou")
+ *   {{3}} = placement résumé ("Table des Pivoines · place 4")
+ *   {{4}} = date formatée ("30 avril 2026")
+ *
+ * Le bouton URL dynamique reçoit `${qrCodeToken}/place` (Meta exige le
+ * suffixe de chemin, pas l'URL pleine) → `${baseUrl}/i/{token}/place`.
+ *
+ * Tant que le template n'est pas validé côté Meta Business Manager (cf.
+ * BACKLOG), `getSeatPassTemplateName` rend `null` et l'action bascule sur
+ * l'email — l'envoi WhatsApp est simplement skip, jamais en erreur.
+ */
+export const SEAT_PASS_TEMPLATE_ENV_VAR = 'WHATSAPP_SEAT_PASS_TEMPLATE';
+
+/** Nom du template Meta pour le pass placement, ou `null` si non configuré. */
+export function getSeatPassTemplateName(
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  const value = env[SEAT_PASS_TEMPLATE_ENV_VAR];
+  return value && value.trim().length > 0 ? value : null;
+}

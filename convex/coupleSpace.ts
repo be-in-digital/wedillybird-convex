@@ -15,6 +15,7 @@ import {
   photoForClient,
 } from './lib/invitationDesign';
 import { collectVestedCredit } from './affiliate';
+import { needsSeatNotification, resolveSeatingPublication } from './lib/seatPass';
 
 /**
  * Espace couple self-serve « /mon-mariage » — backend du produit one-shot.
@@ -167,6 +168,7 @@ export const bundle = query({
         galleryExpiresAt: event.galleryExpiresAt ?? null,
         hdUpsellPurchasedAt: event.hdUpsellPurchasedAt ?? null,
         seatingUnlocked: eventHasFeature(event, 'seatingPlan'),
+        seatingPublication: resolveSeatingPublication(event.seatingConfig),
         invitationCinematic: event.invitationCinematic ?? null,
         invitationMusic: musicForClient(event.invitationMusic),
         invitationPhoto: photoForClient(event.invitationPhoto),
@@ -177,6 +179,9 @@ export const bundle = query({
         code: referralAff?.code ?? null,
         availableMinor: referralCreditMinor,
       },
+      // File d'envoi des pass placement : combien d'invités placés attendent
+      // (ou re-attendent) leur place. Alimente le panneau de publication.
+      seatingNotifications: seatingNotificationCounts(guests, tables),
       guests: guests.map((g) => ({
         id: g._id,
         fullName: g.fullName,
@@ -185,6 +190,7 @@ export const bundle = query({
         plusOnesAllowed: g.plusOnesAllowed,
         rsvpStatus: g.rsvpStatus,
         tableId: g.tableId ?? null,
+        seatNumber: g.tableId ? (g.seatNumber ?? null) : null,
       })),
       vendors: vendors.map((x) => ({
         id: x._id,
@@ -779,6 +785,11 @@ export const upsertTable = mutation({
     if (args.tableId) {
       const table = await ctx.db.get(args.tableId);
       if (!table || table.eventId !== args.eventId) throw new Error('TABLE_NOT_FOUND');
+      // Réduire la capacité rend caduques les chaises au-delà : on les efface
+      // plutôt que de laisser un invité avec une place qui n'existe plus.
+      if (args.capacity < table.capacity) {
+        await clearSeatsAbove(ctx, args.tableId, args.capacity, now);
+      }
       await ctx.db.patch(args.tableId, {
         name: sanitizeLabel(args.name, 80),
         shape: args.shape,
@@ -826,8 +837,23 @@ export const removeTable = mutation({
       .query('guests')
       .withIndex('by_table', (q) => q.eq('tableId', args.tableId))
       .collect();
+    const now = Date.now();
     for (const g of seated) {
-      await ctx.db.patch(g._id, { tableId: undefined, updatedAt: Date.now() });
+      await ctx.db.patch(g._id, {
+        tableId: undefined,
+        seatNumber: undefined,
+        seatAssignedAt: now,
+        updatedAt: now,
+      });
+    }
+    // Accompagnants placés à cette table (modèle unité-personne, cf. seating.ts).
+    const companionRows = await ctx.db
+      .query('tableAssignments')
+      .withIndex('by_table', (q) => q.eq('tableId', args.tableId))
+      .collect();
+    for (const row of companionRows) {
+      await ctx.db.delete(row._id);
+      await ctx.db.patch(row.guestId, { seatAssignedAt: now, updatedAt: now });
     }
     await ctx.db.delete(args.tableId);
   },
@@ -849,9 +875,74 @@ export const assignGuestTable = mutation({
       const table = await ctx.db.get(args.tableId);
       if (!table || table.eventId !== guest.eventId) throw new Error('TABLE_NOT_FOUND');
     }
+    // Changer de table invalide la chaise : un numéro conservé placerait
+    // l'invité sur une place qu'il n'a jamais reçue à la nouvelle table.
+    // `seatAssignedAt` alimente la file d'envoi des pass (cf. seatPass.ts).
+    const now = Date.now();
     await ctx.db.patch(args.guestId, {
       tableId: args.tableId ?? undefined,
-      updatedAt: Date.now(),
+      seatNumber: args.tableId && args.tableId === guest.tableId ? guest.seatNumber : undefined,
+      seatAssignedAt: now,
+      updatedAt: now,
     });
   },
 });
+
+/**
+ * Efface les numéros de chaise supérieurs à `capacity` sur une table (invité
+ * principal via `guests.seatNumber`, accompagnants via `tableAssignments`).
+ * Appelé quand la capacité baisse — sans ça un invité garderait sur son pass
+ * une place que la table n'a plus.
+ */
+async function clearSeatsAbove(
+  ctx: MutationCtx,
+  tableId: Id<'tables'>,
+  capacity: number,
+  now: number,
+): Promise<void> {
+  const seated = await ctx.db
+    .query('guests')
+    .withIndex('by_table', (q) => q.eq('tableId', tableId))
+    .collect();
+  for (const g of seated) {
+    if (g.seatNumber !== undefined && g.seatNumber > capacity) {
+      await ctx.db.patch(g._id, { seatNumber: undefined, seatAssignedAt: now, updatedAt: now });
+    }
+  }
+  const rows = await ctx.db
+    .query('tableAssignments')
+    .withIndex('by_table', (q) => q.eq('tableId', tableId))
+    .collect();
+  for (const row of rows) {
+    if (row.seatNumber !== undefined && row.seatNumber > capacity) {
+      await ctx.db.patch(row._id, { seatNumber: undefined, updatedAt: now });
+      await ctx.db.patch(row.guestId, { seatAssignedAt: now, updatedAt: now });
+    }
+  }
+}
+
+/**
+ * Compte les invités placés / déjà prévenus / à (re)notifier pour le panneau
+ * de publication du plan de table.
+ *
+ * Un invité compte comme « placé » dès qu'il porte une table valide — les
+ * accompagnants suivent leur invitation, ils ne sont jamais notifiés seuls
+ * (ils n'ont pas de numéro de téléphone propre).
+ */
+function seatingNotificationCounts(
+  guests: ReadonlyArray<Doc<'guests'>>,
+  tables: ReadonlyArray<Doc<'tables'>>,
+): { placedGuests: number; notified: number; needsNotify: number } {
+  const known = new Set<string>(tables.map((t) => t._id));
+  let placedGuests = 0;
+  let notified = 0;
+  let needsNotify = 0;
+  for (const g of guests) {
+    const placed = Boolean(g.tableId && known.has(g.tableId));
+    if (!placed) continue;
+    placedGuests += 1;
+    if (g.seatNotifiedAt) notified += 1;
+    if (needsSeatNotification(g, placed)) needsNotify += 1;
+  }
+  return { placedGuests, notified, needsNotify };
+}

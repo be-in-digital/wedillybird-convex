@@ -100,6 +100,7 @@ export default async function InvitationPage({
           locale={locale}
           accentColor={accentColor}
           showFooter
+          seatPassAvailable={event.seatingPublished}
           guest={guest}
           event={event}
         />

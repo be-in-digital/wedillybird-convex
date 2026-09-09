@@ -21,6 +21,7 @@ import type {
   MmInvoice,
   MmReferral,
   MmRoom,
+  MmSeatingNotifications,
 } from '@/lib/mon-mariage/types';
 import {
   activeFromEvent,
@@ -47,6 +48,8 @@ import {
   mmAddTaskAction,
   mmAddVendorAction,
   mmAssignGuestTableAction,
+  mmAutoNumberSeatsAction,
+  mmBroadcastSeatPassesAction,
   mmEnsurePlanningAction,
   mmRefreshBundleAction,
   mmRemovePaymentAction,
@@ -58,6 +61,7 @@ import {
   mmSetCeremonyScheduleAction,
   mmSetInvitationDesignAction,
   mmSetPaymentPaidAction,
+  mmSetSeatingPublicationAction,
   mmSetTaskStatusAction,
   mmUpdateVendorAction,
   mmUpsertTableAction,
@@ -93,6 +97,8 @@ export interface MonMariageState {
   invoices: MmInvoice[];
   /** Parrainage : code du couple + crédit disponible (récompenses vested). */
   referral: MmReferral | null;
+  /** File d'envoi des pass placement (recalculée à chaque bundle). */
+  seatingNotifications: MmSeatingNotifications;
 
   hydrate: (bundle: MmBundle | null, now: number) => void;
   refresh: () => Promise<void>;
@@ -152,9 +158,25 @@ export interface MonMariageState {
   removeSeatTable: (tableId: string) => Promise<void>;
   assignGuestTable: (guestId: string, tableId: string | null) => Promise<void>;
   saveRoom: (config: RoomConfig, elements: RoomElement[]) => Promise<void>;
+  /** Numérote les chaises puis recharge le bundle (les numéros viennent du serveur). */
+  autoNumberSeats: (mode?: 'fill' | 'renumber') => Promise<number>;
+  /** Publie / dépublie le plan pour les invités et enregistre les réglages. */
+  setSeatingPublication: (input: {
+    published: boolean;
+    numbering?: 'table' | 'seat';
+    showRoomPlan?: boolean;
+    note?: string;
+  }) => Promise<boolean>;
+  /** Envoie les pass placement aux invités à (re)prévenir. */
+  broadcastSeatPasses: (force?: boolean) => Promise<{ sent: number; failed: number } | null>;
 }
 
 const EMPTY_USAGE: McUsage = { guests: 0, storageGo: 0 };
+const EMPTY_SEAT_NOTIFICATIONS: MmSeatingNotifications = {
+  placedGuests: 0,
+  notified: 0,
+  needsNotify: 0,
+};
 
 export const useMonMariage = create<MonMariageState>()((set, get) => {
   function applyBundle(bundle: MmBundle | null, now: number) {
@@ -176,6 +198,7 @@ export const useMonMariage = create<MonMariageState>()((set, get) => {
         room: null,
         invoices: [],
         referral: null,
+        seatingNotifications: EMPTY_SEAT_NOTIFICATIONS,
       });
       return;
     }
@@ -200,6 +223,7 @@ export const useMonMariage = create<MonMariageState>()((set, get) => {
       room: bundle.room,
       invoices: bundle.invoices,
       referral: bundle.referral,
+      seatingNotifications: bundle.seatingNotifications,
     });
   }
 
@@ -220,6 +244,7 @@ export const useMonMariage = create<MonMariageState>()((set, get) => {
     room: null,
     invoices: [],
     referral: null,
+    seatingNotifications: EMPTY_SEAT_NOTIFICATIONS,
 
     hydrate: (bundle, now) => applyBundle(bundle, now),
 
@@ -243,6 +268,7 @@ export const useMonMariage = create<MonMariageState>()((set, get) => {
         plusOnesAllowed: input.plusOnesAllowed,
         rsvpStatus: 'pending',
         tableId: null,
+        seatNumber: null,
       };
       const prevUsage = get().usage;
       set((s) => ({
@@ -706,8 +732,74 @@ export const useMonMariage = create<MonMariageState>()((set, get) => {
         failToast();
       }
     },
+
+    /* ============================ Publication du plan ============================ */
+
+    autoNumberSeats: async (mode) => {
+      const event = get().event;
+      if (!event) return 0;
+      if (get().demo) return 0;
+      const before = countUnnumbered(get().guests);
+      const res = await mmAutoNumberSeatsAction(event.id, mode);
+      if (!res.ok) {
+        failToast();
+        return 0;
+      }
+      // Les numéros sont calculés côté serveur (échanges compris) : on recharge
+      // plutôt que de tenter un patch local qui divergerait.
+      await get().refresh();
+      return Math.max(0, before - countUnnumbered(get().guests));
+    },
+
+    setSeatingPublication: async (input) => {
+      const event = get().event;
+      if (!event) return false;
+      const prev = event.seatingPublication;
+      // Optimiste : le badge « publié » doit basculer sans attendre l'aller-retour.
+      set({
+        event: {
+          ...event,
+          seatingPublication: {
+            ...prev,
+            published: input.published,
+            numbering: input.numbering ?? prev.numbering,
+            showRoomPlan: input.showRoomPlan ?? prev.showRoomPlan,
+            note: input.note !== undefined ? input.note || null : prev.note,
+          },
+        },
+      });
+      if (get().demo) return true;
+      const res = await mmSetSeatingPublicationAction(event.id, input);
+      if (!res.ok) {
+        const current = get().event;
+        if (current) set({ event: { ...current, seatingPublication: prev } });
+        failToast();
+        return false;
+      }
+      await get().refresh();
+      return true;
+    },
+
+    broadcastSeatPasses: async (force) => {
+      const event = get().event;
+      if (!event) return null;
+      if (get().demo) return { sent: 0, failed: 0 };
+      const res = await mmBroadcastSeatPassesAction(event.id, force);
+      if (!res.ok) {
+        failToast();
+        return null;
+      }
+      // Recharge : `seatNotifiedAt` change côté serveur, donc la file d'envoi.
+      await get().refresh();
+      return { sent: res.sent ?? 0, failed: res.failed ?? 0 };
+    },
   };
 });
+
+/** Invités placés à une table sans numéro de chaise. */
+function countUnnumbered(guests: ReadonlyArray<MmGuest>): number {
+  return guests.filter((g) => g.tableId !== null && g.seatNumber === null).length;
+}
 
 /* ============================ Sélecteurs dérivés ============================ */
 

@@ -18,6 +18,13 @@ import {
 import type { Doc, Id } from './_generated/dataModel';
 import { isValidEmail } from './lib/email';
 import {
+  DEFAULT_PARTNER_COMP_MONTHS,
+  DEFAULT_PARTNER_COMP_TIER,
+  compExpiresAt,
+  decidePartnerComp,
+} from './lib/partnerInvite';
+import { pickUniqueSlug, slugifyOrgName } from './lib/uniqueSlug';
+import {
   DEFAULT_RATE_BPS,
   isRewardConfigSafe,
   isSelfReferral,
@@ -153,17 +160,120 @@ export const setAffiliateOwner = mutation({
       ownerUserId: ownerUserId ?? undefined,
       updatedAt: now,
     });
+
+    // Rattacher une partenaire, c'est lui ouvrir son compte offert. Sans ça
+    // elle restait en rôle `couple` sans organisation : l'assistant de création
+    // lui présentait l'étape « choisir le forfait », puis le mur du paiement à
+    // la publication — alors qu'un partenaire ne paie pas.
+    const comp =
+      ownerUserId && affiliate.kind === 'partner'
+        ? await openPartnerComp(ctx, {
+            userId: ownerUserId,
+            grantedBy: adminId,
+            affiliateId,
+            now,
+          })
+        : null;
+
     await ctx.db.insert('adminAuditLog', {
       adminId,
       action: ownerUserId ? 'attach_affiliate_owner' : 'detach_affiliate_owner',
       targetType: 'affiliate',
       targetId: affiliateId,
-      details: JSON.stringify({ code: affiliate.code, ownerUserId: ownerUserId ?? null }),
+      details: JSON.stringify({
+        code: affiliate.code,
+        ownerUserId: ownerUserId ?? null,
+        ...(comp ? { comp } : {}),
+      }),
       createdAt: now,
     });
-    return { ok: true as const };
+    return { ok: true as const, comp };
   },
 });
+
+/**
+ * Ouvre le compte agence offert d'une partenaire — même cadeau que le lien
+ * d'invitation, posé cette fois au rattachement depuis l'admin.
+ *
+ * Aucun objet Stripe n'est créé : un essai Stripe se termine en tentant de
+ * prélever, et une partenaire qu'on courtise recevrait un échec de paiement.
+ * Le cadeau expire en silence, la bannière de décompte prend le relais.
+ *
+ * Rend `null` quand rien n'a été fait, avec la raison — l'audit doit dire
+ * pourquoi un rattachement n'a pas ouvert de compte.
+ */
+async function openPartnerComp(
+  ctx: MutationCtx,
+  input: {
+    userId: Id<'users'>;
+    grantedBy: Id<'users'>;
+    affiliateId: Id<'affiliates'>;
+    now: number;
+  },
+): Promise<{ granted: boolean; reason?: string; expiresAt?: number }> {
+  const { userId, grantedBy, affiliateId, now } = input;
+
+  const existingOrg = await ctx.db
+    .query('organizations')
+    .withIndex('by_owner', (q) => q.eq('ownerId', userId))
+    .first();
+
+  const decision = decidePartnerComp({ org: existingOrg ?? null, now });
+  if (decision.action !== 'grant') {
+    return { granted: false, reason: decision.reason };
+  }
+
+  const comp = {
+    tier: DEFAULT_PARTNER_COMP_TIER,
+    grantedBy,
+    grantedAt: now,
+    expiresAt: compExpiresAt(now, DEFAULT_PARTNER_COMP_MONTHS),
+    reason: 'partner_affiliate',
+    affiliateId,
+  };
+
+  if (existingOrg) {
+    // Le tier est écrit sur l'organisation, pas seulement dans le cadeau :
+    // sans lui `eventQuotaForTier` rend `null`, c'est-à-dire des mariages
+    // illimités — l'inverse d'un compte d'essai.
+    await ctx.db.patch(existingOrg._id, {
+      subscriptionTier: DEFAULT_PARTNER_COMP_TIER,
+      compedSubscription: comp,
+      updatedAt: now,
+    });
+  } else {
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error('USER_NOT_FOUND');
+    // Le back-office pro exige le rôle ; une partenaire inscrite normalement
+    // arrive en `couple`. La promotion fait partie du cadeau — sans elle, elle
+    // garderait l'étape « choisir le forfait » de l'espace particulier.
+    if (user.role !== 'pro' && user.role !== 'admin') {
+      await ctx.db.patch(userId, { role: 'pro' as const });
+    }
+    const baseSlug = slugifyOrgName(user.fullName ?? '') || `agence-${affiliateId.slice(0, 6)}`;
+    const slug = await pickUniqueSlug(ctx, 'organizations', 'by_slug', 'slug', baseSlug);
+    const organizationId = await ctx.db.insert('organizations', {
+      ownerId: userId,
+      name: user.fullName?.trim() || slug,
+      slug,
+      subscriptionTier: DEFAULT_PARTNER_COMP_TIER,
+      compedSubscription: comp,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await ctx.db.insert('organizationMemberships', {
+      organizationId,
+      userId,
+      role: 'owner' as const,
+      status: 'active' as const,
+      invitedBy: userId,
+      invitedAt: now,
+      acceptedAt: now,
+    });
+  }
+
+  return { granted: true, expiresAt: comp.expiresAt };
+}
 
 /**
  * Corrige le contact d'un affilié : adresse d'envoi et nom affiché.

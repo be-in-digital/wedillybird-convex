@@ -103,6 +103,78 @@ describe('CheckInManager', () => {
     expect(screen.getByTestId('undo-check-in')).toBeInTheDocument();
   });
 
+  it('affiche la place de l’invité au scan pour orienter l’hôtesse', async () => {
+    checkInActionMock.mockResolvedValue({
+      ok: true,
+      alreadyCheckedIn: false,
+      checkedInAt: Date.now(),
+      guest: {
+        _id: 'g1',
+        fullName: 'Aminata Diallo',
+        plusOnesAllowed: 0,
+        rsvpStatus: 'attending',
+        tableName: 'Table des Pivoines',
+        seatNumber: 4,
+      },
+    });
+
+    const user = userEvent.setup();
+    render(<CheckInManager eventId={EVENT_ID} initialGuests={GUESTS} />);
+    await user.type(screen.getByTestId('manual-token'), 'TK1');
+    await user.click(screen.getByTestId('manual-submit'));
+
+    const seat = await screen.findByTestId('toast-seat');
+    expect(seat).toHaveTextContent('table=Table des Pivoines');
+    expect(seat).toHaveTextContent('seat=4');
+  });
+
+  it('sans numéro de chaise, n’affiche que la table', async () => {
+    checkInActionMock.mockResolvedValue({
+      ok: true,
+      alreadyCheckedIn: false,
+      checkedInAt: Date.now(),
+      guest: {
+        _id: 'g1',
+        fullName: 'Aminata Diallo',
+        plusOnesAllowed: 0,
+        rsvpStatus: 'attending',
+        tableName: 'Table des Pivoines',
+        seatNumber: null,
+      },
+    });
+
+    const user = userEvent.setup();
+    render(<CheckInManager eventId={EVENT_ID} initialGuests={GUESTS} />);
+    await user.type(screen.getByTestId('manual-token'), 'TK1');
+    await user.click(screen.getByTestId('manual-submit'));
+
+    const seat = await screen.findByTestId('toast-seat');
+    expect(seat).toHaveTextContent('Checkin.toastTable(table=Table des Pivoines)');
+  });
+
+  it('invité non placé : le scan le dit explicitement plutôt que de rester muet', async () => {
+    checkInActionMock.mockResolvedValue({
+      ok: true,
+      alreadyCheckedIn: false,
+      checkedInAt: Date.now(),
+      guest: {
+        _id: 'g1',
+        fullName: 'Aminata Diallo',
+        plusOnesAllowed: 0,
+        rsvpStatus: 'attending',
+        tableName: null,
+        seatNumber: null,
+      },
+    });
+
+    const user = userEvent.setup();
+    render(<CheckInManager eventId={EVENT_ID} initialGuests={GUESTS} />);
+    await user.type(screen.getByTestId('manual-token'), 'TK1');
+    await user.click(screen.getByTestId('manual-submit'));
+
+    expect(await screen.findByTestId('toast-seat')).toHaveTextContent('Checkin.toastNoSeat');
+  });
+
   it('shows an "already" toast without undo when server reports alreadyCheckedIn', async () => {
     checkInActionMock.mockResolvedValue({
       ok: true,
