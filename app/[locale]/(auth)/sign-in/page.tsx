@@ -1,6 +1,8 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { Link } from '@/i18n/navigation';
+import { Link, redirect } from '@/i18n/navigation';
+import { getSession } from '@/lib/auth/session';
+import { redirectForSignedInVisitor } from '@/lib/auth/signed-in-visitor';
 import { safeNextPath } from '@/lib/auth/safe-next';
 import { AuthCard } from '@/components/auth/auth-card';
 import { AuthMethodSwitcher } from '@/components/auth/auth-method-switcher';
@@ -35,6 +37,21 @@ export default async function SignInPage({
   // redirection ouverte (cf. `safeNextPath`).
   const sp = await searchParams;
   const next = safeNextPath(typeof sp.next === 'string' ? sp.next : null);
+
+  // Deja connecte : « Se connecter » doit rouvrir son espace, pas redemander un
+  // code a usage unique pour aboutir exactement la ou l'on etait deja
+  // (cf. `redirectForSignedInVisitor`). Le cookie suffit a trancher : HMAC
+  // local, aucun appel reseau, donc aucune dependance backend ajoutee a la page
+  // la plus critique du tunnel.
+  const signedInDestination = redirectForSignedInVisitor({
+    hasSession: (await getSession()) !== null,
+    next,
+    error: typeof sp.error === 'string' ? sp.error : null,
+  });
+  if (signedInDestination) {
+    redirect({ href: signedInDestination as never, locale });
+  }
+
   setRequestLocale(locale);
   const t = await getTranslations('Auth');
   const tCommon = await getTranslations('Common');

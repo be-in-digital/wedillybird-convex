@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Check, Menu, X } from 'lucide-react';
+import { Check, LogIn, Menu, X } from 'lucide-react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { buttonVariants } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { LOCALE_FLAGS, LOCALE_NATIVE_NAMES, routing, type Locale } from '@/i18n/routing';
 import { useCurrencyStore } from '@/stores/currency-store';
@@ -18,14 +19,20 @@ const SECTION_ITEMS: ReadonlyArray<{ id: string; key: string }> = [
 
 /**
  * Mobile menu — déclenché par hamburger sur header mobile.
- * Bottom-sheet (Vaul) qui héberge la section nav + le sélecteur de langue
- * (rendu en grille de pills tactiles, pas en dropdown). Le CTA sign-up reste
- * visible dans le header (à côté du hamburger). Sur md+ ce composant est
- * rendu invisible.
+ * Bottom-sheet (Vaul) qui héberge « Se connecter », la section nav et le
+ * sélecteur de langue (rendu en grille de pills tactiles, pas en dropdown). Le
+ * CTA sign-up reste visible dans le header (à côté du hamburger). Sur md+ ce
+ * composant est rendu invisible.
+ *
+ * « Se connecter » ouvre la feuille : sous 640px la barre sticky est pleine au
+ * pixel près (logo + CTA + hamburger), donc c'est le seul endroit où un compte
+ * existant peut le trouver — et c'est précisément ce qu'on ne trouvait pas.
+ * D'où sa place en TÊTE, avant les ancres de section.
  */
 export function MobileMenu() {
   const t = useTranslations('Landing.mobileMenu');
   const tNav = useTranslations('Landing.sectionNav');
+  const tCommon = useTranslations('Common');
   const [open, setOpen] = useState(false);
   const currentLocale = useLocale() as Locale;
   const pathname = usePathname();
@@ -69,7 +76,27 @@ export function MobileMenu() {
           </button>
         </div>
 
-        <nav aria-label={t('navAriaLabel')} className="flex flex-col gap-1 pt-2 pb-2">
+        <div className="border-b border-[color:var(--color-border)] pt-2 pb-5">
+          <span className="mb-3 inline-block font-mono text-[10px] tracking-[0.32em] text-[color:var(--color-ink-500)] uppercase">
+            {t('account')}
+          </span>
+          <Link
+            href="/sign-in"
+            onClick={() => {
+              analytics.ctaClicked({ source: 'mobile_menu', destination: '/sign-in' });
+              setOpen(false);
+            }}
+            className={cn(
+              buttonVariants({ variant: 'outline', size: 'lg' }),
+              'w-full justify-center',
+            )}
+          >
+            <LogIn className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            {tCommon('signIn')}
+          </Link>
+        </div>
+
+        <nav aria-label={t('navAriaLabel')} className="flex flex-col gap-1 pt-5 pb-2">
           {SECTION_ITEMS.map((item) => (
             <Link
               key={item.id}

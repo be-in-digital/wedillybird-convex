@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@/i18n/navigation';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants, type ButtonProps } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
 import { analytics } from '@/lib/analytics/posthog-client';
 import type { AnalyticsAudience, BillingPeriod } from '@/lib/analytics/events';
@@ -27,6 +27,13 @@ interface Props {
   audience?: AnalyticsAudience;
   /** Valeur `destination` de l'event (par défaut `/sign-up`). */
   destination?: string;
+  /**
+   * Style du bouton. `primary` pour l'action d'acquisition (créer un compte),
+   * `ghost` pour l'action secondaire de retour (se connecter) — un utilisateur
+   * qui revient ne doit pas avoir à deviner, mais ne doit pas non plus se voir
+   * proposer deux actions de même poids visuel.
+   */
+  variant?: ButtonProps['variant'];
 }
 
 export function HeaderCta({
@@ -38,13 +45,14 @@ export function HeaderCta({
   billing,
   audience,
   destination = '/sign-up',
+  variant = 'primary',
 }: Props) {
   return (
     <Link
       href={href as never}
       onClick={() => analytics.ctaClicked({ source, destination, plan, billing, audience })}
       className={cn(
-        buttonVariants({ variant: 'primary', size: 'sm' }),
+        buttonVariants({ variant, size: 'sm' }),
         // 44px de cible tactile sur mobile (barre sticky), compact ≥ md.
         'h-11 whitespace-nowrap md:h-9',
         className,

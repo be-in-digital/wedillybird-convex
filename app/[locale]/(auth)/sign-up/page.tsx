@@ -1,6 +1,8 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { Link } from '@/i18n/navigation';
+import { Link, redirect } from '@/i18n/navigation';
+import { getSession } from '@/lib/auth/session';
+import { redirectForSignedInVisitor } from '@/lib/auth/signed-in-visitor';
 import { AuthCard } from '@/components/auth/auth-card';
 import { AuthMethodSwitcher } from '@/components/auth/auth-method-switcher';
 
@@ -29,6 +31,16 @@ export default async function SignUpPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale } = await params;
+
+  // Deja connecte : le CTA d'acquisition ne doit pas ramener sur un formulaire
+  // d'identite quelqu'un qui en a deja une. Meme aiguillage que /sign-in.
+  const signedInDestination = redirectForSignedInVisitor({
+    hasSession: (await getSession()) !== null,
+  });
+  if (signedInDestination) {
+    redirect({ href: signedInDestination as never, locale });
+  }
+
   setRequestLocale(locale);
   const t = await getTranslations('Auth');
   const tCommon = await getTranslations('Common');

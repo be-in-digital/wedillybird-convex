@@ -159,13 +159,30 @@ function LandingShell({
             <SectionNav />
           </nav>
 
-          {/* Colonne droite — desktop : sélecteur de langue + CTA primary
-              (un seul bouton car le flow OTP WhatsApp unifie sign-in/sign-up).
-              Mobile : CTA sign-up reste visible à côté du hamburger qui héberge
-              nav + locale dans un bottom-sheet Vaul. */}
+          {/* Colonne droite — sélecteur de langue, « Se connecter » (ghost) puis
+              CTA primary.
+
+              Le flow OTP unifie techniquement sign-in et sign-up, d'où l'unique
+              bouton d'origine. Mais un compte existant ne le lit pas comme ça :
+              ne voyant que « Créer un compte », il ne trouve pas par où revenir,
+              clique quand même, et se retrouve connecté sans comprendre comment.
+              D'où un lien de connexion explicite, en poids visuel secondaire
+              pour ne pas concurrencer l'acquisition.
+
+              Sous 640px, la barre est pleine (logo + CTA + hamburger tiennent
+              au pixel près) : le lien y vit dans le bottom-sheet, en tête de
+              menu. */}
           <div className="flex items-center justify-end gap-2 md:gap-3">
             <LocaleSwitcher className="hidden md:inline-flex" />
             <span aria-hidden className="hidden h-5 w-px bg-[color:var(--color-border)] md:block" />
+            <HeaderCta
+              href="/sign-in"
+              label={tCommon('signIn')}
+              source="header"
+              destination="/sign-in"
+              variant="ghost"
+              className="hidden sm:inline-flex"
+            />
             <HeaderCta href="/sign-up" label={tCommon('signUp')} source="header" />
             <div className="md:hidden">
               <MobileMenu />
