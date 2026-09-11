@@ -59,6 +59,7 @@ export default async function ProsPage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('Marketing.pros');
+  const tCommon = await getTranslations('Common');
   const defaultCurrency = defaultCurrencyForLocale(locale as Locale);
 
   return (
@@ -94,6 +95,17 @@ export default async function ProsPage({ params }: { params: Promise<{ locale: s
           <div className="flex items-center justify-end gap-2 md:gap-3">
             <LocaleSwitcher className="hidden md:inline-flex" />
             <span aria-hidden className="hidden h-5 w-px bg-[color:var(--color-border)] md:block" />
+            {/* Même raison que sur la landing : sans lien de connexion, une
+                agence déjà cliente n'a aucun point d'entrée pour revenir. */}
+            <HeaderCta
+              href="/sign-in"
+              label={tCommon('signIn')}
+              source="pros_header"
+              destination="/sign-in"
+              variant="ghost"
+              audience="pro"
+              className="hidden sm:inline-flex"
+            />
             <HeaderCta
               href="/sign-up?plan=business&billing=monthly"
               label={t('cta')}

@@ -85,11 +85,32 @@ test.describe('Landing page', () => {
 
   test("le CTA principal d'inscription est présent dans le header", async ({ page }) => {
     await page.goto('/');
-    // V4 : un seul CTA dans le header (le sign-in/sign-up est un flow unifié
-    // OTP WhatsApp, donc un seul bouton "Créer un compte"). Le lien "déjà un
-    // compte ?" sera offert sur la page sign-in elle-même.
     const header = page.getByRole('banner');
     await expect(header.getByRole('link', { name: /créer un compte/i })).toBeVisible();
+  });
+
+  test('un compte existant trouve par où se connecter', async ({ page }) => {
+    // Le flow OTP ouvre indifféremment un compte neuf ou un compte existant,
+    // d'où l'unique bouton "Créer un compte" d'origine. Un retour utilisateur a
+    // montré que ça ne se lit pas : on ne trouvait pas la connexion, on cliquait
+    // "Créer un compte" faute de mieux, et on se retrouvait connecté sans
+    // comprendre comment. Le point d'entrée doit donc exister, à toute largeur.
+    await page.goto('/');
+    const width = page.viewportSize()?.width ?? 0;
+
+    if (width >= 640) {
+      const signIn = page.getByRole('banner').getByRole('link', { name: /se connecter/i });
+      await expect(signIn).toBeVisible();
+      await expect(signIn).toHaveAttribute('href', '/sign-in');
+      return;
+    }
+
+    // Sous 640px la barre sticky est pleine au pixel près (logo + CTA +
+    // hamburger) : le lien vit en tête du bottom-sheet.
+    await page.getByRole('button', { name: /ouvrir le menu/i }).click();
+    const signIn = page.getByRole('link', { name: /se connecter/i });
+    await expect(signIn).toBeVisible();
+    await expect(signIn).toHaveAttribute('href', '/sign-in');
   });
 
   test('la navigation active suit les sections Tarifs puis FAQ', async ({ page }) => {

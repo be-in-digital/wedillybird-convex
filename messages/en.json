@@ -902,6 +902,7 @@
       "open": "Open menu",
       "close": "Close menu",
       "title": "Menu",
+      "account": "Your account",
       "navAriaLabel": "Main navigation",
       "language": "Language",
       "languageAriaLabel": "Choose language"
